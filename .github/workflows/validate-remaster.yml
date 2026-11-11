@@ -55,6 +55,13 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: App di test separata per non sovrascrivere demo-6
+        run: |
+          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.preview"@' export_presets.cfg
+          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI PREVIEW"@' export_presets.cfg
+          sed -i 's@version/name="0.67-demo"@version/name="0.68-preview"@' export_presets.cfg
+          sed -i 's@version/code=67@version/code=68@' export_presets.cfg
+          grep -q 'org.origini.mobile.preview' export_presets.cfg
       - name: Installa Godot e modelli di esportazione
         uses: chickensoft-games/setup-godot@v2
         with:
