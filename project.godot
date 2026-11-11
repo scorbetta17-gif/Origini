@@ -3,8 +3,8 @@ config_version=5
 [application]
 config/name="ORIGINI | Demo Android"
 run/main_scene="res://scenes/Main.tscn"
-config/features=PackedStringArray("4.7", "GL Compatibility")
-config/description="Protocellule, mutazioni e genealogia in 3D isometrico"
+config/features=PackedStringArray("4.7", "Mobile")
+config/description="Evoluzione cellulare biologica in 3D: modelli Blender, genoma ereditabile e camera prospettica"
 
 [display]
 window/size/viewport_width=1280
@@ -13,8 +13,9 @@ window/stretch/mode="canvas_items"
 window/handheld/orientation=0
 
 [rendering]
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.web="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.012, 0.052, 0.074, 1)
 textures/default_filters/use_nearest_mipmap_filter=false
 
