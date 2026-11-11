@@ -20,6 +20,7 @@ jobs:
         run: |
           python3 tools/ripristina_progetto.py
           sed -i '/config\/icon=/d' project.godot
+          sed -i 's@^rendering/textures/vram_compression/import_etc2_astc=true@textures/vram_compression/import_etc2_astc=true@' project.godot
           sed -i 's/var joystick: VirtualJoystick/var joystick/' src/main.gd
           sed -i 's/^class_name VirtualJoystick$/class_name OriginiJoystick/' src/virtual_joystick.gd
           sed -i 's/VirtualJoystick/OriginiJoystick/g' tests/qa_static.py
