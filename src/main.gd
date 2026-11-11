@@ -1157,15 +1157,17 @@ func _save_game() -> void:
             "branch":e["branch"],"traits":e["traits"],"external":e["external"],
             "pos":[position.x,position.y,position.z],"hp":e["hp"],"atp":e["atp"],
             "energy":e["energy"],"biomass":e["biomass"],"resources":e["resources"],
-            "points":e["points"],"purchased":e["purchased"],"age":e["age"]})
+            "points":e["points"],"purchased":e["purchased"],"age":e["age"],
+            "phase2_progress":e.get("phase2_progress",PhaseScript.empty())})
     var particle_data: Array = []
     for n in nutrients:
         if is_instance_valid(n["node"]):
             var position: Vector3 = n["node"].position
             particle_data.append({"kind":n["kind"],"pos":[position.x,position.y,position.z]})
-    var data: Dictionary = {"version":67,"elapsed":t,"player_id":player_id,"next_id":next_id,
+    var data: Dictionary = {"version":70,"elapsed":t,"player_id":player_id,"next_id":next_id,
         "entities":cells,"genealogy":genealogy,"nutrients":particle_data,
-        "partner":partner_id,"phase_two":phase_two,"last_external_arrival":last_external_arrival}
+        "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
+        "last_external_arrival":last_external_arrival,"world_age":world_age}
     var file: FileAccess = FileAccess.open(SAVE_PATH,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
@@ -1173,7 +1175,7 @@ func _save_game() -> void:
 
 func _load_game() -> void:
     if not FileAccess.file_exists(SAVE_PATH):
-        _notice("Non esiste ancora un salvataggio 0.67")
+        _notice("Non esiste ancora una partita salvata")
         return
     var file: FileAccess = FileAccess.open(SAVE_PATH,FileAccess.READ)
     if file == null:
@@ -1181,8 +1183,8 @@ func _load_game() -> void:
         return
     var loaded: Variant = JSON.parse_string(file.get_as_text())
     file.close()
-    if not (loaded is Dictionary) or int(loaded.get("version",0)) != 67:
-        _notice("Salvataggio incompatibile")
+    if not (loaded is Dictionary) or not [67,70].has(int(loaded.get("version",0))):
+        _notice("Salvataggio incompatibile: supportate versioni 0.67 e 0.70")
         return
     var cell_list: Array = loaded.get("entities",[])
     var controlled: String = str(loaded.get("player_id",""))
@@ -1213,9 +1215,10 @@ func _load_game() -> void:
         var id: String = str(record["id"])
         _create_entity(id,str(record.get("parent","")),int(record.get("generation",0)),str(record.get("branch","pre_luca")),record.get("traits",_base_traits()),Vector3(float(xyz[0]),float(xyz[1]),float(xyz[2])),false,bool(record.get("external",false)))
         var target: Dictionary = entities[id]
-        for key in ["hp","atp","energy","biomass","resources","points","purchased","age"]:
+        for key in ["hp","atp","energy","biomass","resources","points","purchased","age","phase2_progress"]:
             if record.has(key):
                 target[key] = record[key]
+        target["phase2_progress"] = PhaseScript.normalize(target.get("phase2_progress",{}))
     genealogy = saved_history
     for p in loaded.get("nutrients",[]):
         if not(p is Dictionary) or not (TYPES.has(str(p.get("kind",""))) or str(p.get("kind",""))=="detritus"):
@@ -1227,11 +1230,28 @@ func _load_game() -> void:
     t = maxf(0.0,float(loaded.get("elapsed",0.0)))
     next_id = maxi(1,int(loaded.get("next_id",1)))
     partner_id = str(loaded.get("partner",""))
-    phase_two = float(loaded.get("phase_two",0.0))
+    if int(loaded.get("version",0)) == 70:
+        phase2_progress = PhaseScript.normalize(loaded.get("phase2_progress",{}))
+    else:
+        # Il vecchio timer prova vicinanza, NON scambio metabolico:
+        # nessun traguardo biologico e' inventato durante la migrazione.
+        phase2_progress = PhaseScript.empty()
+        if partner_id != "" and entities.has(partner_id) and entities[player_id]["branch"] == "archaea":
+            phase2_progress["discovered"] = true
+            phase2_progress["adhesion"] = true
+            phase2_progress["partner_id"] = partner_id
+            phase2_progress["last_partner_id"] = partner_id
+            phase2_progress["bonded"] = true
+            phase2_progress["contact_seconds"] = clampf(float(loaded.get("phase_two",0.0)),0.0,25.0)
+        entities[player_id]["phase2_progress"] = phase2_progress.duplicate(true)
+    partner_id = str(phase2_progress.get("partner_id",""))
+    phase_two = float(phase2_progress.get("contact_seconds",0.0))
     last_external_arrival = float(loaded.get("last_external_arrival",-60.0))
+    world_age = float(loaded.get("world_age",t))
     if not entities.has(partner_id) or entities[player_id]["branch"] != "archaea":
         partner_id = ""
         phase_two = 0.0
+        phase2_progress = PhaseScript.release(phase2_progress)
     eco_tick = 0.0
     autosave_timer = 0.0
     skill_cooldown = 0.0
@@ -1240,7 +1260,7 @@ func _load_game() -> void:
     is_paused = false
     _close_overlay()
     _refresh_hud()
-    _notice("Salvataggio 0.67 caricato con genealogia e HP per linea")
+    _notice("Partita caricata · genealogia, genoma e Fase 2 ripristinati")
 
 func _notice(message: String) -> void:
     if is_instance_valid(tips_label):
