@@ -3,6 +3,7 @@ class_name CellVisual
 ## ORIGINI: renderer biologico parametrico, senza asset fittizi precostituiti.
 ## All'inizio: una membrana, un filamento di ssRNA, pochi complessi autocatalitici.
 const MEMBRANE_SHADER = preload("res://shaders/cell_membrane.gdshader")
+const SHADOW_SHADER = preload("res://shaders/cell_contact_shadow.gdshader")
 var traits: Dictionary = {}
 var branch: String = "pre_luca"
 var is_player: bool = false
@@ -152,15 +153,23 @@ func _build() -> void:
     var strand_count: int = 2 if dna else 1
     for strand in range(strand_count):
         var poly := PackedVector3Array()
-        for i in range(41):
-            var t: float = float(i)/40.0
-            var u: float = (t-.5)*(.81 if primitive else 1.12)
-            var phase: float = t*TAU*1.3+float(strand)*PI
-            # Il filamento attraversa il citoplasma in profondita', non disegnato su un piano.
-            var p := Vector3(u,sin(phase)*.17+sin(t*TAU*2.1)*.046,
-                cos(phase)*.19+sin(t*TAU*.73)*.065)
+        for i in range(61):
+            var t: float = float(i)/60.0
+            var p: Vector3
+            if dna:
+                # DNA solo dopo il locus di stabilizzazione: due filamenti distinti.
+                var u: float = (t-.5)*1.13
+                var phase: float = t*TAU*1.9+float(strand)*PI
+                p = Vector3(u,sin(phase)*.17,cos(phase)*.17)
+            else:
+                # Un unico ssRNA ripiegato in 3D: curve non complanari.
+                p = Vector3(
+                    (t-.5)*.72 + sin(t*TAU*3.1)*.14,
+                    sin(t*TAU*1.85)*.16 + cos(t*TAU*3.4)*.075,
+                    cos(t*TAU*1.43)*.22 + sin(t*TAU*2.5)*.065
+                )
             poly.append(p)
-        _tube(interior,poly,.024 if primitive else .022,Color(.91,.66,.48) if not dna else Color(.76,.72,.59))
+        _tube(interior,poly,.018 if primitive else .020,Color(.92,.60,.47) if not dna else Color(.76,.72,.59))
     if dna:
         # Segmenti aggiuntivi sono visibili solo dopo la stabilizzazione del DNA.
         for i in range(9):
@@ -251,15 +260,29 @@ func _build() -> void:
             path.append(Vector3(-u*2.0,sin(u*TAU*3.0+float(i))*.095,cos(u*TAU*3.0+float(i))*.085))
         _tube(root,path,.015,Color(.71,.84,.74) if branch == "archaea" else Color(.85,.78,.62))
 
+    # Ombra di contatto morbida: il fondo resta lontano dalla cellula,
+    # ma l'osservatore percepisce l'altezza del corpo sopra il sedimento.
+    var shadow_plane := PlaneMesh.new()
+    shadow_plane.size = Vector2(2.35,2.35)
+    var shadow := MeshInstance3D.new()
+    shadow.mesh = shadow_plane
+    shadow.position = Vector3(0,-.242,0)
+    var shadow_mat := ShaderMaterial.new()
+    shadow_mat.shader = SHADOW_SHADER
+    shadow_mat.set_shader_parameter("strength",.31)
+    shadow.material_override = shadow_mat
+    shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(shadow)
+
     var ring := TorusMesh.new()
-    ring.inner_radius = .91
-    ring.outer_radius = .925
+    ring.inner_radius = .80
+    ring.outer_radius = .812
     ring.rings = 56
     ring.ring_segments = 8
     selection_ring = MeshInstance3D.new()
     selection_ring.mesh = ring
     selection_ring.position.y = -.08
-    selection_ring.material_override = _mat(Color(.41,.62,.61),.16)
+    selection_ring.material_override = _mat(Color(.41,.62,.61),.09)
     selection_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     selection_ring.visible = is_player
     add_child(selection_ring)
