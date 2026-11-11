@@ -12,7 +12,7 @@ permissions:
 jobs:
   qa:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Installa Godot
@@ -21,6 +21,8 @@ jobs:
           version: 4.7.2
           use-dotnet: false
           include-templates: false
+      - name: Verifica asset Blender GLB versionati
+        run: python3 tools/blender/validate_cell_assets.py
       - name: Controlli statici
         run: python3 tests/qa_static.py
       - name: Import e parsing del progetto
@@ -35,8 +37,10 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
       - name: Genotipo, ereditarieta' e fenotipo
         run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
+      - name: Import effettivo Blender 3D e moduli per gene
+        run: timeout 90s godot --headless --path . --script res://tests/blender_asset_smoke.gd
       - name: Driver per capture 3D
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers vulkan-tools
       - name: Screenshot autentici (Godot con display virtuale)
         run: |
           mkdir -p build/previews
@@ -46,6 +50,20 @@ jobs:
           test -s build/previews/fenotipo-macro-godot.png
           test -s build/previews/cellula-evoluta-godot.png
           test -s build/previews/bioma-idrotermale-godot.png
+      - name: Screenshot reali tramite renderer Mobile/Vulkan
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/previews
+          export ORIGIN_REQUIRE_MOBILE=1
+          export ORIGIN_CAPTURE_PREFIX="mobile-"
+          if test -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json; then
+            export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+          fi
+          timeout 180s xvfb-run -a godot --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_preview.gd 2>&1 | tee build/mobile-vulkan.log
+          grep -q 'ORIGIN_ACTUAL_RENDERER=mobile DRIVER=vulkan' build/mobile-vulkan.log
+          test -s build/previews/mobile-primordiale-macro-godot.png
+          test -s build/previews/mobile-fenotipo-macro-godot.png
       - name: Salva screenshot 3D per la revisione
         uses: actions/upload-artifact@v4
         with:
@@ -61,11 +79,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: App di test separata per non sovrascrivere demo-6
         run: |
-          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.preview"@' export_presets.cfg
-          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI PREVIEW"@' export_presets.cfg
-          sed -i 's@version/name="0.67-demo"@version/name="0.68-preview"@' export_presets.cfg
-          sed -i 's@version/code=67@version/code=68@' export_presets.cfg
-          grep -q 'org.origini.mobile.preview' export_presets.cfg
+          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.preview.vulkan"@' export_presets.cfg
+          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI VULKAN"@' export_presets.cfg
+          sed -i 's@version/name="0.67-demo"@version/name="0.69-vulkan-preview"@' export_presets.cfg
+          sed -i 's@version/code=67@version/code=69@' export_presets.cfg
+          grep -q 'org.origini.mobile.preview.vulkan' export_presets.cfg
       - name: Installa Godot e modelli di esportazione
         uses: chickensoft-games/setup-godot@v2
         with:
@@ -102,16 +120,39 @@ jobs:
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/origini-remaster-debug.keystore" >> "${GITHUB_ENV}"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "${GITHUB_ENV}"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "${GITHUB_ENV}"
-      - name: Esporta APK Android ARM64
-        run: godot --headless --path . --export-debug Android build/android/ORIGINI-REMASTER-PREVIEW.apk
-      - name: Verifica archivio APK
+      - name: Esporta APK Android Mobile/Vulkan
+        run: godot --headless --path . --export-debug Android build/android/ORIGINI-VULKAN-PREVIEW.apk
+      - name: Verifica Vulkan APK
         run: |
-          test -s build/android/ORIGINI-REMASTER-PREVIEW.apk
-          unzip -t build/android/ORIGINI-REMASTER-PREVIEW.apk >/dev/null
-          unzip -Z1 build/android/ORIGINI-REMASTER-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
-      - name: APK Android solo come artefatto (no release)
+          test -s build/android/ORIGINI-VULKAN-PREVIEW.apk
+          unzip -t build/android/ORIGINI-VULKAN-PREVIEW.apk >/dev/null
+          unzip -Z1 build/android/ORIGINI-VULKAN-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
+          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging build/android/ORIGINI-VULKAN-PREVIEW.apk | grep -q "org.origini.mobile.preview.vulkan"
+      - name: Crea variante OpenGL Compatibility per telefoni non Vulkan
+        run: |
+          sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
+          sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
+          sed -i 's@org.origini.mobile.preview.vulkan@org.origini.mobile.preview.compat@' export_presets.cfg
+          sed -i 's@ORIGINI VULKAN@ORIGINI COMPAT@' export_presets.cfg
+          sed -i 's@0.69-vulkan-preview@0.69-compat-preview@' export_presets.cfg
+          godot --headless --path . --editor --quit
+      - name: Esporta APK Android Compatibility
+        run: godot --headless --path . --export-debug Android build/android/ORIGINI-COMPAT-PREVIEW.apk
+      - name: Verifica Compatibility APK
+        run: |
+          test -s build/android/ORIGINI-COMPAT-PREVIEW.apk
+          unzip -t build/android/ORIGINI-COMPAT-PREVIEW.apk >/dev/null
+          unzip -Z1 build/android/ORIGINI-COMPAT-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
+          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging build/android/ORIGINI-COMPAT-PREVIEW.apk | grep -q "org.origini.mobile.preview.compat"
+      - name: APK Android Mobile/Vulkan solo come artefatto (no release)
         uses: actions/upload-artifact@v4
         with:
-          name: ORIGINI-Remaster-Android-Preview
-          path: build/android/ORIGINI-REMASTER-PREVIEW.apk
+          name: ORIGIN-Android-Mobile-Vulkan
+          path: build/android/ORIGINI-VULKAN-PREVIEW.apk
+          if-no-files-found: error
+      - name: APK Android Compatibility solo come artefatto (no release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ORIGIN-Android-Compatibility
+          path: build/android/ORIGINI-COMPAT-PREVIEW.apk
           if-no-files-found: error
