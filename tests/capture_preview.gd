@@ -29,7 +29,7 @@ func _capture() -> void:
         quit(1)
         return
     var controlled: Node3D = game.get("player")
-    controlled.position = Vector3(-11.0,0,3.0)
+    controlled.position = Vector3(-9.8,0,3.2)
     await create_timer(.9).timeout
     if not _save_frame("bioma-idrotermale"):
         quit(1)
