@@ -21,6 +21,7 @@ jobs:
           python3 tools/ripristina_progetto.py
           sed -i '/config\/icon=/d' project.godot
           sed -i 's/var joystick: VirtualJoystick/var joystick/' src/main.gd
+          sed -i '/^class_name VirtualJoystick$/d' src/virtual_joystick.gd
       - name: Installa Godot e template di esportazione
         uses: chickensoft-games/setup-godot@v2
         with:
