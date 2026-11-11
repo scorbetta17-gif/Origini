@@ -1,0 +1,115 @@
+name: ORIGINI - APK Android e demo Chrome
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Ripristina il progetto Godot
+        run: |
+          python3 tools/ripristina_progetto.py
+          sed -i '/config\/icon=/d' project.godot
+      - name: Installa Godot e template di esportazione
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+      - name: Controlli statici
+        run: python3 tests/qa_static.py
+      - name: Importazione e parsing Godot
+        run: |
+          godot --version
+          godot --headless --path . --editor --quit
+      - name: Test giocabilita e genealogia
+        run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
+      - name: Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Build tools Android
+        run: sdkmanager --install 'platform-tools' 'build-tools;35.0.1' 'platforms;android-35'
+      - name: Firma di test e impostazioni Godot
+        shell: bash
+        run: |
+          mkdir -p ~/.config/godot build/android build/web
+          cat > ~/.config/godot/editor_settings-4.7.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "${ANDROID_HOME}"
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          EOF
+          keytool -genkeypair -v -keystore "${RUNNER_TEMP}/origini-debug.keystore" \
+            -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=ORIGINI Demo,O=Test,C=IT" -noprompt
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/origini-debug.keystore" >> "${GITHUB_ENV}"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "${GITHUB_ENV}"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "${GITHUB_ENV}"
+      - name: Esporta APK ARM64
+        run: godot --headless --path . --export-debug Android build/android/ORIGINI.apk
+      - name: Verifica APK
+        run: |
+          test -s build/android/ORIGINI.apk
+          unzip -t build/android/ORIGINI.apk >/dev/null
+          unzip -Z1 build/android/ORIGINI.apk | grep -q '^AndroidManifest.xml$'
+      - name: Esporta demo Web
+        run: godot --headless --path . --export-release Web build/web/index.html
+      - name: Verifica Web
+        run: |
+          test -s build/web/index.html
+          test "$(find build/web -maxdepth 1 -name '*.wasm' | wc -l)" -ge 1
+          test "$(find build/web -maxdepth 1 -name '*.pck' | wc -l)" -ge 1
+      - name: Artefatto APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ORIGINI-APK
+          path: build/android/ORIGINI.apk
+      - name: Artefatto Web
+        uses: actions/upload-artifact@v4
+        with:
+          name: ORIGINI-Web
+          path: build/web/
+      - name: Pubblica APK direttamente su Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "demo-${GITHUB_RUN_NUMBER}" build/android/ORIGINI.apk \
+            --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" \
+            --title "ORIGINI - demo ${GITHUB_RUN_NUMBER}" \
+            --notes "Build Android demo ARM64 (firma di prova). Per installare: scarica ORIGINI.apk." --latest
+
+  pages:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Scarica demo Web
+        uses: actions/download-artifact@v4
+        with:
+          name: ORIGINI-Web
+          path: public
+      - name: Pacchetto Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - name: Pubblica Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
