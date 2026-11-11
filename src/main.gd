@@ -815,6 +815,7 @@ func _choose_daughter(choice: int) -> void:
     var gen: int = generation+1
     var old_partner: String = partner_id
     var old_phase: float = phase_two
+    var parent_phase: Dictionary = PhaseScript.normalize(phase2_progress)
     var old_resources: Dictionary = resources.duplicate(true)
     var old_hp: float = hp
     var old_atp: float = atp
@@ -838,15 +839,33 @@ func _choose_daughter(choice: int) -> void:
         new_cell["energy"] = old_atp*.55
         new_cell["points"] = old_points+2
         new_cell["purchased"] = old_owned.duplicate(true)
+        if str(option["branch"]) == "archaea" and str(parent["branch"]) == "archaea":
+            var descendant_phase: Dictionary = PhaseScript.normalize(parent_phase)
+            if i == choice:
+                var partner_alive: bool = old_partner != "" and entities.has(old_partner)
+                descendant_phase = PhaseScript.inherit(descendant_phase,new_cell["traits"],
+                    partner_alive,old_id,gen)
+                if bool(descendant_phase["complete"]):
+                    descendant_phase["partner_id"] = old_partner
+                    descendant_phase["bonded"] = true
+            else:
+                descendant_phase = PhaseScript.release(descendant_phase)
+            new_cell["phase2_progress"] = descendant_phase
         if i == choice:
             chosen_id = id
     division_options.clear()
     _activate_lineage(chosen_id)
-    partner_id = old_partner if entities[player_id]["branch"] == "archaea" and entities.has(old_partner) else ""
-    phase_two = old_phase if partner_id != "" else 0.0
+    var phase2_finished: bool = bool(phase2_progress.get("complete",false))
     _close_overlay()
     _save_game()
-    _notice("Scissione completata · %s · +2 punti" % chosen_id)
+    if phase2_finished:
+        _open_overlay("FASE 2 COMPLETATA", "Un consorzio metabolico stabile ha trasmesso la capacita di cooperare a una figlia.")
+        _add_overlay_label("Il genoma eredita adesine e trasportatori; il partner rimane una cellula Bacteria distinta.")
+        _add_overlay_label("Traguardo: associazione procariotica cooperativa. NON endosimbiosi, nucleo o mitocondri.")
+        _add_overlay_label("Puoi continuare a esplorare, dividerti, evolvere e seguire altre linee.")
+        _add_overlay_button("CONTINUA IL GIOCO",_close_overlay)
+    else:
+        _notice("Scissione completata · %s · +2 punti" % chosen_id)
 
 func _on_regen() -> void:
     if hp >= 99.99 or regeneration_cooldown > 0:
@@ -957,28 +976,42 @@ func _follow_attack(delta: float) -> void:
         _notice("Danno %.0f · HP preda %.0f" % [damage,maxf(0.0,float(target["hp"]))])
 
 func _on_cooperate() -> void:
-    if entities[player_id]["branch"] != "archaea":
-        _notice("La cooperazione della Fase 2 richiede una linea Archaea")
+    if not entities.has(player_id) or entities[player_id]["branch"] != "archaea":
+        _notice("La Fase 2 segue una linea Archaea; Bacteria resta separata")
+        return
+    if partner_id != "" and entities.has(partner_id) and bool(phase2_progress.get("bonded",false)):
+        _notice("Adesione attiva: mantieni vicinanza e scambia metaboliti")
         return
     var traits: Dictionary = entities[player_id]["traits"]
     if not GenomeScript.has(traits,"surface_recognition") and not GenomeScript.has(traits,"eps_biosynthesis"):
-        _notice("Occorre un locus maggiore per adesione o EPS")
+        _notice("Per aderire serve una mutazione maggiore: recettori o EPS")
         return
     var closest: String = ""
-    var dist: float = 6.0
+    var distance: float = PhaseScript.BOND_RADIUS
     for id in entities:
-        if id == player_id or entities[id]["branch"] != "bacteria":
+        if id == player_id or str(entities[id]["branch"]) != "bacteria":
+            continue
+        var bacterial: Dictionary = entities[id]["traits"]
+        if not PhaseScript.can_adhere(traits,bacterial):
             continue
         var d: float = entities[id]["node"].position.distance_to(player.position)
-        if d < dist:
-            closest = id
-            dist = d
+        if d < distance:
+            closest = str(id)
+            distance = d
     if closest == "":
-        _notice("Avvicinati a una cellula Bacteria compatibile")
+        _notice("Nessuna Bacteria compatibile vicino. Raggiungila e riprova.")
+        return
+    phase2_progress = PhaseScript.bind(phase2_progress,traits,entities[closest]["traits"],closest,distance)
+    if not bool(phase2_progress["bonded"]):
+        _notice("Adesione non riuscita: recettori incompatibili")
         return
     partner_id = closest
     phase_two = 0.0
-    _notice("Protoconsorzio avviato · mantieni la vicinanza")
+    _cache_current()
+    if not PhaseScript.can_exchange(traits,entities[closest]["traits"]):
+        _notice("Adesione stabilita. Servono trasportatori di membrana per lo scambio.")
+    else:
+        _notice("Adesione stabilita: mantieni la vicinanza per lo scambio metabolico")
 
 func _on_tree() -> void:
     _open_overlay("ALBERO EVOLUTIVO", "Specializza la tua linea: 288 nodi collegati, sei rami")
