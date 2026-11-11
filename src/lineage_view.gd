@@ -99,9 +99,8 @@ func _portrait(center: Vector2, r: Dictionary, factor: float) -> void:
     var tr: Dictionary = r.get("traits",{})
     var r_x: float = 15.0*factor
     var r_y: float = 12.0*factor
-    if str(r.get("branch","")) == "bacteria":
-        r_x *= 1.34
-    r_x *= clampf(1.0+(float(tr.get("motility",1.0))-1.0)*.22,.84,1.24)
+    # La forma nell'albero segue il medesimo locus strutturale del modello 3D.
+    r_x *= 1.0+clampf(float(tr.get("elongation",0.0))*.36,0.0,.44)
     var ellipse: PackedVector2Array = PackedVector2Array()
     for j in range(25):
         var a: float = TAU*float(j)/24.0
@@ -119,6 +118,17 @@ func _portrait(center: Vector2, r: Dictionary, factor: float) -> void:
     for j in range(mini(5,motor)):
         var pos: Vector2 = center+Vector2(-r_x*.8,(-2.0+float(j))*r_y*.23)
         draw_line(pos,pos+Vector2(-12.0*factor,(-2.0+float(j))*2.2*factor),Color(.58,.94,.96),1.2*factor,true)
+    # Le appendici visibili sono solo quelle espresse dai loci ereditabili.
+    var pili: int = mini(7,int(tr.get("pili",0)))
+    for j in range(pili):
+        var a: float = TAU*float(j)/float(maxi(1,pili))
+        var start: Vector2 = center+Vector2(cos(a)*r_x,sin(a)*r_y)
+        draw_line(start,start+Vector2(cos(a)*9.0,sin(a)*9.0)*factor,Color(.71,.82,.69),1.2*factor,true)
+    var receptors: int = mini(7,int(tr.get("receptors",0)))
+    for j in range(receptors):
+        var a: float = TAU*(float(j)+.5)/float(maxi(1,receptors))
+        var tip: Vector2 = center+Vector2(cos(a)*(r_x+3.0),sin(a)*(r_y+3.0))
+        draw_circle(tip,1.9*factor,Color(.75,.90,.76))
     if bool(tr.get("eps",false)):
         draw_arc(center,r_x+3.0,0,TAU,32,Color(.58,1.0,.8,.65),1.7*factor,true)
 
@@ -158,11 +168,16 @@ func _draw() -> void:
             draw_arc(p,half.x+6,0,TAU,52,Color(.96,.98,.61,.95),2.0,true)
     if inspected != "" and by_id.has(inspected):
         var rec: Dictionary = by_id[inspected]
-        draw_rect(Rect2(9,size.y-76,size.x-18,69),Color(.03,.13,.18,.99),true)
+        draw_rect(Rect2(9,size.y-101,size.x-18,94),Color(.03,.13,.18,.99),true)
         var info: String = "%s · %s · gen %d" % [inspected,str(rec.get("branch","")),int(rec.get("generation",0))]
         var relation: String = "Origine indipendente" if str(rec.get("parent","")) == "" else "Genitore: %s" % str(rec.get("parent",""))
         var state: String = "VIVA · tocca di nuovo per seguirla" if bool(rec.get("alive",true)) else "STORICA · %s" % str(rec.get("cause","scissione"))
-        draw_string(ThemeDB.fallback_font,Vector2(18,size.y-53),info,HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.87,1,.97))
+        var phenotype: Dictionary = rec.get("traits",{})
+        var genome: Dictionary = phenotype.get("genome",{})
+        var loci: Dictionary = genome.get("loci",{})
+        var genetics: String = "Genotipo: %d loci · varianti numeriche: %d" % [loci.size(),phenotype.get("mutations",[]).size()]
+        draw_string(ThemeDB.fallback_font,Vector2(18,size.y-76),info,HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.87,1,.97))
+        draw_string(ThemeDB.fallback_font,Vector2(18,size.y-54),genetics,HORIZONTAL_ALIGNMENT_LEFT,-1,11,Color(.73,.88,.82))
         draw_string(ThemeDB.fallback_font,Vector2(18,size.y-31),relation+"  ·  "+state,HORIZONTAL_ALIGNMENT_LEFT,-1,11,Color(.65,.87,.91))
 
 func _pick(pos: Vector2) -> String:
