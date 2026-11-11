@@ -190,7 +190,7 @@ func _make_3d_scene() -> void:
     add_child(sun)
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 17.0
+    camera.size = 7.4
     camera.position = camera_offset
     add_child(camera)
     camera.look_at(Vector3(0,0,0))
@@ -274,14 +274,14 @@ func _vent(pos: Vector3, height: float) -> void:
 
 func _create_nutrient(kind: String, at: Vector3) -> void:
     var sphere := SphereMesh.new()
-    sphere.radius = .22 if kind == "detritus" else (.16 if kind != "nucleic" else .12)
+    sphere.radius = .13 if kind == "detritus" else (.085 if kind != "nucleic" else .067)
     sphere.height = .32
     sphere.radial_segments = 12
     sphere.rings = 7
     var node := MeshInstance3D.new()
     node.mesh = sphere
     node.position = at
-    node.material_override = _solid(Color(.50,.43,.38) if kind == "detritus" else TYPE_COLORS[kind].darkened(.40), .02)
+    node.material_override = _solid(Color(.50,.43,.38) if kind == "detritus" else TYPE_COLORS[kind].lerp(Color(.34,.42,.41),.55), .01)
     nutrient_root.add_child(node)
     nutrients.append({"kind": kind, "node": node, "origin_y": at.y, "bob": rng.randf_range(0,TAU)})
 
