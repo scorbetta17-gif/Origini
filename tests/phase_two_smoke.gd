@@ -73,6 +73,9 @@ func _run() -> void:
     assert(bool(game.phase2_progress["stable"]))
     assert(float(game.phase2_progress["metabolites_exchanged"]) > 0.0)
     assert(float(game.resources["carbon"]) < 24.0)
+    # Lo scambio consuma davvero risorse: il test simula raccolta prima della scissione.
+    game.resources["carbon"] = 24.0
+    game.atp = 99.0
     game.call("_divide_pressed")
     assert(game.division_options.size() == 2)
     game.call("_choose_daughter",0)
