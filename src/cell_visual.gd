@@ -109,8 +109,9 @@ func _color() -> Color:
 
 func _build() -> void:
     var primitive: bool = branch == "pre_luca"
-    var shape: float = clampf((float(traits.get("motility",1.0))-1.0)*.30,0.0,.35)
-    var elongated: bool = float(traits.get("motility",1.0)) > 1.65
+    # Solo un locus morfogenetico MAGGIORE modifica la forma.
+    var shape: float = clampf(float(traits.get("elongation",0.0))*.48,0.0,.40)
+    var elongated: bool = shape > .24
     body_radii = Vector3(.77+shape,.69,.77-shape*.24)
     if primitive:
         body_radii *= .90
@@ -134,12 +135,15 @@ func _build() -> void:
     var thermal: float = float(traits.get("thermotolerance",0.0))
     shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
     shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
-    shell_mat.set_shader_parameter("opacity",.19 if primitive else .26)
+    shell_mat.set_shader_parameter("opacity",.21 if primitive else .26)
     shell_mat.set_shader_parameter("membrane_motion",.008)
+    shell_mat.set_shader_parameter("internal_scattering",.46 if primitive else .54)
     membrane.material_override = shell_mat
     membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(membrane)
 
+    # Volume del citoplasma: scattering molto lieve, non un organello.
+    _ellipsoid(self,Vector3(0,.81,0),body_radii*.963,tint.darkened(.13),.055)
     # Contenuto citoplasmatico mobile, ma nessun organello moderno iniziale.
     interior = Node3D.new()
     interior.position = Vector3(0,.81,0)
@@ -152,7 +156,9 @@ func _build() -> void:
             var t: float = float(i)/40.0
             var u: float = (t-.5)*(.81 if primitive else 1.12)
             var phase: float = t*TAU*1.3+float(strand)*PI
-            var p := Vector3(u,sin(phase)*.18+sin(t*TAU*2.1)*.046,cos(phase)*.18)
+            # Il filamento attraversa il citoplasma in profondita', non disegnato su un piano.
+            var p := Vector3(u,sin(phase)*.17+sin(t*TAU*2.1)*.046,
+                cos(phase)*.19+sin(t*TAU*.73)*.065)
             poly.append(p)
         _tube(interior,poly,.024 if primitive else .022,Color(.91,.66,.48) if not dna else Color(.76,.72,.59))
     if dna:
@@ -168,12 +174,20 @@ func _build() -> void:
     var complexes: int = 3 if primitive else 5
     for i in range(complexes):
         var phi: float = float(i)*TAU/float(complexes)+.5
-        var center := Vector3(cos(phi)*.28, sin(phi*2.0)*.17, sin(phi)*.26)
+        var center := Vector3(cos(phi)*.28, sin(phi*2.0)*.22, sin(phi)*.30)
         var protein_color := Color(.80,.76,.59) if primitive else Color(.73,.76,.66)
         _ellipsoid(interior,center,Vector3(.075,.047,.06),protein_color)
         _ellipsoid(interior,center+Vector3(.044,.026,-.03),Vector3(.042,.033,.039),protein_color.darkened(.11))
         _ellipsoid(interior,center+Vector3(-.035,-.021,.034),Vector3(.035,.03,.042),protein_color.lightened(.12))
 
+    # Trasportatori: pori incastonati nella membrana; solo locus maggiore.
+    var transporters: int = clampi(int(traits.get("transporters",0)),0,9)
+    for i in range(transporters):
+        var phi: float = TAU*(float(i)+.43)/float(maxi(1,transporters))
+        var n := Vector3(cos(phi),.24*sin(phi*1.75),sin(phi)).normalized()
+        var pos := Vector3(n.x*body_radii.x,.81+n.y*body_radii.y,n.z*body_radii.z)
+        _ellipsoid(self,pos,Vector3(.048,.038,.048),Color(.40,.59,.60),.90)
+        _ellipsoid(self,pos+n*.026,Vector3(.024,.018,.024),Color(.20,.35,.37),.86)
     # Moduli di adesione, riconoscimento e lisi emergono per mutazione.
     var receptors: int = clampi(int(traits.get("receptors",0)),0,8)
     for i in range(receptors):
@@ -212,8 +226,15 @@ func _build() -> void:
             _tube(self,PackedVector3Array([anchor,anchor+n*.13,anchor+n*.20]),.017,Color(.69,.81,.74))
     if bool(traits.get("eps",false)):
         _ellipsoid(self,Vector3(0,.81,0),body_radii*1.13,Color(.54,.69,.67),.075)
-    if branch == "bacteria":
-        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.018,Color(.57,.67,.58),.09)
+    # Involucri diversi compaiono solo con loci codificati.
+    var envelope: String = str(traits.get("envelope","none"))
+    if envelope == "monoderm":
+        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.025,Color(.62,.73,.65),.14)
+    elif envelope == "diderm":
+        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.026,Color(.65,.75,.66),.13)
+        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.085,Color(.53,.71,.70),.14)
+    elif envelope == "archaeal":
+        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.026,Color(.58,.74,.68),.11)
     if thermal > .01:
         for i in range(mini(5,ceili(thermal))):
             var a: float = TAU*float(i)/float(maxi(1,mini(5,ceili(thermal))))
