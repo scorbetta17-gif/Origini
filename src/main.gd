@@ -444,7 +444,8 @@ func _temperature_at(where: Vector3) -> float:
 
 func _toggle_focus() -> void:
     camera_focus = not camera_focus
-    camera_offset = Vector3(0,2.4,3.3) if camera_focus else Vector3(0,7.5,8.7)
+    # Tre quarti: il volume 3D diventa leggibile anche nelle mutazioni laterali.
+    camera_offset = Vector3(1.3,2.1,3.4) if camera_focus else Vector3(0,7.5,8.7)
     camera.fov = 38.0 if camera_focus else 34.0
     buttons["focus"].text = "MONDO" if camera_focus else "CELLULA"
 
