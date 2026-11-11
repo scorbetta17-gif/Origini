@@ -42,7 +42,11 @@ func _capture() -> void:
         traits = GENOME.grant(traits,str(gene),3,"preview_gene","bacteria")
     # Il fenotipo di anteprima deriva dal GENOMA: nessun flag visivo artificiale.
     game.entities[game.player_id]["traits"] = traits
+    game.entities[game.player_id]["branch"] = "bacteria"
+    game.entities[game.player_id]["generation"] = 3
+    game.set("generation",3)
     hero.setup(traits,"bacteria",true)
+    game.call("_refresh_hud")
     await create_timer(.38).timeout
     if not _save_frame("cellula-evoluta"):
         quit(1)
