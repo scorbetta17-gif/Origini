@@ -4,6 +4,7 @@ extends Node3D
 
 const CellScript = preload("res://src/cell_visual.gd")
 const GenomeScript = preload("res://src/cell_genome.gd")
+const PhaseScript = preload("res://src/phase_two_progress.gd")
 const OceanScript = preload("res://src/primordial_ocean.gd")
 const TreeScript = preload("res://src/mutation_tree.gd")
 const LineageScript = preload("res://src/lineage_view.gd")
@@ -69,8 +70,11 @@ var skill_cooldown: float = 0.0
 var regeneration_cooldown: float = 0.0
 var mutation_points: int = 0
 var purchased: Dictionary = {}
-var phase_two: float = 0.0
+var phase_two: float = 0.0 # Legacy alias for progress bar
+var phase2_progress: Dictionary = PhaseScript.empty()
 var partner_id: String = ""
+var metabolism_particles: Array[MeshInstance3D] = []
+var metabolism_particle_material: StandardMaterial3D
 var division_options: Array = []
 var selected_target_id: String = ""
 var selected_nutrient: MeshInstance3D = null
@@ -112,6 +116,7 @@ func _ready() -> void:
     rng.randomize()
     _make_3d_scene()
     _build_ui()
+    _setup_metabolic_visuals()
     _new_game()
     get_viewport().size_changed.connect(_layout_ui)
 
@@ -136,6 +141,7 @@ func _new_game() -> void:
     generation = 0
     partner_id = ""
     phase_two = 0.0
+    phase2_progress = PhaseScript.empty()
     t = 0.0
     world_age = 0.0
     last_external_arrival = -60.0
@@ -294,7 +300,8 @@ func _create_entity(id: String, parent: String, gen: int, branch: String, traits
     entities[id] = {"node":node,"parent":parent,"generation":gen,"branch":branch,
         "traits":inherited.duplicate(true),"external":external,"age":0.0,
         "biomass":24.0,"energy":46.0,"hp":100.0,"atp":65.0,
-        "resources":inventory,"points":0,"purchased":{},"fission_count":0}
+        "resources":inventory,"points":0,"purchased":{},"fission_count":0,
+        "phase2_progress":PhaseScript.empty()}
     genealogy.append({"id":id,"parent":parent,"generation":gen,"branch":branch,
         "name":("Origine" if id == "C-000" else ("Estranea " + id if external and parent == "" else id)),
         "alive":true,"status":"viva","cause":"","traits":inherited.duplicate(true),"external":external})
@@ -313,6 +320,7 @@ func _cache_current() -> void:
     e["points"] = mutation_points
     e["purchased"] = purchased.duplicate(true)
     e["biomass"] = float(resources.get("biomass",22.0))
+    e["phase2_progress"] = phase2_progress.duplicate(true)
 
 func _activate_lineage(id: String) -> void:
     if not entities.has(id):
@@ -331,6 +339,12 @@ func _activate_lineage(id: String) -> void:
         resources[key] = clampf(float(resources.get(key,0.0)),0.0,float(NEED[key])*1.1)
     mutation_points = int(e.get("points",0))
     purchased = e.get("purchased", {}).duplicate(true)
+    phase2_progress = PhaseScript.normalize(e.get("phase2_progress",{}))
+    partner_id = str(phase2_progress.get("partner_id",""))
+    phase_two = float(phase2_progress["contact_seconds"])
+    if partner_id != "" and (not entities.has(partner_id) or str(e.get("branch","")) != "archaea"):
+        partner_id = ""
+        phase2_progress = PhaseScript.release(phase2_progress)
     selected_target_id = ""
     selected_nutrient = null
     attack_mode = ""
@@ -358,6 +372,7 @@ func _remove_entity(id: String, cause: String) -> void:
     if id == partner_id:
         partner_id = ""
         phase_two = 0.0
+        phase2_progress = PhaseScript.release(phase2_progress)
     if cause != "scissione":
         # I detriti cellulari hanno un'origine tracciabile.
         for i in range(3):
@@ -412,19 +427,9 @@ func _process(delta: float) -> void:
     if eco_tick >= .22:
         _update_ecosystem(eco_tick)
         eco_tick = 0.0
-    if partner_id != "":
-        if entities.has(partner_id) and entities[player_id]["branch"] == "archaea":
-            var partner: CellVisual = entities[partner_id]["node"]
-            if player.position.distance_to(partner.position) < 4.6:
-                phase_two += delta
-                atp = minf(100.0,atp+delta*.42)
-            else:
-                phase_two = maxf(0.0,phase_two-delta*.8)
-                if phase_two <= 0:
-                    partner_id = ""
-        else:
-            partner_id = ""
-            phase_two = 0.0
+    # Phase 2: riconoscimento, adesione, metaboliti, stabilita e discendenza.
+    _advance_phase_two(delta)
+    _update_metabolic_visuals()
     _cache_current()
     if hp <= 0:
         _game_over()
