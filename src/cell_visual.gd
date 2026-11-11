@@ -231,14 +231,14 @@ func _build() -> void:
         _tube(root,path,.015,Color(.71,.84,.74) if branch == "archaea" else Color(.85,.78,.62))
 
     var ring := TorusMesh.new()
-    ring.inner_radius = .93
-    ring.outer_radius = .945
-    ring.rings = 6
-    ring.ring_segments = 64
+    ring.inner_radius = .91
+    ring.outer_radius = .925
+    ring.rings = 56
+    ring.ring_segments = 8
     selection_ring = MeshInstance3D.new()
     selection_ring.mesh = ring
     selection_ring.position.y = -.08
-    selection_ring.material_override = _mat(Color(.52,.73,.68),.32)
+    selection_ring.material_override = _mat(Color(.41,.62,.61),.16)
     selection_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     selection_ring.visible = is_player
     add_child(selection_ring)
