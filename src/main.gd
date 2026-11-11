@@ -3,6 +3,7 @@ extends Node3D
 ## Scene 3D reali, camera isometrica, fenotipi procedurali, UI mobile.
 
 const CellScript = preload("res://src/cell_visual.gd")
+const GenomeScript = preload("res://src/cell_genome.gd")
 const OceanScript = preload("res://src/primordial_ocean.gd")
 const TreeScript = preload("res://src/mutation_tree.gd")
 const LineageScript = preload("res://src/lineage_view.gd")
@@ -159,10 +160,12 @@ func _new_game() -> void:
     _refresh_hud()
 
 func _base_traits() -> Dictionary:
-    return {"motility": 1.0, "attack": 1.0, "defense": 1.0, "mutation": 0.0,
+    var starter: Dictionary = {"motility": 1.0, "attack": 1.0, "defense": 1.0, "mutation": 0.0,
         "metabolism": 1.0, "uptake": 1.0, "archaella": 0, "dna": false, "eps": false,
         "adhesion": false, "flagella": 0, "envelope": "none", "mutations": [], "signature": 0.0,
-        "thermotolerance": 0.0, "pili": 0, "receptors": 0, "protease": 0, "vesicles": 0}
+        "thermotolerance": 0.0, "pili": 0, "receptors": 0, "protease": 0, "vesicles": 0,
+        "transporters": 0, "elongation": 0.0, "genome":GenomeScript.origin()}
+    return GenomeScript.normalize(starter,"pre_luca")
 
 func _make_3d_scene() -> void:
     world_root = Node3D.new()
@@ -266,19 +269,20 @@ func _create_nutrient(kind: String, at: Vector3) -> void:
 func _create_entity(id: String, parent: String, gen: int, branch: String, traits: Dictionary, at: Vector3, controlled: bool = false, external: bool = false) -> void:
     if entities.has(id):
         return
+    var inherited: Dictionary = GenomeScript.normalize(traits,branch)
     var node: CellVisual = CellScript.new()
     cells_root.add_child(node)
     node.position = at
-    node.setup(traits, branch, controlled)
+    node.setup(inherited, branch, controlled)
     node.set_growth(.72 if branch == "pre_luca" and gen == 0 else .78)
     var inventory: Dictionary = {"carbon":6.0,"amino":4.0,"lipid":3.0,"nucleic":1.0,"biomass":24.0}
     entities[id] = {"node":node,"parent":parent,"generation":gen,"branch":branch,
-        "traits":traits.duplicate(true),"external":external,"age":0.0,
+        "traits":inherited.duplicate(true),"external":external,"age":0.0,
         "biomass":24.0,"energy":46.0,"hp":100.0,"atp":65.0,
         "resources":inventory,"points":0,"purchased":{},"fission_count":0}
     genealogy.append({"id":id,"parent":parent,"generation":gen,"branch":branch,
         "name":("Origine" if id == "C-000" else ("Estranea " + id if external and parent == "" else id)),
-        "alive":true,"status":"viva","cause":"","traits":traits.duplicate(true),"external":external})
+        "alive":true,"status":"viva","cause":"","traits":inherited.duplicate(true),"external":external})
     if controlled:
         player = node
         player_id = id
@@ -560,9 +564,8 @@ func _has_external_bacteria() -> bool:
 func _create_external_bacterium() -> void:
     last_external_arrival = t
     var traits: Dictionary = _base_traits()
-    traits["dna"] = true
-    traits["flagella"] = 0
-    traits["envelope"] = "diderm"
+    traits = GenomeScript.grant(traits,"dna_stabilization",0,"linea_esterna","bacteria")
+    traits = GenomeScript.grant(traits,"diderm_envelope",0,"linea_esterna","bacteria")
     var new_id: String = "E-%03d" % next_id
     next_id += 1
     _create_entity(new_id,"",0,"bacteria",traits,player.position+Vector3(rng.randf_range(5,8),0,rng.randf_range(-4,4)),false,true)
@@ -599,7 +602,8 @@ func _divide_npc(id: String) -> void:
         phase_two = previous_phase
 
 func _mutated_traits(source: Dictionary, child_generation: int, branch: String) -> Dictionary:
-    var traits: Dictionary = source.duplicate(true)
+    var traits: Dictionary = GenomeScript.normalize(source,branch)
+    # Mutazioni minori: piccoli modificatori numerici, nessuna struttura 3D inventata.
     if rng.randf() < clampf(.64+float(traits.get("mutation",0.0)),.10,.95):
         var mutation: Array = TRAIT_POOL[rng.randi_range(0,TRAIT_POOL.size()-1)]
         var key: String = str(mutation[1])
@@ -611,26 +615,13 @@ func _mutated_traits(source: Dictionary, child_generation: int, branch: String) 
         var history: Array = traits.get("mutations",[]).duplicate()
         history.append(str(mutation[0]))
         traits["mutations"] = history
-        traits["signature"] = fposmod(float(traits.get("signature",0.0))+0.05,1.0)
-        # I tratti specialistici sono ereditari e controllano geometria e funzioni.
-        match str(mutation[0]):
-            "Chaperoni", "Proteostasi", "Dissipazione termica":
-                traits["thermotolerance"] = minf(5.0,float(traits.get("thermotolerance",0.0))+.55)
-            "Molecole adesive", "Adesione reversibile":
-                traits["adhesion"] = true
-                traits["receptors"] = mini(8,int(traits.get("receptors",0))+2)
-            "Segnale di chemotassi", "Mobilita amplificata":
-                traits["pili"] = mini(8,int(traits.get("pili",0))+2)
-            "Idrolasi extracellulari", "Proteasi specializzate", "Proteasi ad ampio spettro":
-                traits["protease"] = mini(6,int(traits.get("protease",0))+1)
-                traits["vesicles"] = mini(5,int(traits.get("vesicles",0))+1)
-            "Pori di membrana", "Scambio superficiale":
-                traits["receptors"] = mini(8,int(traits.get("receptors",0))+1)
-    if branch == "archaea" and child_generation >= 2 and int(traits.get("archaella",0)) == 0 and rng.randf() < .14:
-        traits["archaella"] = 2
-    if branch == "bacteria" and child_generation >= 2 and int(traits.get("flagella",0)) == 0 and rng.randf() < .13:
-        traits["flagella"] = 2
-    return traits
+    # Mutazioni maggiori: nuovi loci ereditabili, che sono anche la sorgente dei moduli fisici.
+    if child_generation >= 2 and rng.randf() < .28:
+        var options: Array[String] = GenomeScript.random_candidates(branch,traits)
+        if not options.is_empty():
+            var locus: String = options[rng.randi_range(0,options.size()-1)]
+            traits = GenomeScript.grant(traits,locus,child_generation,"major_mutation",branch)
+    return GenomeScript.express(traits,branch)
 
 func _can_divide() -> bool:
     for key in NEED:
@@ -650,17 +641,18 @@ func _divide_pressed() -> void:
         var next_branch: String = str(parent["branch"])
         var highlight: String = "Variazione ereditaria"
         if next_branch == "pre_luca" and generation >= 1 and i == 0:
-            traits["dna"] = true
             next_branch = "luca"
-            highlight = "Sistema a DNA · passaggio ipotetico verso LUCA"
+            traits = GenomeScript.grant(traits,"dna_stabilization",generation+1,"milestone_ludica",next_branch)
+            highlight = "Major: stabilizzazione del DNA (locus ereditabile)"
         elif next_branch == "luca" and generation >= 2:
             next_branch = "bacteria" if i == 0 else "archaea"
-            traits["envelope"] = "monoderm" if i == 0 else "archaeal"
-            highlight = "Bacteria" if i == 0 else "Archaea"
+            var envelope_locus: String = "monoderm_envelope" if i == 0 else "archaeal_envelope"
+            traits = GenomeScript.grant(traits,envelope_locus,generation+1,"divergenza_ludica",next_branch)
+            highlight = "Major: involucro Bacteria" if i == 0 else "Major: involucro Archaea"
         elif generation >= 3 and i == 1 and rng.randf() < .36:
-            traits["adhesion"] = true
-            traits["eps"] = true
-            highlight = "Adesione post-scissione e EPS"
+            traits = GenomeScript.grant(traits,"surface_recognition",generation+1,"major_mutation",next_branch)
+            traits = GenomeScript.grant(traits,"eps_biosynthesis",generation+1,"major_mutation",next_branch)
+            highlight = "Major: riconoscimento cellulare e EPS"
         division_options.append({"traits":traits,"branch":next_branch,"name":highlight})
     _open_overlay("SCISSIONE CELLULARE", "Scegli una discendente. La sorella segue la propria linea.")
     _add_overlay_button("FIGLIA A · %s" % str(division_options[0]["name"]),func():_choose_daughter(0))
@@ -857,16 +849,25 @@ func _on_tree_mutation(id: int,stat: String,value: float,cost: int) -> void:
         return
     var traits: Dictionary = entities[player_id]["traits"]
     traits[stat] = clampf(float(traits.get(stat,0.0 if stat=="mutation" else 1.0))+value,-.30,4.0)
-    if stat == "motility" and entities[player_id]["branch"] == "archaea" and int(traits.get("archaella",0)) == 0 and id%48 >= 16:
-        traits["archaella"] = 2
-    if stat == "defense" and id%48 >= 32:
-        traits["eps"] = true
-    if stat == "motility" and entities[player_id]["branch"] == "bacteria" and id%48 >= 16:
-        traits["flagella"] = 2
-    player.setup(traits,entities[player_id]["branch"],true)
+    # Il vecchio albero a 288 nodi conferisce SOLO bonus passivi:
+    # non crea flagelli, archaella o EPS senza mutazioni maggiori nel genoma.
+    traits = GenomeScript.express(traits,str(entities[player_id]["branch"]))
+    entities[player_id]["traits"] = traits
     _cache_current()
     tree_view.configure(purchased,mutation_points)
     _refresh_hud()
+
+func _on_genome() -> void:
+    if not entities.has(player_id):
+        return
+    var tr: Dictionary = entities[player_id]["traits"]
+    var entries: Array[String] = GenomeScript.describe(tr)
+    _open_overlay("GENOMA CELLULARE", "Loci maggiori ereditabili → strutture e funzioni")
+    _add_overlay_label("Genotipo: %d loci attivi  |  Mutazioni minori: %d" % [entries.size(),tr.get("mutations",[]).size()])
+    for entry in entries:
+        _add_overlay_label(entry)
+    _add_overlay_label("I piccoli bonus statistici non introducono strutture: l'albero passivo agisce separatamente.")
+    _add_overlay_label("Nota: i loci rappresentano moduli funzionali astratti, non sequenze genomiche ricostruite.")
 
 func _on_genealogy() -> void:
     _open_overlay("LINEE EVOLUTIVE", "Madre, figlie e popolazioni esterne in una sola mappa")
@@ -893,6 +894,7 @@ func _open_main_menu() -> void:
     _add_overlay_button("Rigenera +30 HP",_on_regen)
     _add_overlay_button("Albero mutazioni",_on_tree)
     _add_overlay_button("Linee genealogiche",_on_genealogy)
+    _add_overlay_button("Genoma e fenotipo",_on_genome)
     _add_overlay_button("Obiettivi",_on_goals)
     _add_overlay_button("Salva partita",_save_game)
     _add_overlay_button("Carica partita",_load_game)
@@ -1137,6 +1139,7 @@ func _build_ui() -> void:
     _button("OBIETTIVO",_on_goals,"goals")
     _button("SALVA",_save_game,"save")
     _button("CARICA",_load_game,"load")
+    _button("GENOMA",_on_genome,"genome")
     _button("MENU",_open_main_menu,"menu")
     overlay = ColorRect.new()
     overlay.color = Color(.005,.025,.040,.97)
