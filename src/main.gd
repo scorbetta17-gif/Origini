@@ -92,6 +92,7 @@ var is_paused: bool = false
 var t: float = 0.0
 var eco_tick: float = 0.0
 var autosave_timer: float = 0.0
+var notice_expires: float = -1.0
 var hud: Control
 var overlay: ColorRect
 var overlay_scroll: ScrollContainer
@@ -388,6 +389,8 @@ func _process(delta: float) -> void:
         return
     delta = minf(delta,.07)
     t += delta
+    if is_instance_valid(tips_label) and notice_expires >= 0 and t > notice_expires:
+        tips_label.visible = false
     regeneration_cooldown = maxf(0.0,regeneration_cooldown-delta)
     skill_cooldown = maxf(0.0,skill_cooldown-delta)
     autosave_timer += delta
@@ -1078,18 +1081,48 @@ func _open_main_menu() -> void:
     _add_overlay_button("Linee genealogiche",_on_genealogy)
     _add_overlay_button("Genoma e fenotipo",_on_genome)
     _add_overlay_button("Obiettivi",_on_goals)
+    _add_overlay_button("Fase 2 · Consorzi metabolici",_on_phase_two)
     _add_overlay_button("Salva partita",_save_game)
     _add_overlay_button("Carica partita",_load_game)
 
 func _on_goals() -> void:
-    var branch: String = entities[player_id]["branch"]
-    _open_overlay("CAMPAGNA EVOLUTIVA", "Pre-LUCA → LUCA → Bacteria / Archaea → cooperazione")
-    _add_overlay_label("LINEA CORRENTE: %s   ·   GENERAZIONE %d" % [branch.to_upper(),generation])
-    _add_overlay_label("1. Sistema ereditario a DNA: %s" % ("✓" if bool(entities[player_id]["traits"].get("dna",false)) else "DA SCOPRIRE"))
-    _add_overlay_label("2. Divergenza delle linee: %s" % ("✓" if branch == "archaea" or branch=="bacteria" else "DA RAGGIUNGERE"))
-    _add_overlay_label("3. Protoconsorzio: %s" % ("IN CORSO" if partner_id!="" else "DA INIZIARE"))
-    _add_overlay_label("4. Stabilita della relazione: %.0f / 25 s" % phase_two)
-    _add_overlay_label("La formazione del mitocondrio e del nucleo rimane in un capitolo futuro.")
+    if not entities.has(player_id):
+        return
+    var branch: String = str(entities[player_id]["branch"])
+    var traits: Dictionary = entities[player_id]["traits"]
+    _open_overlay("CAMPAGNA EVOLUTIVA", "Dalla cellula primordiale al consorzio metabolico")
+    _add_overlay_label("LINEA: %s  ·  GENERAZIONE %d" % [branch.to_upper(),generation])
+    var dna_achieved: bool = bool(traits.get("dna",false))
+    var divergent: bool = branch == "bacteria" or branch == "archaea"
+    _add_overlay_label(("✓" if generation >= 1 else "○")+" FASE 1 · Scissione in due figlie vive e genealogia")
+    _add_overlay_label(("✓" if dna_achieved else "○")+" FASE 1 · DNA stabile (tappa di evoluzione semplificata)")
+    _add_overlay_label(("✓" if divergent else "○")+" FASE 1 · Divergenza Bacteria / Archaea da antenato comune")
+    _add_overlay_label("FASE 2 · Consorzi procariotici opzionali, NON un passaggio obbligato verso eucarioti.")
+    for line in PhaseScript.objective_lines(phase2_progress):
+        _add_overlay_label(line)
+    _add_overlay_label("La prima cellula ha RNA singolo e enzimi semplici; organelli e mitocondri appartengono a capitoli futuri.")
+    if branch == "archaea":
+        _add_overlay_button("SUGGERIMENTI PER LA FASE 2",_on_phase_two)
+
+func _on_phase_two() -> void:
+    if not entities.has(player_id):
+        return
+    var branch: String = str(entities[player_id]["branch"])
+    var traits: Dictionary = entities[player_id]["traits"]
+    _open_overlay("FASE 2 · COOPERAZIONE", "Cinque traguardi per un consorzio stabile e trasmissibile")
+    for line in PhaseScript.objective_lines(phase2_progress):
+        _add_overlay_label(line)
+    if branch != "archaea":
+        _add_overlay_label("Per questa campagna scegli una discendente Archaea. Le Bacteria restano linee separate.")
+    else:
+        var surface_ok: bool = GenomeScript.has(traits,"surface_recognition") or GenomeScript.has(traits,"eps_biosynthesis")
+        var transporter_ok: bool = GenomeScript.has(traits,"membrane_transport")
+        _add_overlay_label(("✓" if surface_ok else "○")+" Gene: recettori di riconoscimento oppure adesione EPS")
+        _add_overlay_label(("✓" if transporter_ok else "○")+" Gene: trasportatore di membrana")
+        _add_overlay_label("Quando dividi una Archaea, una delle figlie puo acquisire una nuova variante maggiore.")
+        _add_overlay_label("Avvicinati a una Bacteria compatibile e premi COOPERA; mantenetevi abbastanza vicine.")
+        _add_overlay_label("Il flusso scambia risorse con costi per entrambe le cellule. Dopo 25 s e 12 s di scambio, dividiti.")
+    _add_overlay_label("Nota biologica: l'aggregazione cellulare e la sintrofia sono diverse dall'endosimbiosi.")
 
 func _game_over() -> void:
     is_paused = true
@@ -1212,6 +1245,9 @@ func _load_game() -> void:
 func _notice(message: String) -> void:
     if is_instance_valid(tips_label):
         tips_label.text = message
+        tips_label.visible = true
+        tips_label.add_theme_color_override("font_color",Color(.95,.90,.71))
+        notice_expires = t+5.0
 
 func _refresh_hud() -> void:
     if not is_instance_valid(player) or not entities.has(player_id):
@@ -1228,16 +1264,14 @@ func _refresh_hud() -> void:
     hp_bar.value = clampf(hp,0.0,100.0)
     atp_bar.value = clampf(atp,0.0,100.0)
     scission_button.text = "SCISSIONE  ✓" if _can_divide() else "SCISSIONE · %d%%" % int(scission_bar.value)
-    if entities[player_id]["branch"]=="archaea":
-        objective_label.text = "FASE 2 · Stabilizza un consorzio con Bacteria (%.0f/25 s)" % phase_two
+    if str(entities[player_id]["branch"]) == "archaea":
+        objective_label.text = PhaseScript.short_objective(phase2_progress)
     elif not bool(traits.get("dna",false)):
-        objective_label.text = "OBIETTIVO · Raggiungi LUCA: eredita DNA nella tua linea"
-    elif entities[player_id]["branch"]=="luca":
-        objective_label.text = "OBIETTIVO · Diversifica Bacteria e Archaea"
+        objective_label.text = "FASE 1 · Nutriti, dividi la cellula e segui una linea con DNA stabile"
+    elif str(entities[player_id]["branch"]) == "luca":
+        objective_label.text = "FASE 1 · Scegli la diversificazione in Bacteria o Archaea"
     else:
-        objective_label.text = "OBIETTIVO · Evolvi una linea complessa · Esplora i biomi"
-    if phase_two>=25.0:
-        objective_label.text = "FASE 2 COMPLETATA · Consorzio metabolico stabile"
+        objective_label.text = "FASE 1 · Esplora una linea Bacteria e le sue mutazioni ereditarie"
     var danger_temperature: float = 43.0+18.0*float(traits.get("thermotolerance",0.0))
     if _temperature_at(player.position) > danger_temperature:
         objective_label.text = "STRESS TERMICO · Allontanati dalla sorgente o evolvi termotolleranza"
@@ -1290,7 +1324,7 @@ func _build_ui() -> void:
     hud.add_child(status_label)
     objective_label = _label("Obiettivo",15)
     hud.add_child(objective_label)
-    tips_label = _label("",11)
+    tips_label = _label("",14)
     tips_label.visible = false
     hud.add_child(tips_label)
     for stat in ["HP", "ATP"]:
@@ -1344,7 +1378,8 @@ func _layout_ui() -> void:
     status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
     objective_label.position = Vector2(20,79)
     objective_label.size = Vector2(wh.x-40,25)
-    tips_label.visible = false
+    tips_label.position = Vector2(20,132)
+    tips_label.size = Vector2(wh.x-40,28)
     hp_bar.position = Vector2(20,112)
     hp_bar.size = Vector2(minf(wh.x*.16,175),8)
     atp_bar.position = Vector2(30+hp_bar.size.x,112)
