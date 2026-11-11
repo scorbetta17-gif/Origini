@@ -3,6 +3,7 @@ extends Node3D
 ## Scene 3D reali, camera isometrica, fenotipi procedurali, UI mobile.
 
 const CellScript = preload("res://src/cell_visual.gd")
+const OceanScript = preload("res://src/primordial_ocean.gd")
 const TreeScript = preload("res://src/mutation_tree.gd")
 const LineageScript = preload("res://src/lineage_view.gd")
 const JoystickScript = preload("res://src/virtual_joystick.gd")
@@ -152,8 +153,8 @@ func _new_game() -> void:
     var starter: Dictionary = _base_traits()
     _create_entity("C-000", "", 0, "pre_luca", starter, Vector3.ZERO, true)
     # Materiali abiotici: nessun frammento di DNA o detrito cellulare prima delle cellule.
-    for i in range(96):
-        _create_nutrient(TYPES[i % 4], Vector3(rng.randf_range(-22.0,22.0),.29,rng.randf_range(-22.0,22.0)))
+    for i in range(44):
+        _create_nutrient(TYPES[i % 4], Vector3(rng.randf_range(-22.0,22.0),.19,rng.randf_range(-22.0,22.0)))
     _close_overlay()
     _refresh_hud()
 
@@ -176,52 +177,29 @@ func _make_3d_scene() -> void:
     var we := WorldEnvironment.new()
     var env := Environment.new()
     env.background_mode = Environment.BG_COLOR
-    env.background_color = Color(0.017, 0.067, 0.080)
+    env.background_color = Color(0.023, 0.052, 0.064)
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.32, 0.56, 0.59)
-    env.ambient_light_energy = 0.72
+    env.ambient_light_color = Color(0.44, 0.61, 0.61)
+    env.ambient_light_energy = 1.16
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     we.environment = env
     add_child(we)
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-55, 28, -15)
     sun.light_color = Color(0.56, 0.76, 0.79)
-    sun.light_energy = 0.90
+    sun.light_energy = 1.35
     add_child(sun)
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 7.4
+    camera.size = 5.7
     camera.position = camera_offset
     add_child(camera)
     camera.look_at(Vector3(0,0,0))
     camera.current = true
-    var floor_mesh := PlaneMesh.new()
-    floor_mesh.size = Vector2(110, 110)
-    var floor_mat := StandardMaterial3D.new()
-    floor_mat.albedo_color = Color(0.095, 0.150, 0.161)
-    floor_mat.roughness = 0.78
-    var floor := MeshInstance3D.new()
-    floor.mesh = floor_mesh
-    floor.material_override = floor_mat
-    floor.position.y = -0.28
-    world_root.add_child(floor)
-    # Oceano primordiale: solo sedimenti, rocce abiogene e due sorgenti distanti.
-    # Nessuna alga, corallo, fauna o installazione fantascientifica.
-    for i in range(72):
-        var x: float = rng.randf_range(-25.0,25.0)
-        var z: float = rng.randf_range(-25.0,25.0)
-        var stone: Color = Color(.20,.25,.25).lerp(Color(.12,.19,.21),rng.randf())
-        _rock(Vector3(x,0,z), rng.randf_range(.11,.60), stone)
-    for i in range(140):
-        var x: float = rng.randf_range(-26.0,26.0)
-        var z: float = rng.randf_range(-26.0,26.0)
-        _pebble(Vector3(x,-.19,z),Vector3(rng.randf_range(.04,.18),.015,rng.randf_range(.05,.22)),Color(.18,.22,.21).lerp(Color(.29,.29,.26),rng.randf()))
-    _vent(Vector3(THERMAL_SOURCES[0].x,0,THERMAL_SOURCES[0].y),1.65)
-    _vent(Vector3(THERMAL_SOURCES[1].x,0,THERMAL_SOURCES[1].y),1.15)
-    # Particolato a basso costo, deriva lenta; niente sfere fluorescenti.
-    for i in range(26):
-        var mote := _pebble(Vector3(rng.randf_range(-24,24),rng.randf_range(.5,3.4),rng.randf_range(-24,24)),Vector3.ONE*rng.randf_range(.012,.029),Color(.42,.52,.49))
-        ambient_particles.append(mote)
+    var biome: Node3D = OceanScript.new()
+    biome.name = "Fondale_minimale"
+    world_root.add_child(biome)
+    biome.call("setup",rng)
 
 func _solid(color: Color, emission: float = 0.0, alpha: float = 1.0) -> StandardMaterial3D:
     var mat := StandardMaterial3D.new()
@@ -292,7 +270,7 @@ func _create_entity(id: String, parent: String, gen: int, branch: String, traits
     cells_root.add_child(node)
     node.position = at
     node.setup(traits, branch, controlled)
-    node.set_growth(.55 if branch == "pre_luca" and gen == 0 else .68)
+    node.set_growth(.72 if branch == "pre_luca" and gen == 0 else .78)
     var inventory: Dictionary = {"carbon":6.0,"amino":4.0,"lipid":3.0,"nucleic":1.0,"biomass":24.0}
     entities[id] = {"node":node,"parent":parent,"generation":gen,"branch":branch,
         "traits":traits.duplicate(true),"external":external,"age":0.0,
@@ -404,7 +382,7 @@ func _process(delta: float) -> void:
     if atp < 1.0:
         hp = maxf(0.0,hp-delta*.55)
     # Cresce con la biomassa, ma la dimensione massima e' limitata.
-    player.set_growth(.55 + .48 * clampf((float(resources["biomass"])-23.0)/42.0,0.0,1.0))
+    player.set_growth(.72 + .41 * clampf((float(resources["biomass"])-23.0)/42.0,0.0,1.0))
     camera.position = camera.position.lerp(player.position+camera_offset,minf(1.0,delta*3.2))
     for n in nutrients:
         if is_instance_valid(n["node"]):
@@ -543,7 +521,7 @@ func _update_ecosystem(dt: float) -> void:
         if target_idx >= 0 and target_idx < nutrients.size():
             if c.position.distance_to(nutrients[target_idx]["node"].position) < .78:
                 _consume_nutrient(target_idx,false,str(id))
-        c.set_growth(.56+.43*clampf((float(e["biomass"])-24.0)/45.0,0.0,1.0))
+        c.set_growth(.72+.41*clampf((float(e["biomass"])-24.0)/45.0,0.0,1.0))
         if float(e["biomass"]) >= 64.0 and float(e["energy"]) >= 28.0 and int(e["generation"]) < 24 and entities.size() < 20:
             _divide_npc(str(id))
             continue
@@ -910,6 +888,15 @@ func _switch_lineage(id: String) -> void:
     _close_overlay()
     _notice("Segui la linea %s · %s" % [id,str(entities[id]["branch"])])
 
+func _open_main_menu() -> void:
+    _open_overlay("MENU", "Evoluzione, genealogia e salvataggio")
+    _add_overlay_button("Rigenera +30 HP",_on_regen)
+    _add_overlay_button("Albero mutazioni",_on_tree)
+    _add_overlay_button("Linee genealogiche",_on_genealogy)
+    _add_overlay_button("Obiettivi",_on_goals)
+    _add_overlay_button("Salva partita",_save_game)
+    _add_overlay_button("Carica partita",_load_game)
+
 func _on_goals() -> void:
     var branch: String = entities[player_id]["branch"]
     _open_overlay("CAMPAGNA EVOLUTIVA", "Pre-LUCA → LUCA → Bacteria / Archaea → cooperazione")
@@ -1107,13 +1094,14 @@ func _build_ui() -> void:
     hud = Control.new()
     hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
     layer.add_child(hud)
-    title_label = _label("ORIGINI",24)
+    title_label = _label("ORIGINI",21)
     hud.add_child(title_label)
     status_label = _label("ATP · HP · biomassa",15)
     hud.add_child(status_label)
     objective_label = _label("Obiettivo",15)
     hud.add_child(objective_label)
-    tips_label = _label("Movimento: joystick tattile oppure WASD e frecce",13)
+    tips_label = _label("",11)
+    tips_label.visible = false
     hud.add_child(tips_label)
     for stat in ["HP", "ATP"]:
         var bar := ProgressBar.new()
@@ -1143,6 +1131,7 @@ func _build_ui() -> void:
     _button("OBIETTIVO",_on_goals,"goals")
     _button("SALVA",_save_game,"save")
     _button("CARICA",_load_game,"load")
+    _button("MENU",_open_main_menu,"menu")
     overlay = ColorRect.new()
     overlay.color = Color(.005,.025,.040,.97)
     overlay.visible = false
@@ -1155,37 +1144,41 @@ func _layout_ui() -> void:
         return
     var wh: Vector2 = get_viewport().get_visible_rect().size
     hud.size = wh
-    title_label.position = Vector2(18,10)
-    status_label.position = Vector2(18,43)
-    objective_label.position = Vector2(18,72)
-    tips_label.position = Vector2(18,103)
     var portrait: bool = wh.y > wh.x
-    title_label.size = Vector2(wh.x-30,34)
-    status_label.size = Vector2(wh.x-30,56 if portrait else 28)
-    hp_bar.position = Vector2(16,183 if portrait else 133)
-    hp_bar.size = Vector2(minf(wh.x*.37,230),12)
-    atp_bar.position = Vector2(26 + hp_bar.size.x,183 if portrait else 133)
-    atp_bar.size = Vector2(minf(wh.x*.37,230),12)
-    status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    objective_label.position.y = 109 if portrait else 72
-    tips_label.position.y = 148 if portrait else 103
-    var bottom_y: float = wh.y - (228 if portrait else 99)
-    joystick.size = Vector2(116,116)
-    joystick.position = Vector2(22,wh.y-(380 if portrait else 230))
-    scission_bar.position = Vector2(18,bottom_y - 32)
-    scission_bar.size = Vector2(minf(wh.x*.57,520),18)
-    var names := ["divide","regen","enzymes","lysis","cooperate","tree","genealogy","goals","save","load"]
-    var cols: int = 4 if portrait else 10
-    var cell_w: float = (wh.x-28.0)/float(cols)
-    for i in range(names.size()):
-        var key: String = names[i]
-        var b: Button = buttons[key]
-        var row: int = i / cols
-        var col: int = i % cols
-        b.position = Vector2(14+float(col)*cell_w,bottom_y+float(row)*57)
-        b.size = Vector2(cell_w-5,50)
-        b.add_theme_font_size_override("font_size",11 if portrait else 14)
-        b.clip_text = true
+    title_label.position = Vector2(20,14)
+    title_label.size = Vector2(wh.x-40,30)
+    status_label.position = Vector2(20,48)
+    status_label.size = Vector2(wh.x-40,29)
+    status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+    objective_label.position = Vector2(20,79)
+    objective_label.size = Vector2(wh.x-40,25)
+    tips_label.visible = false
+    hp_bar.position = Vector2(20,112)
+    hp_bar.size = Vector2(minf(wh.x*.16,175),8)
+    atp_bar.position = Vector2(30+hp_bar.size.x,112)
+    atp_bar.size = Vector2(minf(wh.x*.16,175),8)
+    joystick.size = Vector2(112,112)
+    joystick.position = Vector2(22,wh.y-150)
+    scission_bar.size = Vector2(minf(wh.x*.27,235),7)
+    scission_bar.position = Vector2(wh.x-scission_bar.size.x-16,wh.y-89)
+    # Gli strumenti secondari restano nel menu, ma le azioni sono conservate.
+    var primary: Array[String] = ["divide","enzymes","lysis","cooperate","menu"]
+    for key in buttons:
+        buttons[key].visible = primary.has(str(key))
+    if portrait:
+        var w: float = minf((wh.x-28.0)/3.0,132.0)
+        for i in range(primary.size()):
+            var b: Button = buttons[primary[i]]
+            b.position = Vector2(wh.x - 3*w - 12 + float(i%3)*w,wh.y-146 + float(i/3)*58)
+            b.size = Vector2(w-5,49)
+            b.add_theme_font_size_override("font_size",12)
+    else:
+        var w: float = minf(117.0,(wh.x-160.0)/5.0)
+        for i in range(primary.size()):
+            var b: Button = buttons[primary[i]]
+            b.position = Vector2(wh.x-(5.0*w+18.0)+float(i)*w,wh.y-70)
+            b.size = Vector2(w-6,51)
+            b.add_theme_font_size_override("font_size",13)
     overlay.size = wh
     if is_instance_valid(overlay_scroll):
         overlay_scroll.position = Vector2(14,92)
