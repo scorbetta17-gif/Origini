@@ -20,6 +20,7 @@ jobs:
         run: |
           python3 tools/ripristina_progetto.py
           sed -i '/config\/icon=/d' project.godot
+          sed -i 's/var joystick: VirtualJoystick/var joystick/' src/main.gd
       - name: Installa Godot e template di esportazione
         uses: chickensoft-games/setup-godot@v2
         with:
@@ -31,7 +32,11 @@ jobs:
       - name: Importazione e parsing Godot
         run: |
           godot --version
-          godot --headless --path . --editor --quit
+          set -o pipefail
+          godot --headless --path . --editor --quit 2>&1 | tee godot-import.log
+          if grep -E '(SCRIPT ERROR|Parse Error|Failed to load script)' godot-import.log; then
+            echo 'Errore GDScript rilevato in importazione'; exit 1
+          fi
       - name: Test giocabilita e genealogia
         run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
       - name: Java
