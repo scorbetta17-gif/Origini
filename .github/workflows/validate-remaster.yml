@@ -33,6 +33,8 @@ jobs:
           fi
       - name: Smoke test
         run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
+      - name: Genotipo, ereditarieta' e fenotipo
+        run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
       - name: Driver per capture 3D
         run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri
       - name: Screenshot autentici (Godot con display virtuale)
@@ -40,6 +42,8 @@ jobs:
           mkdir -p build/previews
           timeout 90s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_preview.gd
           test -s build/previews/primordiale-godot.png
+          test -s build/previews/primordiale-macro-godot.png
+          test -s build/previews/fenotipo-macro-godot.png
           test -s build/previews/cellula-evoluta-godot.png
           test -s build/previews/bioma-idrotermale-godot.png
       - name: Salva screenshot 3D per la revisione
