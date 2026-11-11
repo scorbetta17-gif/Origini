@@ -1,0 +1,50 @@
+name: ORIGINI - test rimasterizzazione (senza release)
+on:
+  push:
+    branches: [work/remaster-068]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installa Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: false
+      - name: Controlli statici
+        run: python3 tests/qa_static.py
+      - name: Import e parsing del progetto
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --editor --quit 2>&1 | tee godot-import.log
+          if grep -E '(SCRIPT ERROR|Parse Error|Failed to load script)' godot-import.log; then
+            exit 1
+          fi
+      - name: Smoke test
+        run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
+      - name: Driver per capture 3D
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri
+      - name: Screenshot autentici (Godot con display virtuale)
+        run: |
+          mkdir -p build/previews
+          timeout 90s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_preview.gd
+          test -s build/previews/primordiale-godot.png
+          test -s build/previews/cellula-evoluta-godot.png
+          test -s build/previews/bioma-idrotermale-godot.png
+      - name: Salva screenshot 3D per la revisione
+        uses: actions/upload-artifact@v4
+        with:
+          name: ORIGINI-Remaster-Screenshot-Reali
+          path: build/previews/*.png
+          if-no-files-found: error
