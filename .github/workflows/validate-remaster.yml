@@ -50,7 +50,6 @@ jobs:
           if-no-files-found: error
 
   android-preview:
-    if: github.event_name != 'pull_request'
     needs: qa
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -93,15 +92,15 @@ jobs:
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "${GITHUB_ENV}"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "${GITHUB_ENV}"
       - name: Esporta APK Android ARM64
-        run: godot --headless --path . --export-debug Android build/android/ORIGINI-REMMASTER-PREVIEW.apk
+        run: godot --headless --path . --export-debug Android build/android/ORIGINI-REMASTER-PREVIEW.apk
       - name: Verifica archivio APK
         run: |
-          test -s build/android/ORIGINI-REMMASTER-PREVIEW.apk
-          unzip -t build/android/ORIGINI-REMMASTER-PREVIEW.apk >/dev/null
-          unzip -Z1 build/android/ORIGINI-REMMASTER-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
+          test -s build/android/ORIGINI-REMASTER-PREVIEW.apk
+          unzip -t build/android/ORIGINI-REMASTER-PREVIEW.apk >/dev/null
+          unzip -Z1 build/android/ORIGINI-REMASTER-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
       - name: APK Android solo come artefatto (no release)
         uses: actions/upload-artifact@v4
         with:
           name: ORIGINI-Remaster-Android-Preview
-          path: build/android/ORIGINI-REMMASTER-PREVIEW.apk
+          path: build/android/ORIGINI-REMASTER-PREVIEW.apk
           if-no-files-found: error
