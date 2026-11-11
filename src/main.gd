@@ -7,6 +7,10 @@ const TreeScript = preload("res://src/mutation_tree.gd")
 const LineageScript = preload("res://src/lineage_view.gd")
 const JoystickScript = preload("res://src/virtual_joystick.gd")
 const SAVE_PATH = "user://origini_067.json"
+# Biomi termici localizzati: il resto dell'oceano resta temperato e spoglio.
+const THERMAL_SOURCES = [Vector2(-11.0, 3.0), Vector2(16.0, -14.0)]
+const THERMAL_AMPLITUDE = [92.0, 62.0]
+const THERMAL_DECAY = [13.0, 9.0]
 const NEED = {"carbon": 24.0, "amino": 15.0, "lipid": 12.0, "nucleic": 8.0, "biomass": 65.0}
 const TYPES = ["carbon", "amino", "lipid", "nucleic"]
 const TYPE_COLORS = {
@@ -156,7 +160,8 @@ func _new_game() -> void:
 func _base_traits() -> Dictionary:
     return {"motility": 1.0, "attack": 1.0, "defense": 1.0, "mutation": 0.0,
         "metabolism": 1.0, "uptake": 1.0, "archaella": 0, "dna": false, "eps": false,
-        "adhesion": false, "flagella": 0, "envelope": "none", "mutations": [], "signature": 0.0}
+        "adhesion": false, "flagella": 0, "envelope": "none", "mutations": [], "signature": 0.0,
+        "thermotolerance": 0.0, "pili": 0, "receptors": 0, "protease": 0, "vesicles": 0}
 
 func _make_3d_scene() -> void:
     world_root = Node3D.new()
@@ -171,17 +176,17 @@ func _make_3d_scene() -> void:
     var we := WorldEnvironment.new()
     var env := Environment.new()
     env.background_mode = Environment.BG_COLOR
-    env.background_color = Color(0.020, 0.080, 0.105)
+    env.background_color = Color(0.017, 0.067, 0.080)
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.36, 0.71, 0.81)
-    env.ambient_light_energy = 0.83
+    env.ambient_light_color = Color(0.32, 0.56, 0.59)
+    env.ambient_light_energy = 0.72
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     we.environment = env
     add_child(we)
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-55, 28, -15)
-    sun.light_color = Color(0.47, 0.85, 1.0)
-    sun.light_energy = 1.23
+    sun.light_color = Color(0.56, 0.76, 0.79)
+    sun.light_energy = 0.90
     add_child(sun)
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -193,33 +198,30 @@ func _make_3d_scene() -> void:
     var floor_mesh := PlaneMesh.new()
     floor_mesh.size = Vector2(110, 110)
     var floor_mat := StandardMaterial3D.new()
-    floor_mat.albedo_color = Color(0.045, 0.24, 0.28)
+    floor_mat.albedo_color = Color(0.095, 0.150, 0.161)
     floor_mat.roughness = 0.78
     var floor := MeshInstance3D.new()
     floor.mesh = floor_mesh
     floor.material_override = floor_mat
     floor.position.y = -0.28
     world_root.add_child(floor)
-    # Tre biomi spazialmente distinti, senza immagini bidimensionali.
-    for i in range(48):
-        var a: float = rng.randf_range(0, TAU)
-        var rad: float = rng.randf_range(0, 5.0)
-        var p := Vector3(-10.0 + cos(a)*rad, 0, 3.0 + sin(a)*rad)
-        _rock(p, rng.randf_range(.25, .92), Color(0.25, 0.29, 0.30))
-    for i in range(5):
-        _vent(Vector3(-10.0 + rng.randf_range(-2.6,2.6), 0, 2.0 + rng.randf_range(-2.1,2.1)), rng.randf_range(1.1,2.5))
-    for i in range(105):
-        var x: float = rng.randf_range(4.0, 17.0)
-        var z: float = rng.randf_range(-10.0, 12.0)
-        var tint := Color(0.12, rng.randf_range(.34,.66), rng.randf_range(.20,.36))
-        if i % 4 == 0:
-            tint = Color(0.67, 0.25, 0.46)
-        _pebble(Vector3(x, 0, z), Vector3(rng.randf_range(.35,.76), rng.randf_range(.14,.34), rng.randf_range(.40,.9)), tint, .17)
-    for i in range(52):
-        _rock(Vector3(rng.randf_range(-25,25), 0, rng.randf_range(-25,25)), rng.randf_range(.18,.68), Color(.08,.26,.31))
-    for i in range(50):
-        var orb := _pebble(Vector3(rng.randf_range(-24,24), rng.randf_range(1.8,5.3), rng.randf_range(-24,24)), Vector3.ONE * rng.randf_range(.025,.065), Color(.4,.86,1), .65)
-        ambient_particles.append(orb)
+    # Oceano primordiale: solo sedimenti, rocce abiogene e due sorgenti distanti.
+    # Nessuna alga, corallo, fauna o installazione fantascientifica.
+    for i in range(72):
+        var x: float = rng.randf_range(-25.0,25.0)
+        var z: float = rng.randf_range(-25.0,25.0)
+        var stone: Color = Color(.20,.25,.25).lerp(Color(.12,.19,.21),rng.randf())
+        _rock(Vector3(x,0,z), rng.randf_range(.11,.60), stone)
+    for i in range(140):
+        var x: float = rng.randf_range(-26.0,26.0)
+        var z: float = rng.randf_range(-26.0,26.0)
+        _pebble(Vector3(x,-.19,z),Vector3(rng.randf_range(.04,.18),.015,rng.randf_range(.05,.22)),Color(.18,.22,.21).lerp(Color(.29,.29,.26),rng.randf()))
+    _vent(Vector3(THERMAL_SOURCES[0].x,0,THERMAL_SOURCES[0].y),1.65)
+    _vent(Vector3(THERMAL_SOURCES[1].x,0,THERMAL_SOURCES[1].y),1.15)
+    # Particolato a basso costo, deriva lenta; niente sfere fluorescenti.
+    for i in range(26):
+        var mote := _pebble(Vector3(rng.randf_range(-24,24),rng.randf_range(.5,3.4),rng.randf_range(-24,24)),Vector3.ONE*rng.randf_range(.012,.029),Color(.42,.52,.49))
+        ambient_particles.append(mote)
 
 func _solid(color: Color, emission: float = 0.0, alpha: float = 1.0) -> StandardMaterial3D:
     var mat := StandardMaterial3D.new()
@@ -254,23 +256,21 @@ func _rock(pos: Vector3, size: float, color: Color) -> void:
         _pebble(Vector3(pos.x+size*.18,size*.58,pos.z), Vector3(size*.40,size*.59,size*.46), color.lightened(.10))
 
 func _vent(pos: Vector3, height: float) -> void:
-    var mesh := CylinderMesh.new()
-    mesh.bottom_radius = .54
-    mesh.top_radius = .26
-    mesh.height = height
-    mesh.radial_segments = 9
+    # Piccola fumarola minerale: niente lava o luci arancioni al suolo.
+    var chimney := CylinderMesh.new()
+    chimney.bottom_radius = .36
+    chimney.top_radius = .20
+    chimney.height = height
+    chimney.radial_segments = 11
     var part := MeshInstance3D.new()
-    part.mesh = mesh
-    part.position = pos + Vector3(0,height*.5,0)
-    part.material_override = _solid(Color(.15,.18,.22))
+    part.mesh = chimney
+    part.position = pos+Vector3(0,height*.5,0)
+    part.material_override = _solid(Color(.16,.19,.18))
     world_root.add_child(part)
-    _pebble(pos+Vector3(0,height,0), Vector3(.30,.07,.3), Color(1,.45,.19), .9)
-    var glow := OmniLight3D.new()
-    glow.light_color = Color(1.0,.49,.22)
-    glow.light_energy = 1.1
-    glow.omni_range = 3.0
-    glow.position = pos + Vector3(0,height,0)
-    world_root.add_child(glow)
+    _pebble(pos+Vector3(0,height,0),Vector3(.22,.06,.24),Color(.24,.28,.25))
+    for i in range(10):
+        var plume := _pebble(pos+Vector3(rng.randf_range(-.35,.35),height+rng.randf_range(.18,1.7),rng.randf_range(-.35,.35)),Vector3.ONE*rng.randf_range(.018,.045),Color(.29,.40,.39))
+        ambient_particles.append(plume)
 
 func _create_nutrient(kind: String, at: Vector3) -> void:
     var sphere := SphereMesh.new()
@@ -281,7 +281,7 @@ func _create_nutrient(kind: String, at: Vector3) -> void:
     var node := MeshInstance3D.new()
     node.mesh = sphere
     node.position = at
-    node.material_override = _solid(Color(.75,.54,.48) if kind == "detritus" else TYPE_COLORS[kind], .22 if kind == "detritus" else .5)
+    node.material_override = _solid(Color(.50,.43,.38) if kind == "detritus" else TYPE_COLORS[kind].darkened(.40), .02)
     nutrient_root.add_child(node)
     nutrients.append({"kind": kind, "node": node, "origin_y": at.y, "bob": rng.randf_range(0,TAU)})
 
@@ -397,6 +397,10 @@ func _process(delta: float) -> void:
     elif selected_target_id != "" or is_instance_valid(selected_nutrient):
         _follow_attack(delta)
     atp = maxf(0.0,atp-delta*.28)
+    var player_temperature: float = _temperature_at(player.position)
+    var tolerance: float = 43.0+18.0*float(entities[player_id]["traits"].get("thermotolerance",0.0))
+    if player_temperature > tolerance:
+        hp = maxf(0.0,hp-delta*(player_temperature-tolerance)*.075)
     if atp < 1.0:
         hp = maxf(0.0,hp-delta*.55)
     # Cresce con la biomassa, ma la dimensione massima e' limitata.
@@ -431,11 +435,22 @@ func _process(delta: float) -> void:
         autosave_timer = 0.0
     _refresh_hud()
 
+func _temperature_at(where: Vector3) -> float:
+    # Modello locale e ludico del gradiente, non ricostruzione di un oceano storico.
+    var result: float = 29.0
+    for i in range(THERMAL_SOURCES.size()):
+        var xy: Vector2 = THERMAL_SOURCES[i]
+        var distance_squared: float = Vector2(where.x-xy.x,where.z-xy.y).length_squared()
+        result += THERMAL_AMPLITUDE[i]*exp(-distance_squared/THERMAL_DECAY[i])
+    return result
+
 func _move_player(direction: Vector2, delta: float) -> void:
     var traits: Dictionary = entities[player_id]["traits"]
     var motility: float = float(traits.get("motility", 1.0))
     var archaella: int = int(traits.get("archaella",0))
-    var speed: float = 3.40 * motility * (1.0 if archaella > 0 or int(traits.get("flagella",0)) > 0 else .78)
+    var motorized: bool = archaella > 0 or int(traits.get("flagella",0)) > 0
+    var tethered: bool = int(traits.get("pili",0)) > 0
+    var speed: float = 3.40 * motility * (1.0 if motorized else (.87 if tethered else .78))
     player.position.x += direction.x * speed * delta
     player.position.z += direction.y * speed * delta
     player.position.x = clampf(player.position.x, -25,25)
@@ -507,6 +522,13 @@ func _update_ecosystem(dt: float) -> void:
         if not is_instance_valid(c):
             continue
         e["age"] = float(e["age"])+dt
+        var local_temperature: float = _temperature_at(c.position)
+        var limit_temperature: float = 43.0+18.0*float(e["traits"].get("thermotolerance",0.0))
+        if local_temperature > limit_temperature:
+            e["hp"] = float(e["hp"])-dt*(local_temperature-limit_temperature)*.075
+            if float(e["hp"]) <= 0.0:
+                _remove_entity(str(id),"stress termico")
+                continue
         e["energy"] = maxf(0.0,float(e["energy"])-dt*.19)
         var target_idx: int = _nearest_nutrient(c.position,6.5)
         var dir: Vector3 = Vector3(sin(t*.39+float(str(id).hash()%77)),0,cos(t*.31+float(str(id).hash()%63)))
@@ -612,6 +634,20 @@ func _mutated_traits(source: Dictionary, child_generation: int, branch: String) 
         history.append(str(mutation[0]))
         traits["mutations"] = history
         traits["signature"] = fposmod(float(traits.get("signature",0.0))+0.05,1.0)
+        # I tratti specialistici sono ereditari e controllano geometria e funzioni.
+        match str(mutation[0]):
+            "Chaperoni", "Proteostasi", "Dissipazione termica":
+                traits["thermotolerance"] = minf(5.0,float(traits.get("thermotolerance",0.0))+.55)
+            "Molecole adesive", "Adesione reversibile":
+                traits["adhesion"] = true
+                traits["receptors"] = mini(8,int(traits.get("receptors",0))+2)
+            "Segnale di chemotassi", "Mobilita amplificata":
+                traits["pili"] = mini(8,int(traits.get("pili",0))+2)
+            "Idrolasi extracellulari", "Proteasi specializzate", "Proteasi ad ampio spettro":
+                traits["protease"] = mini(6,int(traits.get("protease",0))+1)
+                traits["vesicles"] = mini(5,int(traits.get("vesicles",0))+1)
+            "Pori di membrana", "Scambio superficiale":
+                traits["receptors"] = mini(8,int(traits.get("receptors",0))+1)
     if branch == "archaea" and child_generation >= 2 and int(traits.get("archaella",0)) == 0 and rng.randf() < .14:
         traits["archaella"] = 2
     if branch == "bacteria" and child_generation >= 2 and int(traits.get("flagella",0)) == 0 and rng.randf() < .13:
@@ -1010,8 +1046,9 @@ func _refresh_hud() -> void:
     if not is_instance_valid(player) or not entities.has(player_id):
         return
     var traits: Dictionary = entities[player_id]["traits"]
-    title_label.text = "ORIGINI  ·  %s  ·  GEN %d" % [entities[player_id]["branch"].to_upper(),generation]
-    status_label.text = "HP %d/100    ⚡ATP %d/100    ◉ Biomassa %d/%d    |    C %d   A %d   L %d   N %d" % [int(hp),int(atp),int(resources["biomass"]),int(NEED["biomass"]),int(resources["carbon"]),int(resources["amino"]),int(resources["lipid"]),int(resources["nucleic"])]
+    var stage: String = "CELLULA PRIMORDIALE" if entities[player_id]["branch"] == "pre_luca" else str(entities[player_id]["branch"]).to_upper()
+    title_label.text = "ORIGINI  ·  %s  ·  GEN %d" % [stage,generation]
+    status_label.text = "HP %d/100  ATP %d/100  Biomassa %d/%d  T %.0f C  |  C %d A %d L %d N %d" % [int(hp),int(atp),int(resources["biomass"]),int(NEED["biomass"]),_temperature_at(player.position),int(resources["carbon"]),int(resources["amino"]),int(resources["lipid"]),int(resources["nucleic"])]
     var minimum: float = 1.0
     for k in NEED:
         minimum = minf(minimum,float(resources[k])/float(NEED[k]))
