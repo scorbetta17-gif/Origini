@@ -20,7 +20,7 @@ for file,code in scripts.items():
 for symbol in ['CellVisual','MutationTree','LineageView','OriginiJoystick']:
     test(f'class_name {symbol}',sum(f'class_name {symbol}' in code for code in scripts.values())==1)
 test('origine RNA senza motori',all(x in main for x in ['"dna": false','"archaella": 0','"flagella": 0']))
-test('RNA mono filamento', 'var strands: int = 2 if dna else 1' in cell)
+test('RNA mono filamento', 'var strand_count: int = 2 if dna else 1' in cell and 'for strand in range(strand_count):' in cell)
 test('protocellula senza nucleo',not any(x in cell.lower() for x in ['mitochondrion','nucleus','golgi']))
 test('touch joystick dedicato','func _input(event: InputEvent)' in joy and 'signal direction_changed' in joy)
 test('tocco vs mouse sintetico','touch_seen' in joy)
@@ -36,6 +36,8 @@ test('rami con riserve separate','_cache_current()' in main and '_activate_linea
 test('mutazioni e cellule figlie','_mutated_traits(parent["traits"]' in main)
 test('genealogia una sola schermata','_layout_branch(' in line and 'func _draw()' in line)
 test('salvataggio dati cellulari','"version":67' in main and '"genealogy":genealogy' in main)
+test('shaders visivi attivi',(root/'shaders/cell_membrane.gdshader').exists() and (root/'shaders/seafloor.gdshader').exists())
+test('ambiente oceanico dedicato',(root/'src/primordial_ocean.gd').exists() and 'biome.call("setup",rng)' in main)
 test('renderer compatibile',(root/'project.godot').read_text().count('gl_compatibility')>=1)
 test('smoke test incluso',(root/'tests/smoke.gd').exists())
 print(f'PASS {len(tests)} controlli statici. ATTENZIONE: non e una prova di esecuzione Godot.')
