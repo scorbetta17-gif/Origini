@@ -438,6 +438,84 @@ func _process(delta: float) -> void:
         autosave_timer = 0.0
     _refresh_hud()
 
+func _setup_metabolic_visuals() -> void:
+    # Traccianti discreti del flusso di metaboliti: non rappresentano un
+    # ponte cellulare permanente, un mitocondrio o fusione di membrane.
+    var orb := SphereMesh.new()
+    orb.radius = .044
+    orb.height = .088
+    orb.radial_segments = 10
+    orb.rings = 6
+    metabolism_particle_material = StandardMaterial3D.new()
+    metabolism_particle_material.albedo_color = Color(.52,.77,.67,.72)
+    metabolism_particle_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    metabolism_particle_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    metabolism_particle_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+    metabolism_particles.clear()
+    for i in range(4):
+        var n := MeshInstance3D.new()
+        n.name = "Metabolite_%d" % i
+        n.mesh = orb
+        n.material_override = metabolism_particle_material
+        n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        n.visible = false
+        world_root.add_child(n)
+        metabolism_particles.append(n)
+
+func _update_metabolic_visuals() -> void:
+    var active: bool = entities.has(player_id) and partner_id != "" and entities.has(partner_id)
+    if active:
+        var archaeal: Dictionary = entities[player_id]["traits"]
+        var bacterial: Dictionary = entities[partner_id]["traits"]
+        active = bool(phase2_progress.get("bonded",false)) and PhaseScript.can_exchange(archaeal,bacterial)
+        active = active and player.position.distance_to(entities[partner_id]["node"].position) <= PhaseScript.EXCHANGE_RADIUS
+    for i in range(metabolism_particles.size()):
+        var n: MeshInstance3D = metabolism_particles[i]
+        n.visible = active
+        if not active:
+            continue
+        var bacterial_pos: Vector3 = entities[partner_id]["node"].position
+        var alpha: float = fposmod(t*.27+float(i)/float(metabolism_particles.size()),1.0)
+        n.position = player.position.lerp(bacterial_pos,alpha)+Vector3(0,.72+sin(alpha*PI)*.24,0)
+        n.scale = Vector3.ONE*(.72+.28*sin(alpha*PI))
+
+func _advance_phase_two(delta: float) -> void:
+    if not entities.has(player_id) or str(entities[player_id]["branch"]) != "archaea":
+        return
+    for id in entities:
+        if str(id) == player_id:
+            continue
+        if str(entities[id]["branch"]) != "bacteria":
+            continue
+        var distance: float = player.position.distance_to(entities[id]["node"].position)
+        phase2_progress = PhaseScript.observe(phase2_progress,"bacteria",str(id),distance)
+    if partner_id == "":
+        return
+    if not entities.has(partner_id) or str(entities[partner_id]["branch"]) != "bacteria":
+        partner_id = ""
+        phase2_progress = PhaseScript.release(phase2_progress)
+        phase_two = 0.0
+        return
+    var partner: Dictionary = entities[partner_id]
+    var distance: float = player.position.distance_to(partner["node"].position)
+    var before_stable: bool = bool(phase2_progress.get("stable",false))
+    var before_exchange: bool = bool(phase2_progress.get("exchanged",false))
+    var result: Dictionary = PhaseScript.advance(phase2_progress,delta,distance,
+        entities[player_id]["traits"],partner["traits"],
+        float(resources.get("carbon",0.0)),float(partner.get("energy",0.0)))
+    phase2_progress = result["progress"]
+    resources["carbon"] = maxf(0.0,float(resources["carbon"])-float(result["carbon_cost"]))
+    atp = minf(100.0,atp+float(result["atp_gain"]))
+    partner["energy"] = clampf(float(partner["energy"])+float(result["bacterial_energy_delta"]),0.0,85.0)
+    partner["biomass"] = minf(72.0,float(partner["biomass"])+float(result["bacterial_biomass_gain"]))
+    phase_two = float(phase2_progress["contact_seconds"])
+    if not bool(phase2_progress["bonded"]):
+        partner_id = ""
+    if bool(phase2_progress["exchanged"]) and not before_exchange:
+        _notice("Scambio metabolico riuscito: 12 secondi effettivi")
+    if bool(phase2_progress["stable"]) and not before_stable:
+        _notice("Consorzio stabile! Trasmettilo a una figlia tramite scissione")
+
 func _temperature_at(where: Vector3) -> float:
     # Modello locale e ludico del gradiente, non ricostruzione di un oceano storico.
     var result: float = 29.0
