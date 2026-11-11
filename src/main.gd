@@ -188,14 +188,14 @@ func _make_3d_scene() -> void:
     env.background_color = Color(0.023, 0.052, 0.064)
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color(0.44, 0.61, 0.61)
-    env.ambient_light_energy = 1.16
+    env.ambient_light_energy = .88
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     we.environment = env
     add_child(we)
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-55, 28, -15)
     sun.light_color = Color(0.56, 0.76, 0.79)
-    sun.light_energy = 1.35
+    sun.light_energy = 1.02
     add_child(sun)
     camera = Camera3D.new()
     # Prospettiva vera: la dimensione apparente varia con la distanza.
@@ -209,7 +209,7 @@ func _make_3d_scene() -> void:
     camera.current = true
     var cell_fill := OmniLight3D.new()
     cell_fill.light_color = Color(.79,.88,.82)
-    cell_fill.light_energy = .53
+    cell_fill.light_energy = .41
     cell_fill.omni_range = 9.0
     cell_fill.shadow_enabled = false
     cell_fill.position = Vector3(-3.3,2.7,-3.8)
