@@ -143,11 +143,26 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     shell_mat.shader = MEMBRANE_SHADER
     shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
     shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
-    shell_mat.set_shader_parameter("opacity",.22 if primitive else .27)
+    shell_mat.set_shader_parameter("opacity",.11 if primitive else .16)
     shell_mat.set_shader_parameter("membrane_motion",.009)
-    shell_mat.set_shader_parameter("internal_scattering",.45 if primitive else .55)
+    shell_mat.set_shader_parameter("internal_scattering",.28 if primitive else .36)
     membrane.material_override = shell_mat
     membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    # GlTF source keeps geometric form; Godot controls all gameplay optical values.
+    # Overriding imported opaque materials ensures the RNA remains legible.
+    var cytosol_mesh: MeshInstance3D = core.find_child("Cytosol",true,false) as MeshInstance3D
+    if cytosol_mesh != null:
+        cytosol_mesh.material_override = _mat(tint.darkened(.26),.045,.95)
+        cytosol_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var rna_mesh: MeshInstance3D = core.find_child("SingleStrand_RNA",true,false) as MeshInstance3D
+    if rna_mesh != null:
+        rna_mesh.material_override = _mat(Color(.82,.43,.31),1.0,.63)
+    for index in range(1,4):
+        var prefix: String = "Autocatalytic_%02d_" % index
+        for sub in range(1,4):
+            var enzyme_mesh: MeshInstance3D = core.find_child(prefix+("%02d" % sub),true,false) as MeshInstance3D
+            if enzyme_mesh != null:
+                enzyme_mesh.material_override = _mat(Color(.77,.65,.38) if sub == 1 else Color(.58,.65,.48),1.0,.76)
     interior = core.find_child("InteriorAssembly",true,false) as Node3D
     if interior == null:
         interior = Node3D.new()
