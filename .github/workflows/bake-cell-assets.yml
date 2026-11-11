@@ -19,10 +19,17 @@ jobs:
       - name: Installa Blender
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq blender
+          sudo apt-get install -y -qq blender python3-numpy
           blender --version
       - name: Genera modelli 3D originali da geometria Blender
-        run: blender --background --factory-startup --python tools/blender/create_cell_assets.py
+        run: |
+          blender --background --factory-startup --python tools/blender/create_cell_assets.py
+          test -s assets/models/primordial_core.glb
+          test -s assets/models/pili_module.glb
+          test -s assets/models/receptor_module.glb
+          test -s assets/models/protease_module.glb
+          test -s assets/models/transporter_module.glb
+          test -s assets/models/vesicle_module.glb
       - name: Verifica struttura e integrita' GLB
         run: python3 tools/blender/validate_cell_assets.py
       - name: Versiona gli asset binari su ramo di lavoro
