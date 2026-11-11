@@ -113,12 +113,12 @@ func _tube(host: Node3D, coords: PackedVector3Array, radius: float, tint: Color,
 
 func _color() -> Color:
     if branch == "bacteria":
-        return Color(.55,.70,.64)
+        return Color(.49,.65,.55)
     if branch == "archaea":
-        return Color(.55,.73,.70)
+        return Color(.47,.65,.61)
     if branch == "luca":
         return Color(.59,.70,.73)
-    return Color(.55,.75,.73)
+    return Color(.42,.63,.59)
 
 func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     if not ResourceLoader.exists(BLENDER_CORE):
