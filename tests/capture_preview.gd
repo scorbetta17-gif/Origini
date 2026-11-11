@@ -21,7 +21,7 @@ func _capture() -> void:
     var camera: Camera3D = game.get("camera")
     # Lente macro: screenshot reale per ispezionare volume e strutture.
     game.call("_toggle_focus")
-    camera.position = hero.position+Vector3(0,2.4,3.3)
+    camera.position = hero.position+Vector3(1.3,2.1,3.4)
     camera.look_at(hero.position+Vector3(0,.65,0))
     await create_timer(.95).timeout
     if not _save_frame("primordiale-macro"):
