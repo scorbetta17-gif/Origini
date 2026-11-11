@@ -620,10 +620,21 @@ func _update_ecosystem(dt: float) -> void:
         e["energy"] = maxf(0.0,float(e["energy"])-dt*.19)
         var target_idx: int = _nearest_nutrient(c.position,6.5)
         var dir: Vector3 = Vector3(sin(t*.39+float(str(id).hash()%77)),0,cos(t*.31+float(str(id).hash()%63)))
-        if target_idx >= 0:
+        var speed: float = 1.0*clampf(float(e["traits"].get("motility",1.0)),.55,2.6)
+        if str(id) == partner_id and entities.has(player_id):
+            # Un partner aderente tende a restare vicino, pur senza saldarsi
+            # fisicamente al giocatore. L'allontanamento puo' rompere il legame.
+            var separation: Vector3 = player.position-c.position
+            separation.y = 0.0
+            if separation.length() > 2.3:
+                dir = separation
+                speed = maxf(speed,2.05)
+            else:
+                dir = Vector3.ZERO
+                target_idx = -1
+        elif target_idx >= 0:
             dir = nutrients[target_idx]["node"].position-c.position
             dir.y = 0
-        var speed: float = 1.0*clampf(float(e["traits"].get("motility",1.0)),.55,2.6)
         if dir.length() > .02:
             c.position += dir.normalized()*dt*speed
         c.position.x = clampf(c.position.x,-24.0,24.0)
@@ -658,7 +669,7 @@ func _update_ecosystem(dt: float) -> void:
                         e["biomass"] = minf(72.0,float(e["biomass"])+9.0)
                         e["energy"] = minf(85.0,float(e["energy"])+12.0)
     # I partner batterici sono linee indipendenti, non figli della tua Archaea.
-    if generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 20.0:
+    if generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 12.0:
         _create_external_bacterium()
 
 func _has_external_bacteria() -> bool:
@@ -672,9 +683,13 @@ func _create_external_bacterium() -> void:
     var traits: Dictionary = _base_traits()
     traits = GenomeScript.grant(traits,"dna_stabilization",0,"linea_esterna","bacteria")
     traits = GenomeScript.grant(traits,"diderm_envelope",0,"linea_esterna","bacteria")
+    # Partner biologicamente competente: adesine + trasportatori. Non
+    # eredita alcun gene dalla nostra linea archeale.
+    traits = GenomeScript.grant(traits,"surface_recognition",0,"linea_esterna","bacteria")
+    traits = GenomeScript.grant(traits,"membrane_transport",0,"linea_esterna","bacteria")
     var new_id: String = "E-%03d" % next_id
     next_id += 1
-    _create_entity(new_id,"",0,"bacteria",traits,player.position+Vector3(rng.randf_range(5,8),0,rng.randf_range(-4,4)),false,true)
+    _create_entity(new_id,"",0,"bacteria",traits,player.position+Vector3(rng.randf_range(2.5,3.3),0,rng.randf_range(-1.4,1.4)),false,true)
 
 func _divide_npc(id: String) -> void:
     if not entities.has(id):
@@ -687,6 +702,7 @@ func _divide_npc(id: String) -> void:
     var external: bool = bool(parent["external"])
     var was_partner: bool = partner_id == id
     var previous_phase: float = phase_two
+    var inherited_phase: Dictionary = PhaseScript.normalize(parent.get("phase2_progress",{}))
     var older_purchased: Dictionary = parent["purchased"].duplicate(true)
     _remove_entity(id,"scissione")
     var first_id: String = ""
@@ -701,10 +717,13 @@ func _divide_npc(id: String) -> void:
         child["hp"] = maxf(35.0,float(parent["hp"])*.8)
         child["purchased"] = older_purchased.duplicate(true)
         child["points"] = int(parent["points"])
+        child["phase2_progress"] = inherited_phase.duplicate(true)
         if i == 0:
             first_id = new_id
     if was_partner and first_id != "":
         partner_id = first_id
+        phase2_progress["partner_id"] = first_id
+        phase2_progress["bonded"] = true
         phase_two = previous_phase
 
 func _mutated_traits(source: Dictionary, child_generation: int, branch: String) -> Dictionary:
@@ -755,10 +774,22 @@ func _divide_pressed() -> void:
             var envelope_locus: String = "monoderm_envelope" if i == 0 else "archaeal_envelope"
             traits = GenomeScript.grant(traits,envelope_locus,generation+1,"divergenza_ludica",next_branch)
             highlight = "Major: involucro Bacteria" if i == 0 else "Major: involucro Archaea"
+        elif next_branch == "archaea" and i == 0 and generation >= 3:
+            # Garantisce un percorso FINITO ma non istantaneo verso fase 2.
+            # Ogni mutazione compare in una SOLA figlia, poi si eredita.
+            var required_locus: String = ""
+            if not GenomeScript.has(traits,"surface_recognition"):
+                required_locus = "surface_recognition"
+            elif not GenomeScript.has(traits,"membrane_transport"):
+                required_locus = "membrane_transport"
+            elif not GenomeScript.has(traits,"eps_biosynthesis"):
+                required_locus = "eps_biosynthesis"
+            if required_locus != "":
+                traits = GenomeScript.grant(traits,required_locus,generation+1,"variante_selezionabile",next_branch)
+                highlight = "Variante maggiore: "+str(GenomeScript.GENE_INFO[required_locus]["name"])
         elif generation >= 3 and i == 1 and rng.randf() < .36:
             traits = GenomeScript.grant(traits,"surface_recognition",generation+1,"major_mutation",next_branch)
-            traits = GenomeScript.grant(traits,"eps_biosynthesis",generation+1,"major_mutation",next_branch)
-            highlight = "Major: riconoscimento cellulare e EPS"
+            highlight = "Major: riconoscimento cellulare"
         division_options.append({"traits":traits,"branch":next_branch,"name":highlight})
     for option in division_options:
         var tr: Dictionary = option["traits"]
