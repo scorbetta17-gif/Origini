@@ -193,6 +193,7 @@ func _build() -> void:
     globe.radial_segments = 48
     globe.rings = 28
 
+    var thermal: float = float(traits.get("thermotolerance",0.0))
     var imported_blender_core: bool = _try_blender_core(primitive,tint,thermal)
     if not imported_blender_core:
         # Un solo involucro traslucido organico, senza vetro/specchi o sfera opaca.
@@ -202,7 +203,7 @@ func _build() -> void:
         membrane.scale = body_radii
         var shell_mat := ShaderMaterial.new()
         shell_mat.shader = MEMBRANE_SHADER
-        var thermal: float = float(traits.get("thermotolerance",0.0))
+        # Membrane genes already resolved in outer thermal variable.
         shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
         shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
         shell_mat.set_shader_parameter("opacity",.21 if primitive else .26)
