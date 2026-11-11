@@ -77,7 +77,7 @@ var selected_nutrient: MeshInstance3D = null
 var nutrient_respawn: float = 0.0
 var world_age: float = 0.0
 var last_external_arrival: float = -60.0
-var camera_offset := Vector3(0.0, 19.0, 20.0)
+var camera_offset := Vector3(0.0, 7.5, 8.7)
 var world_radius: float = 25.0
 var attack_mode: String = ""
 var move_vector: Vector2 = Vector2.ZERO
@@ -193,12 +193,22 @@ func _make_3d_scene() -> void:
     sun.light_energy = 1.35
     add_child(sun)
     camera = Camera3D.new()
-    camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 5.7
+    # Prospettiva vera: la dimensione apparente varia con la distanza.
+    camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+    camera.fov = 34.0
+    camera.near = .08
+    camera.far = 115.0
     camera.position = camera_offset
     add_child(camera)
     camera.look_at(Vector3(0,0,0))
     camera.current = true
+    var cell_fill := OmniLight3D.new()
+    cell_fill.light_color = Color(.79,.88,.82)
+    cell_fill.light_energy = .53
+    cell_fill.omni_range = 9.0
+    cell_fill.shadow_enabled = false
+    cell_fill.position = Vector3(-3.3,2.7,-3.8)
+    camera.add_child(cell_fill)
     var biome: Node3D = OceanScript.new()
     biome.name = "Fondale_minimale"
     world_root.add_child(biome)
