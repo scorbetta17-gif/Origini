@@ -4,6 +4,14 @@ class_name CellVisual
 ## All'inizio: una membrana, un filamento di ssRNA, pochi complessi autocatalitici.
 const MEMBRANE_SHADER = preload("res://shaders/cell_membrane.gdshader")
 const SHADOW_SHADER = preload("res://shaders/cell_contact_shadow.gdshader")
+const BLENDER_CORE: String = "res://assets/models/primordial_core.glb"
+const BLENDER_MODULES: Dictionary = {
+    "pili": "res://assets/models/pili_module.glb",
+    "receptor": "res://assets/models/receptor_module.glb",
+    "protease": "res://assets/models/protease_module.glb",
+    "transporter": "res://assets/models/transporter_module.glb",
+    "vesicle": "res://assets/models/vesicle_module.glb"
+}
 var traits: Dictionary = {}
 var branch: String = "pre_luca"
 var is_player: bool = false
@@ -15,6 +23,8 @@ var membrane: MeshInstance3D
 var interior: Node3D
 var material_cache: Dictionary = {}
 var body_radii: Vector3 = Vector3(.79,.72,.79)
+var blender_interior: bool = false
+var use_blender_assets: bool = false
 
 func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> void:
     traits = value.duplicate(true)
@@ -26,6 +36,8 @@ func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> vo
     filament_roots.clear()
     material_cache.clear()
     age = 0.0
+    blender_interior = false
+    use_blender_assets = false
     _build()
 
 func set_growth(value: float) -> void:
@@ -108,6 +120,61 @@ func _color() -> Color:
         return Color(.59,.70,.73)
     return Color(.55,.75,.73)
 
+func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
+    if not ResourceLoader.exists(BLENDER_CORE):
+        return false
+    var packed: PackedScene = ResourceLoader.load(BLENDER_CORE) as PackedScene
+    if packed == null:
+        return false
+    var core: Node3D = packed.instantiate() as Node3D
+    if core == null:
+        return false
+    core.name = "BlenderCellCore"
+    core.position = Vector3(0,.81,0)
+    core.scale = body_radii
+    add_child(core)
+    var shell: Node = core.find_child("Membrane_Outer",true,false)
+    if not (shell is MeshInstance3D):
+        remove_child(core)
+        core.queue_free()
+        return false
+    membrane = shell as MeshInstance3D
+    var shell_mat := ShaderMaterial.new()
+    shell_mat.shader = MEMBRANE_SHADER
+    shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
+    shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
+    shell_mat.set_shader_parameter("opacity",.22 if primitive else .27)
+    shell_mat.set_shader_parameter("membrane_motion",.009)
+    shell_mat.set_shader_parameter("internal_scattering",.45 if primitive else .55)
+    membrane.material_override = shell_mat
+    membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    interior = core.find_child("InteriorAssembly",true,false) as Node3D
+    if interior == null:
+        interior = Node3D.new()
+        core.add_child(interior)
+    blender_interior = true
+    use_blender_assets = true
+    return true
+
+func _blender_module(id: String, at: Vector3, normal: Vector3, size: float = 1.0) -> bool:
+    if not use_blender_assets or not BLENDER_MODULES.has(id):
+        return false
+    var path: String = str(BLENDER_MODULES[id])
+    if not ResourceLoader.exists(path):
+        return false
+    var packed: PackedScene = ResourceLoader.load(path) as PackedScene
+    if packed == null:
+        return false
+    var piece: Node3D = packed.instantiate() as Node3D
+    if piece == null:
+        return false
+    piece.name = "GeneModule_" + id
+    piece.position = at
+    piece.quaternion = Quaternion(Vector3.UP,normal.normalized())
+    piece.scale = Vector3.ONE * size
+    add_child(piece)
+    return true
+
 func _build() -> void:
     var primitive: bool = branch == "pre_luca"
     # Solo un locus morfogenetico MAGGIORE modifica la forma.
@@ -126,68 +193,70 @@ func _build() -> void:
     globe.radial_segments = 48
     globe.rings = 28
 
-    # Un solo involucro traslucido organico, senza vetro/specchi o sfera opaca.
-    membrane = MeshInstance3D.new()
-    membrane.mesh = globe
-    membrane.position = Vector3(0,.81,0)
-    membrane.scale = body_radii
-    var shell_mat := ShaderMaterial.new()
-    shell_mat.shader = MEMBRANE_SHADER
-    var thermal: float = float(traits.get("thermotolerance",0.0))
-    shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
-    shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
-    shell_mat.set_shader_parameter("opacity",.21 if primitive else .26)
-    shell_mat.set_shader_parameter("membrane_motion",.008)
-    shell_mat.set_shader_parameter("internal_scattering",.46 if primitive else .54)
-    membrane.material_override = shell_mat
-    membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(membrane)
+    var imported_blender_core: bool = _try_blender_core(primitive,tint,thermal)
+    if not imported_blender_core:
+        # Un solo involucro traslucido organico, senza vetro/specchi o sfera opaca.
+        membrane = MeshInstance3D.new()
+        membrane.mesh = globe
+        membrane.position = Vector3(0,.81,0)
+        membrane.scale = body_radii
+        var shell_mat := ShaderMaterial.new()
+        shell_mat.shader = MEMBRANE_SHADER
+        var thermal: float = float(traits.get("thermotolerance",0.0))
+        shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
+        shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
+        shell_mat.set_shader_parameter("opacity",.21 if primitive else .26)
+        shell_mat.set_shader_parameter("membrane_motion",.008)
+        shell_mat.set_shader_parameter("internal_scattering",.46 if primitive else .54)
+        membrane.material_override = shell_mat
+        membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        add_child(membrane)
 
-    # Volume del citoplasma: scattering molto lieve, non un organello.
-    _ellipsoid(self,Vector3(0,.81,0),body_radii*.963,tint.darkened(.13),.055)
-    # Contenuto citoplasmatico mobile, ma nessun organello moderno iniziale.
-    interior = Node3D.new()
-    interior.position = Vector3(0,.81,0)
-    add_child(interior)
-    var dna: bool = bool(traits.get("dna",false))
-    var strand_count: int = 2 if dna else 1
-    for strand in range(strand_count):
-        var poly := PackedVector3Array()
-        for i in range(61):
-            var t: float = float(i)/60.0
-            var p: Vector3
-            if dna:
-                # DNA solo dopo il locus di stabilizzazione: due filamenti distinti.
-                var u: float = (t-.5)*1.13
-                var phase: float = t*TAU*1.9+float(strand)*PI
-                p = Vector3(u,sin(phase)*.17,cos(phase)*.17)
-            else:
-                # Un unico ssRNA ripiegato in 3D: curve non complanari.
-                p = Vector3(
-                    (t-.5)*.72 + sin(t*TAU*3.1)*.14,
-                    sin(t*TAU*1.85)*.16 + cos(t*TAU*3.4)*.075,
-                    cos(t*TAU*1.43)*.22 + sin(t*TAU*2.5)*.065
-                )
-            poly.append(p)
-        _tube(interior,poly,.018 if primitive else .020,Color(.92,.60,.47) if not dna else Color(.76,.72,.59))
-    if dna:
-        # Segmenti aggiuntivi sono visibili solo dopo la stabilizzazione del DNA.
-        for i in range(9):
-            var u: float = float(i)/8.0
-            var x: float = (u-.5)*1.12
-            var phase: float = u*TAU*1.3
-            _tube(interior,PackedVector3Array([
-                Vector3(x,sin(phase)*.18,cos(phase)*.18),
-                Vector3(x,-sin(phase)*.18,-cos(phase)*.18)
-            ]),.008,Color(.63,.78,.73))
-    var complexes: int = 3 if primitive else 5
-    for i in range(complexes):
-        var phi: float = float(i)*TAU/float(complexes)+.5
-        var center := Vector3(cos(phi)*.28, sin(phi*2.0)*.22, sin(phi)*.30)
-        var protein_color := Color(.80,.76,.59) if primitive else Color(.73,.76,.66)
-        _ellipsoid(interior,center,Vector3(.075,.047,.06),protein_color)
-        _ellipsoid(interior,center+Vector3(.044,.026,-.03),Vector3(.042,.033,.039),protein_color.darkened(.11))
-        _ellipsoid(interior,center+Vector3(-.035,-.021,.034),Vector3(.035,.03,.042),protein_color.lightened(.12))
+        # Volume del citoplasma: scattering molto lieve, non un organello.
+        _ellipsoid(self,Vector3(0,.81,0),body_radii*.963,tint.darkened(.13),.055)
+        # Contenuto citoplasmatico mobile, ma nessun organello moderno iniziale.
+        interior = Node3D.new()
+        interior.position = Vector3(0,.81,0)
+        add_child(interior)
+        var dna: bool = bool(traits.get("dna",false))
+        var strand_count: int = 2 if dna else 1
+        for strand in range(strand_count):
+            var poly := PackedVector3Array()
+            for i in range(61):
+                var t: float = float(i)/60.0
+                var p: Vector3
+                if dna:
+                    # DNA solo dopo il locus di stabilizzazione: due filamenti distinti.
+                    var u: float = (t-.5)*1.13
+                    var phase: float = t*TAU*1.9+float(strand)*PI
+                    p = Vector3(u,sin(phase)*.17,cos(phase)*.17)
+                else:
+                    # Un unico ssRNA ripiegato in 3D: curve non complanari.
+                    p = Vector3(
+                        (t-.5)*.72 + sin(t*TAU*3.1)*.14,
+                        sin(t*TAU*1.85)*.16 + cos(t*TAU*3.4)*.075,
+                        cos(t*TAU*1.43)*.22 + sin(t*TAU*2.5)*.065
+                    )
+                poly.append(p)
+            _tube(interior,poly,.018 if primitive else .020,Color(.92,.60,.47) if not dna else Color(.76,.72,.59))
+        if dna:
+            # Segmenti aggiuntivi sono visibili solo dopo la stabilizzazione del DNA.
+            for i in range(9):
+                var u: float = float(i)/8.0
+                var x: float = (u-.5)*1.12
+                var phase: float = u*TAU*1.3
+                _tube(interior,PackedVector3Array([
+                    Vector3(x,sin(phase)*.18,cos(phase)*.18),
+                    Vector3(x,-sin(phase)*.18,-cos(phase)*.18)
+                ]),.008,Color(.63,.78,.73))
+        var complexes: int = 3 if primitive else 5
+        for i in range(complexes):
+            var phi: float = float(i)*TAU/float(complexes)+.5
+            var center := Vector3(cos(phi)*.28, sin(phi*2.0)*.22, sin(phi)*.30)
+            var protein_color := Color(.80,.76,.59) if primitive else Color(.73,.76,.66)
+            _ellipsoid(interior,center,Vector3(.075,.047,.06),protein_color)
+            _ellipsoid(interior,center+Vector3(.044,.026,-.03),Vector3(.042,.033,.039),protein_color.darkened(.11))
+            _ellipsoid(interior,center+Vector3(-.035,-.021,.034),Vector3(.035,.03,.042),protein_color.lightened(.12))
 
     # Trasportatori: pori incastonati nella membrana; solo locus maggiore.
     var transporters: int = clampi(int(traits.get("transporters",0)),0,9)
@@ -293,7 +362,7 @@ func _process(delta: float) -> void:
     scale = Vector3(growth*pulse,growth,growth*pulse)
     if is_instance_valid(interior):
         interior.rotation.y = sin(age*.32)*.09
-        interior.position.y = .81+sin(age*.83)*.015
+        interior.position.y = sin(age*.83)*.015 if blender_interior else .81+sin(age*.83)*.015
     for i in range(filament_roots.size()):
         var root: Node3D = filament_roots[i]
         root.rotation.y = sin(age*2.1+float(i))*.17
