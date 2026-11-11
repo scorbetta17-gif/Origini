@@ -253,13 +253,13 @@ func _vent(pos: Vector3, height: float) -> void:
 func _create_nutrient(kind: String, at: Vector3) -> void:
     var sphere := SphereMesh.new()
     sphere.radius = .13 if kind == "detritus" else (.085 if kind != "nucleic" else .067)
-    sphere.height = .32
+    sphere.height = .145
     sphere.radial_segments = 12
     sphere.rings = 7
     var node := MeshInstance3D.new()
     node.mesh = sphere
     node.position = at
-    node.material_override = _solid(Color(.50,.43,.38) if kind == "detritus" else TYPE_COLORS[kind].lerp(Color(.34,.42,.41),.55), .01)
+    node.material_override = _solid(Color(.39,.37,.31) if kind == "detritus" else TYPE_COLORS[kind].lerp(Color(.24,.33,.32),.70), .0)
     nutrient_root.add_child(node)
     nutrients.append({"kind": kind, "node": node, "origin_y": at.y, "bob": rng.randf_range(0,TAU)})
 
@@ -1054,6 +1054,12 @@ func _refresh_hud() -> void:
         objective_label.text = "OBIETTIVO · Evolvi una linea complessa · Esplora i biomi"
     if phase_two>=25.0:
         objective_label.text = "FASE 2 COMPLETATA · Consorzio metabolico stabile"
+    var danger_temperature: float = 43.0+18.0*float(traits.get("thermotolerance",0.0))
+    if _temperature_at(player.position) > danger_temperature:
+        objective_label.text = "STRESS TERMICO · Allontanati dalla sorgente o evolvi termotolleranza"
+        objective_label.add_theme_color_override("font_color",Color(.98,.71,.59))
+    else:
+        objective_label.add_theme_color_override("font_color",Color(.83,.95,.96))
     buttons["tree"].text = "ALBERO (%d)" % mutation_points
 
 func _style(color: Color, outline: Color) -> StyleBoxFlat:
