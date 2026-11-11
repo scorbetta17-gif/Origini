@@ -20,10 +20,10 @@ func _capture() -> void:
     var hero: Node3D = game.get("player")
     var camera: Camera3D = game.get("camera")
     # Lente macro: screenshot reale per ispezionare volume e strutture.
-    camera.position = hero.position+Vector3(0,3.25,4.25)
-    camera.look_at(hero.position+Vector3(0,.62,0))
-    camera.fov = 34.0
-    await create_timer(.30).timeout
+    game.call("_toggle_focus")
+    camera.position = hero.position+Vector3(0,2.4,3.3)
+    camera.look_at(hero.position+Vector3(0,.65,0))
+    await create_timer(.95).timeout
     if not _save_frame("primordiale-macro"):
         quit(1)
         return
@@ -43,15 +43,13 @@ func _capture() -> void:
         quit(1)
         return
     hero.position = Vector3(-9.8,0,3.2)
-    var previous: Vector3 = game.get("camera_offset")
-    game.set("camera_offset",Vector3(0,7.5,8.7))
-    await create_timer(.65).timeout
+    game.call("_toggle_focus")
+    await create_timer(.70).timeout
     camera.position = hero.position+Vector3(0,7.5,8.7)
     camera.look_at(hero.position)
     if not _save_frame("bioma-idrotermale"):
         quit(1)
         return
-    game.set("camera_offset",previous)
     quit(0)
 
 func _save_frame(label: String) -> bool:
