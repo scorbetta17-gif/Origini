@@ -78,6 +78,7 @@ var nutrient_respawn: float = 0.0
 var world_age: float = 0.0
 var last_external_arrival: float = -60.0
 var camera_offset := Vector3(0.0, 7.5, 8.7)
+var camera_focus: bool = false
 var world_radius: float = 25.0
 var attack_mode: String = ""
 var move_vector: Vector2 = Vector2.ZERO
@@ -148,6 +149,10 @@ func _new_game() -> void:
     attack_mode = ""
     division_options.clear()
     is_paused = false
+    camera_focus = false
+    camera_offset = Vector3(0,7.5,8.7)
+    if is_instance_valid(camera):
+        camera.fov = 34.0
     if is_instance_valid(joystick):
         joystick.set_controls_enabled(true)
         joystick.reset_input()
@@ -398,6 +403,7 @@ func _process(delta: float) -> void:
     # Cresce con la biomassa, ma la dimensione massima e' limitata.
     player.set_growth(.72 + .41 * clampf((float(resources["biomass"])-23.0)/42.0,0.0,1.0))
     camera.position = camera.position.lerp(player.position+camera_offset,minf(1.0,delta*3.2))
+    camera.look_at(player.position+Vector3(0,.55,0))
     for n in nutrients:
         if is_instance_valid(n["node"]):
             n["node"].position.y = float(n["origin_y"]) + sin(t*1.8+float(n["bob"]))*0.04
@@ -435,6 +441,12 @@ func _temperature_at(where: Vector3) -> float:
         var distance_squared: float = Vector2(where.x-xy.x,where.z-xy.y).length_squared()
         result += THERMAL_AMPLITUDE[i]*exp(-distance_squared/THERMAL_DECAY[i])
     return result
+
+func _toggle_focus() -> void:
+    camera_focus = not camera_focus
+    camera_offset = Vector3(0,2.4,3.3) if camera_focus else Vector3(0,7.5,8.7)
+    camera.fov = 38.0 if camera_focus else 34.0
+    buttons["focus"].text = "MONDO" if camera_focus else "CELLULA"
 
 func _move_player(direction: Vector2, delta: float) -> void:
     var traits: Dictionary = entities[player_id]["traits"]
@@ -540,7 +552,7 @@ func _update_ecosystem(dt: float) -> void:
             _divide_npc(str(id))
             continue
         # Competizione emergente: necessita di capacita' litica ereditaria.
-        if int(e["generation"]) >= 3 and float(e["traits"].get("attack",1.0)) > 1.27 and float(e["energy"]) > 8.0:
+        if int(e["generation"]) >= 3 and GenomeScript.has(e["traits"],"hydrolase_secretion") and float(e["energy"]) > 8.0:
             var nearest_id: String = ""
             var best: float = 1.12
             for other_id in entities:
@@ -664,6 +676,14 @@ func _divide_pressed() -> void:
             traits = GenomeScript.grant(traits,"eps_biosynthesis",generation+1,"major_mutation",next_branch)
             highlight = "Major: riconoscimento cellulare e EPS"
         division_options.append({"traits":traits,"branch":next_branch,"name":highlight})
+    for option in division_options:
+        var tr: Dictionary = option["traits"]
+        var events: Array = tr.get("genome",{}).get("history",[])
+        for event in events:
+            if int(event.get("generation",-1)) == generation+1:
+                var locus: String = str(event.get("locus",""))
+                if GenomeScript.GENE_INFO.has(locus):
+                    option["name"] = "MAJOR: "+str(GenomeScript.GENE_INFO[locus]["name"])
     _open_overlay("SCISSIONE CELLULARE", "Scegli una discendente. La sorella segue la propria linea.")
     _add_overlay_button("FIGLIA A · %s" % str(division_options[0]["name"]),func():_choose_daughter(0))
     _add_overlay_button("FIGLIA B · %s" % str(division_options[1]["name"]),func():_choose_daughter(1))
@@ -732,10 +752,14 @@ func _on_skill(mode: String) -> void:
     if skill_cooldown > 0.0:
         _notice("Abilita' in ricarica")
         return
-    var attack_strength: float = float(entities[player_id]["traits"].get("attack",1.0))
-    if mode == "lysis" and attack_strength < 1.10:
-        _notice("Per la lisi serve una capacita' litica")
+    var genome_traits: Dictionary = entities[player_id]["traits"]
+    if not GenomeScript.has(genome_traits,"hydrolase_secretion"):
+        _notice("Manca il locus maggiore per enzimi proteolitici")
         return
+    if mode == "lysis" and not GenomeScript.has(genome_traits,"surface_recognition"):
+        _notice("La lisi selettiva richiede anche recettori di riconoscimento")
+        return
+    var attack_strength: float = float(genome_traits.get("attack",1.0))
     var best: String = ""
     var dist: float = 8.0
     if mode == "lysis" or attack_strength >= 1.10:
@@ -822,8 +846,8 @@ func _on_cooperate() -> void:
         _notice("La cooperazione della Fase 2 richiede una linea Archaea")
         return
     var traits: Dictionary = entities[player_id]["traits"]
-    if not bool(traits.get("adhesion",false)) and not bool(traits.get("eps",false)):
-        _notice("Occorre una forma di adesione o EPS")
+    if not GenomeScript.has(traits,"surface_recognition") and not GenomeScript.has(traits,"eps_biosynthesis"):
+        _notice("Occorre un locus maggiore per adesione o EPS")
         return
     var closest: String = ""
     var dist: float = 6.0
@@ -1150,6 +1174,7 @@ func _build_ui() -> void:
     _button("SALVA",_save_game,"save")
     _button("CARICA",_load_game,"load")
     _button("GENOMA",_on_genome,"genome")
+    _button("CELLULA",_toggle_focus,"focus")
     _button("MENU",_open_main_menu,"menu")
     overlay = ColorRect.new()
     overlay.color = Color(.005,.025,.040,.97)
@@ -1181,7 +1206,7 @@ func _layout_ui() -> void:
     scission_bar.size = Vector2(minf(wh.x*.27,235),7)
     scission_bar.position = Vector2(wh.x-scission_bar.size.x-16,wh.y-89)
     # Gli strumenti secondari restano nel menu, ma le azioni sono conservate.
-    var primary: Array[String] = ["divide","enzymes","lysis","cooperate","menu"]
+    var primary: Array[String] = ["divide","enzymes","lysis","cooperate","focus","menu"]
     for key in buttons:
         buttons[key].visible = primary.has(str(key))
     if portrait:
@@ -1192,10 +1217,10 @@ func _layout_ui() -> void:
             b.size = Vector2(w-5,49)
             b.add_theme_font_size_override("font_size",12)
     else:
-        var w: float = minf(117.0,(wh.x-160.0)/5.0)
+        var w: float = minf(108.0,(wh.x-160.0)/6.0)
         for i in range(primary.size()):
             var b: Button = buttons[primary[i]]
-            b.position = Vector2(wh.x-(5.0*w+18.0)+float(i)*w,wh.y-70)
+            b.position = Vector2(wh.x-(6.0*w+18.0)+float(i)*w,wh.y-70)
             b.size = Vector2(w-6,51)
             b.add_theme_font_size_override("font_size",13)
     overlay.size = wh
