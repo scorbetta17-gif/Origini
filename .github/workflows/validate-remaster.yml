@@ -37,6 +37,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
       - name: Genotipo, ereditarieta' e fenotipo
         run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
+      - name: Fase 2 completa - da riconoscimento a trasmissione
+        run: timeout 120s godot --headless --path . --script res://tests/phase_two_smoke.gd
       - name: Import effettivo Blender 3D e moduli per gene
         run: timeout 90s godot --headless --path . --script res://tests/blender_asset_smoke.gd
       - name: Driver per capture 3D
