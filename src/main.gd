@@ -705,6 +705,7 @@ func _divide_npc(id: String) -> void:
     var external: bool = bool(parent["external"])
     var was_partner: bool = partner_id == id
     var previous_phase: float = phase_two
+    var player_bond_before: Dictionary = PhaseScript.normalize(phase2_progress)
     var inherited_phase: Dictionary = PhaseScript.normalize(parent.get("phase2_progress",{}))
     var older_purchased: Dictionary = parent["purchased"].duplicate(true)
     _remove_entity(id,"scissione")
@@ -725,7 +726,9 @@ func _divide_npc(id: String) -> void:
             first_id = new_id
     if was_partner and first_id != "":
         partner_id = first_id
+        phase2_progress = player_bond_before
         phase2_progress["partner_id"] = first_id
+        phase2_progress["last_partner_id"] = first_id
         phase2_progress["bonded"] = true
         phase_two = previous_phase
 
@@ -1069,8 +1072,8 @@ func _switch_lineage(id: String) -> void:
         return
     _cache_current()
     _activate_lineage(id)
-    partner_id = ""
-    phase_two = 0.0
+    # Il legame appartiene alla linea attiva: non azzerare un consorzio
+    # valido quando il giocatore torna a una Archaea precedentemente legata.
     _close_overlay()
     _notice("Segui la linea %s · %s" % [id,str(entities[id]["branch"])])
 
