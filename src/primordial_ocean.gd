@@ -26,6 +26,13 @@ func setup(rng: RandomNumberGenerator) -> void:
         if i % 17 == 0:
             r *= 2.15
         _stone(Vector3(x,-.22,z),r,rng)
+    # Piccoli affioramenti lontani dal soggetto: profondita' visiva senza sovraffollare.
+    for where in [
+        Vector3(-3.9,-.22,-1.6),Vector3(4.1,-.22,2.1),
+        Vector3(-2.9,-.22,3.7),Vector3(3.8,-.22,-3.1),
+        Vector3(-4.7,-.22,3.5)
+    ]:
+        _stone(where,rng.randf_range(.31,.63),rng)
     for i in range(22):
         var x: float = rng.randf_range(-26.0,26.0)
         var z: float = rng.randf_range(-26.0,26.0)
@@ -104,6 +111,20 @@ func _vent(at: Vector3, height: float, rng: RandomNumberGenerator) -> void:
     shaft.material_override = mineral_mats[2]
     shaft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(shaft)
+    # Croste minerali sovrapposte attorno al condotto.
+    for i in range(5):
+        var crust := CylinderMesh.new()
+        crust.height = rng.randf_range(.12,.24)
+        crust.top_radius = .21+rng.randf_range(-.055,.095)
+        crust.bottom_radius = crust.top_radius+rng.randf_range(.02,.07)
+        crust.radial_segments = 8
+        var ledge := MeshInstance3D.new()
+        ledge.mesh = crust
+        ledge.position = at+Vector3(rng.randf_range(-.045,.045),height*(.12+float(i)*.185),rng.randf_range(-.045,.045))
+        ledge.rotation.y = rng.randf_range(0,TAU)
+        ledge.material_override = mineral_mats[(i+1)%mineral_mats.size()]
+        ledge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        add_child(ledge)
     # Fumarola diffusa: colonne di acqua torbida neutra anziche' lava.
     for i in range(20):
         var speck := MeshInstance3D.new()
