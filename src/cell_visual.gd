@@ -11,6 +11,7 @@ var growth: float = .55
 var filament_roots: Array = []
 var selection_ring: MeshInstance3D
 var membrane: MeshInstance3D
+var cytoplasm: Node3D
 var material_cache: Dictionary = {}
 
 func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> void:
@@ -83,7 +84,7 @@ func _segment(host: Node3D, start: Vector3, end: Vector3, thickness: float, tint
     host.add_child(part)
 
 func _base_tint() -> Color:
-    var tint := Color(.35,.72,.78)
+    var tint := Color(.54,.72,.70)
     if branch == "luca":
         tint = Color(.54,.55,.82)
     elif branch == "archaea":
@@ -105,10 +106,10 @@ func _build() -> void:
     var motor_count: int = int(traits.get("archaella",0)) if branch == "archaea" else int(traits.get("flagella",0)) if branch == "bacteria" else 0
     var tint: Color = _base_tint()
     var aspect: float = clampf(1.0+(speed-1.0)*.35,.88,1.38)
-    var is_rod: bool = branch == "bacteria" or speed > 1.24
+    var is_rod: bool = speed > 1.48 or float(traits.get("elongation",0.0)) > .60
     var body_size := Vector3(.72*aspect,.58,.69/aspect)
     if is_pre:
-        body_size *= .81
+        body_size *= .74
     if is_rod:
         body_size = Vector3(.91,.59,.63) * (1.0+clampf((speed-1.0)*.12,-.04,.20))
     var body_shape: Mesh
@@ -131,7 +132,7 @@ func _build() -> void:
     core.mesh = body_shape
     core.position = Vector3(0,.74,0)
     core.scale = body_size * .95
-    core.material_override = _material(tint.darkened(.46),.76,.06,.60)
+    core.material_override = _material(tint.darkened(.25),.12,0.0,.78)
     add_child(core)
     if is_rod:
         core.rotation.z = PI*.5
@@ -139,7 +140,7 @@ func _build() -> void:
     membrane.mesh = body_shape
     membrane.position = core.position
     membrane.scale = body_size * (1.035+clampf((armored-1.0)*.075,0,.20))
-    membrane.material_override = _material(tint.lightened(.24),.29,.12,.18)
+    membrane.material_override = _material(tint.lightened(.18),.32,.012,.54)
     add_child(membrane)
     if is_rod:
         membrane.rotation.z = PI*.5
@@ -165,30 +166,37 @@ func _build() -> void:
                 exterior.rotation.z = PI*.5
     if eps:
         _ball(self,Vector3(0,.74,0),body_size*1.26,Color(.48,.91,.79),.09,.12)
-    # Solo 2 granuli nella protocellula pre-LUCA; non sono organelli.
-    var granules: int = 2 if is_pre else 7
-    for i in range(granules):
-        var angle: float = float(i)*2.399
-        var r: float = .12+float(i%3)*.075
-        _ball(self,Vector3(cos(angle)*r,.72+sin(angle*1.8)*.12,sin(angle)*r),Vector3.ONE*(.036 if is_pre else .048),Color(1.0,.69,.33),1.0,.1)
-    # RNA monofilamento iniziale, solo in seguito doppia elica DNA.
+    # La cellula primordiale contiene SOLO ssRNA e 3 complessi autocatalitici.
+    # Tutte le strutture restano all'interno della stessa membrana ereditata.
+    cytoplasm = Node3D.new()
+    add_child(cytoplasm)
+    var complexes: int = 3 if is_pre else 5
+    for i in range(complexes):
+        var a: float = float(i)*2.399
+        var r: float = .14+float(i%2)*.045
+        var center := Vector3(cos(a)*r,.73+sin(a*2.0)*.075,sin(a)*r)
+        var color := Color(.76,.70,.56) if is_pre else Color(.69,.79,.69)
+        _ball(cytoplasm,center,Vector3.ONE*.034,color,.92)
+        _ball(cytoplasm,center+Vector3(.023,.014,-.009),Vector3.ONE*.019,color.lightened(.10),.91)
+        _ball(cytoplasm,center+Vector3(-.015,.022,.013),Vector3.ONE*.018,color.darkened(.12),.93)
+    # RNA a singolo filamento, non una doppia elica iniziale.
     var strands: int = 2 if dna else 1
     for helix in range(strands):
         var last := Vector3.ZERO
-        for index in range(18):
-            var u: float = float(index)/17.0
-            var x: float = (u-.5)*(.62 if is_pre else .90)
-            var a: float = u*TAU*1.65+float(helix)*PI
-            var point := Vector3(x,.74+sin(a)*.095,cos(a)*.12)
+        for index in range(25):
+            var u: float = float(index)/24.0
+            var x: float = (u-.5)*(.58 if is_pre else .89)
+            var phase: float = u*TAU*1.28+float(helix)*PI
+            var point := Vector3(x,.74+sin(phase)*.093,cos(phase)*.107)
             if index > 0:
-                _segment(self,last,point,.013,Color(.96,.53,.77) if not dna else Color(.60,.78,1.0),.20)
+                _segment(cytoplasm,last,point,.009,Color(.89,.62,.49) if not dna else Color(.56,.70,.83))
             last = point
     if dna:
         for index in range(12):
             var u: float = float(index)/11.0
-            var x: float = (u-.5)*.9
-            var a: float = u*TAU*1.65
-            _segment(self,Vector3(x,.74+sin(a)*.095,cos(a)*.12),Vector3(x,.74-sin(a)*.095,-cos(a)*.12),.009,Color(.86,.90,.70))
+            var x: float = (u-.5)*.89
+            var a: float = u*TAU*1.28
+            _segment(cytoplasm,Vector3(x,.74+sin(a)*.093,cos(a)*.107),Vector3(x,.74-sin(a)*.093,-cos(a)*.107),.007,Color(.73,.80,.70))
     # Recettori, proteasi e adesine sono visibili soltanto se associati ai tratti.
     var pores: int = clampi(int(maxf(0.0,uptake-1.0)*13.0),0,12)
     for i in range(pores):
@@ -205,14 +213,44 @@ func _build() -> void:
             var start := Vector3(cos(a)*body_size.x*.87,.80,sin(a)*body_size.z*.87)
             var end := start+Vector3(cos(a)*.20,.07,sin(a)*.19)
             _segment(self,start,end,.020,Color(.77,.86,.78),.06)
-    # Ereditarieta' grafica: firme superficiali delle mutazioni, non organelli fittizi.
-    var history: Array = traits.get("mutations",[])
-    for index in range(mini(14,history.size())):
-        var name: String = str(history[index])
-        var code: int = absi(name.hash())
-        var a: float = float(code%359)*PI/180.0
-        var point := Vector3(cos(a)*body_size.x*.97,.72+sin(float(code%53))*.15,sin(a)*body_size.z*.97)
-        _ball(self,point,Vector3.ONE*(.027+float(code%4)*.006),Color(.57,.81,.90),1.0,.17)
+    # Moduli biologici opzionali: la loro geometria appare solo dopo mutazione.
+    var receptor_count: int = clampi(int(traits.get("receptors",0)),0,8)
+    for i in range(receptor_count):
+        var angle: float = float(i)*TAU/float(maxi(1,receptor_count))
+        var direction := Vector3(cos(angle),.12*sin(angle*2.0),sin(angle))
+        var base: Vector3 = Vector3(direction.x*body_size.x*.95,.74+direction.y,direction.z*body_size.z*.95)
+        _segment(self,base,base+direction.normalized()*.073,.014,Color(.59,.77,.72))
+        _ball(self,base+direction.normalized()*.077,Vector3.ONE*.034,Color(.67,.81,.75),.95)
+    var pili: int = clampi(int(traits.get("pili",0)),0,8)
+    for i in range(pili):
+        var angle: float = TAU*(float(i)+.2)/float(maxi(1,pili))
+        var dir := Vector3(cos(angle),.10,sin(angle)).normalized()
+        var start := Vector3(dir.x*body_size.x,.74+dir.y*.2,dir.z*body_size.z)
+        var prev: Vector3 = start
+        for j in range(1,5):
+            var next: Vector3 = start+dir*(.15*float(j))+Vector3(0,sin(float(j)*1.3+float(i))*.036,0)
+            _segment(self,prev,next,.009,Color(.60,.75,.70))
+            prev = next
+    var protease_count: int = clampi(int(traits.get("protease",0)),0,6)
+    for i in range(protease_count):
+        var angle: float = TAU*float(i)/float(maxi(1,protease_count))
+        var outward := Vector3(cos(angle),0,sin(angle))
+        var site := Vector3(outward.x*body_size.x,.74,outward.z*body_size.z)
+        _ball(self,site,Vector3(.055,.028,.055),Color(.76,.59,.49),.93)
+        _ball(self,site+outward*.10,Vector3.ONE*.022,Color(.78,.65,.53),.68)
+    var vesicle_count: int = clampi(int(traits.get("vesicles",0)),0,5)
+    for i in range(vesicle_count):
+        var angle: float = TAU*(float(i)+.35)/float(maxi(1,vesicle_count))
+        var r: float = body_size.x*(1.02+float(i%2)*.14)
+        var pos := Vector3(cos(angle)*r,.74+sin(angle*2.0)*.06,sin(angle)*body_size.z*1.10)
+        _ball(self,pos,Vector3.ONE*.061,Color(.63,.73,.68),.25)
+    if float(traits.get("thermotolerance",0.0)) > .01:
+        # Proteostasi e membrane adattate: variazione materiale + piccoli complessi interni.
+        var thermo: int = mini(5,maxi(1,ceili(float(traits.get("thermotolerance",0.0)))))
+        for i in range(thermo):
+            var a: float = TAU*float(i)/float(maxi(1,thermo))
+            _ball(cytoplasm,Vector3(cos(a)*.23,.66,sin(a)*.23),Vector3(.031,.020,.028),Color(.72,.72,.55),.88)
+        membrane.material_override = _material(tint.lerp(Color(.66,.69,.60),.26),.37,.007,.64)
     # Motori: nel protagonista iniziale assenti. Archaella e flagelli batterici distinti.
     for i in range(mini(7,motor_count)):
         var root := Node3D.new()
@@ -241,6 +279,9 @@ func _process(delta: float) -> void:
     age += delta
     var breath: float = 1.0+sin(age*2.1)*.013
     scale = Vector3(growth,growth*breath,growth)
+    if is_instance_valid(cytoplasm):
+        cytoplasm.rotation.y = sin(age*.83)*.035
+        cytoplasm.position.y = sin(age*1.23)*.009
     for i in range(filament_roots.size()):
         var root: Node3D = filament_roots[i]
         root.rotation.y = sin(age*3.8+float(i))*.21
