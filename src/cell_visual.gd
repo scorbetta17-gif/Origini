@@ -264,38 +264,43 @@ func _build() -> void:
         var phi: float = TAU*(float(i)+.43)/float(maxi(1,transporters))
         var n := Vector3(cos(phi),.24*sin(phi*1.75),sin(phi)).normalized()
         var pos := Vector3(n.x*body_radii.x,.81+n.y*body_radii.y,n.z*body_radii.z)
-        _ellipsoid(self,pos,Vector3(.048,.038,.048),Color(.40,.59,.60),.90)
-        _ellipsoid(self,pos+n*.026,Vector3(.024,.018,.024),Color(.20,.35,.37),.86)
+        if not _blender_module("transporter",pos,n,.85):
+            _ellipsoid(self,pos,Vector3(.048,.038,.048),Color(.40,.59,.60),.90)
+            _ellipsoid(self,pos+n*.026,Vector3(.024,.018,.024),Color(.20,.35,.37),.86)
     # Moduli di adesione, riconoscimento e lisi emergono per mutazione.
     var receptors: int = clampi(int(traits.get("receptors",0)),0,8)
     for i in range(receptors):
         var a: float = TAU*(float(i)+.3)/float(maxi(1,receptors))
         var n: Vector3 = Vector3(cos(a),.22*sin(a*1.8),sin(a)).normalized()
         var anchor: Vector3 = Vector3(n.x*body_radii.x,n.y*body_radii.y,n.z*body_radii.z)+Vector3(0,.81,0)
-        _tube(self,PackedVector3Array([anchor,anchor+n*.11]),.018,Color(.74,.84,.72))
-        _ellipsoid(self,anchor+n*.12,Vector3.ONE*.04,Color(.82,.85,.74))
+        if not _blender_module("receptor",anchor,n,1.0):
+            _tube(self,PackedVector3Array([anchor,anchor+n*.11]),.018,Color(.74,.84,.72))
+            _ellipsoid(self,anchor+n*.12,Vector3.ONE*.04,Color(.82,.85,.74))
     var pili: int = clampi(int(traits.get("pili",0)),0,9)
     for i in range(pili):
         var a: float = TAU*float(i)/float(maxi(1,pili))
         var n: Vector3 = Vector3(cos(a),.15,sin(a)).normalized()
         var anchor := Vector3(n.x*body_radii.x,.81+n.y*body_radii.y,n.z*body_radii.z)
-        var path := PackedVector3Array()
-        for j in range(7):
-            var distance: float = float(j)*.15
-            path.append(anchor+n*distance+Vector3(0,sin(float(j)*.82+float(i))*.027,0))
-        _tube(self,path,.012,Color(.72,.79,.66))
+        if not _blender_module("pili",anchor,n,1.0):
+            var path := PackedVector3Array()
+            for j in range(7):
+                var distance: float = float(j)*.15
+                path.append(anchor+n*distance+Vector3(0,sin(float(j)*.82+float(i))*.027,0))
+            _tube(self,path,.012,Color(.72,.79,.66))
     var proteases: int = clampi(int(traits.get("protease",0)),0,6)
     for i in range(proteases):
         var a: float = TAU*(float(i)+.5)/float(maxi(1,proteases))
         var n := Vector3(cos(a),0,sin(a))
         var loc := Vector3(n.x*body_radii.x,.81,n.z*body_radii.z)
-        _ellipsoid(self,loc,Vector3(.045,.025,.043),Color(.80,.64,.52))
-        _ellipsoid(self,loc+n*.11,Vector3.ONE*.02,Color(.85,.68,.52),.65)
+        if not _blender_module("protease",loc,n,1.0):
+            _ellipsoid(self,loc,Vector3(.045,.025,.043),Color(.80,.64,.52))
+            _ellipsoid(self,loc+n*.11,Vector3.ONE*.02,Color(.85,.68,.52),.65)
     var vesicles: int = clampi(int(traits.get("vesicles",0)),0,5)
     for i in range(vesicles):
         var a: float = TAU*(float(i)+.2)/float(maxi(1,vesicles))
         var point := Vector3(cos(a)*body_radii.x*1.23,.81+sin(a*2.0)*.12,sin(a)*body_radii.z*1.23)
-        _ellipsoid(self,point,Vector3.ONE*.065,tint.lightened(.15),.27)
+        if not _blender_module("vesicle",point,Vector3.UP,1.0):
+            _ellipsoid(self,point,Vector3.ONE*.065,tint.lightened(.15),.27)
     if bool(traits.get("adhesion",false)):
         for i in range(4):
             var a: float = TAU*float(i)/4.0
