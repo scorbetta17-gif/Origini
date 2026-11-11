@@ -6,6 +6,14 @@ func _initialize() -> void:
     call_deferred("_capture")
 
 func _capture() -> void:
+    var method: String = RenderingServer.get_current_rendering_method()
+    var driver: String = RenderingServer.get_current_rendering_driver_name()
+    print("ORIGIN_ACTUAL_RENDERER=",method," DRIVER=",driver)
+    if OS.get_environment("ORIGIN_REQUIRE_MOBILE") == "1":
+        if method != "mobile" or driver != "vulkan":
+            push_error("Vulkan Mobile not active; got "+method+" / "+driver)
+            quit(1)
+            return
     var packed: PackedScene = load("res://scenes/Main.tscn")
     if packed == null:
         push_error("Scena principale non disponibile")
@@ -55,7 +63,8 @@ func _capture() -> void:
 func _save_frame(label: String) -> bool:
     var dir: String = ProjectSettings.globalize_path("res://build/previews")
     DirAccess.make_dir_recursive_absolute(dir)
-    var path: String = dir+"/"+label+"-godot.png"
+    var prefix: String = OS.get_environment("ORIGIN_CAPTURE_PREFIX")
+    var path: String = dir+"/"+prefix+label+"-godot.png"
     var snapshot: Image = root.get_texture().get_image()
     var result: Error = snapshot.save_png(path)
     print("SCREENSHOT_GODOT=",path," result=",result)
