@@ -1,8 +1,8 @@
 shader_type spatial;
 render_mode diffuse_burley, specular_schlick_ggx, cull_back;
 
-uniform vec3 sand_dark : source_color = vec3(0.065, 0.105, 0.113);
-uniform vec3 sand_light : source_color = vec3(0.125, 0.175, 0.168);
+uniform vec3 sand_dark : source_color = vec3(0.087, 0.123, 0.129);
+uniform vec3 sand_light : source_color = vec3(0.157, 0.190, 0.179);
 varying vec3 seabed_pos;
 
 float hash21(vec2 p) {
@@ -25,8 +25,9 @@ void fragment() {
     float n = noise2(p*1.25)*0.55+noise2(p*4.0)*0.25+noise2(p*11.0)*0.20;
     float s = sin(p.x*.32 + sin(p.y*.18)*2.3) * 0.045;
     vec3 base = mix(sand_dark,sand_light,clamp(n*0.85+s+0.1,0.0,1.0));
-    float grain = hash21(floor(p*32.0));
-    base += (grain-.5)*.025;
+    float grain = hash21(floor(p*9.0));
+    float ripple = sin(p.y*2.5 + noise2(p*.27)*3.0);
+    base += (grain-.5)*.008 + ripple*.011;
     ALBEDO = base;
     ROUGHNESS = .96;
     SPECULAR = .13;
