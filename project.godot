@@ -1,10 +1,10 @@
 config_version=5
 
 [application]
-config/name="ORIGINI | Demo Android"
+config/name="ORIGINI | Fase 2"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
-config/description="Evoluzione cellulare biologica in 3D: modelli Blender, genoma ereditabile e camera prospettica"
+config/description="Dalla protocellula al consorzio Bacteria-Archaea: mutazioni ereditarie, selezione, scissione e cooperazione metabolica"
 
 [display]
 window/size/viewport_width=1280
