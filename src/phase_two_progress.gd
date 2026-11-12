@@ -13,6 +13,7 @@ static func empty() -> Dictionary:
         "discovered":false, "adhesion":false, "exchanged":false,
         "stable":false, "transmitted":false, "complete":false,
         "partner_id":"", "last_partner_id":"", "bonded":false,
+        "active_stable":false,
         "exchange_seconds":0.0, "contact_seconds":0.0,
         "metabolites_exchanged":0.0, "transmitted_from":"",
         "generation_completed":-1
@@ -26,6 +27,9 @@ static func normalize(source: Dictionary) -> Dictionary:
     result["exchange_seconds"] = maxf(0.0,float(result["exchange_seconds"]))
     result["contact_seconds"] = maxf(0.0,float(result["contact_seconds"]))
     result["metabolites_exchanged"] = maxf(0.0,float(result["metabolites_exchanged"]))
+    if not source.has("active_stable"):
+        result["active_stable"] = bool(result["stable"]) and bool(result["bonded"]) and (
+            float(result["contact_seconds"]) >= STABILITY_REQUIRED and float(result["exchange_seconds"]) >= EXCHANGE_REQUIRED)
     if bool(result["transmitted"]):
         result["stable"] = true
         result["exchanged"] = true
@@ -59,6 +63,7 @@ static func bind(source: Dictionary, archaeal_traits: Dictionary, bacterial_trai
     result["discovered"] = true
     result["adhesion"] = true
     result["bonded"] = true
+    result["active_stable"] = false
     result["partner_id"] = other_id
     result["last_partner_id"] = other_id
     result["contact_seconds"] = 0.0
@@ -69,6 +74,7 @@ static func release(source: Dictionary) -> Dictionary:
     var result: Dictionary = normalize(source)
     result["partner_id"] = ""
     result["bonded"] = false
+    result["active_stable"] = false
     result["contact_seconds"] = 0.0
     result["exchange_seconds"] = 0.0
     return result
@@ -85,6 +91,7 @@ static func advance(source: Dictionary, dt: float, distance: float,
     if not bool(progress["bonded"]) or str(progress["partner_id"]) == "":
         return result
     if not can_adhere(archaeal_traits,bacterial_traits) or distance > EXCHANGE_RADIUS:
+        progress["active_stable"] = false
         progress["contact_seconds"] = maxf(0.0,float(progress["contact_seconds"])-dt*1.3)
         progress["exchange_seconds"] = maxf(0.0,float(progress["exchange_seconds"])-dt*.55)
         if distance > DETECT_RADIUS or not can_adhere(archaeal_traits,bacterial_traits):
@@ -108,6 +115,7 @@ static func advance(source: Dictionary, dt: float, distance: float,
                 progress["exchanged"] = true
     if bool(progress["exchanged"]) and float(progress["contact_seconds"]) >= STABILITY_REQUIRED:
         progress["stable"] = true
+        progress["active_stable"] = true
     return result
 
 static func inherit(source: Dictionary, daughter_traits: Dictionary,
@@ -115,7 +123,7 @@ static func inherit(source: Dictionary, daughter_traits: Dictionary,
     var progress: Dictionary = normalize(source)
     var inherited_ability: bool = bool(daughter_traits.get("adhesion",false)) or bool(daughter_traits.get("eps",false))
     inherited_ability = inherited_ability and int(daughter_traits.get("transporters",0)) > 0
-    if bool(progress["stable"]) and partner_alive and inherited_ability and bool(progress["bonded"]):
+    if bool(progress["stable"]) and bool(progress["active_stable"]) and partner_alive and inherited_ability and bool(progress["bonded"]):
         progress["transmitted"] = true
         progress["complete"] = true
         progress["transmitted_from"] = mother_id
@@ -150,4 +158,6 @@ static func short_objective(source: Dictionary) -> String:
         return "FASE 2 · Trasportatori su entrambe le cellule: %.0f/12 s" % float(p["exchange_seconds"])
     if not bool(p["stable"]):
         return "FASE 2 · Mantieni l'aggregato: %.0f/25 s" % float(p["contact_seconds"])
+    if not bool(p["active_stable"]):
+        return "FASE 2 · Riattiva il consorzio stabile prima della scissione"
     return "FASE 2 · Consorzio stabile: completa una scissione e scegli una figlia"
