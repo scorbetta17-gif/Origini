@@ -6,6 +6,8 @@ func _initialize() -> void:
     call_deferred("_capture")
 
 func _capture() -> void:
+    root.size = Vector2i(720,1280)
+    root.content_scale_size = Vector2i(720,1280)
     var method: String = RenderingServer.get_current_rendering_method()
     var driver: String = RenderingServer.get_current_rendering_driver_name()
     print("ORIGIN_ACTUAL_RENDERER=",method," DRIVER=",driver)
