@@ -368,6 +368,7 @@ func _cache_current() -> void:
     e["biomass"] = float(resources.get("biomass",22.0))
     e["phase2_progress"] = phase2_progress.duplicate(true)
     e["zero_atp_seconds"] = zero_atp_seconds
+    e["strategy"] = Physiology.strategy(e["traits"])
 
 func _activate_lineage(id: String) -> void:
     if not entities.has(id):
