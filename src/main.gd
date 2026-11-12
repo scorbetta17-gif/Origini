@@ -100,6 +100,7 @@ var overlay_list: VBoxContainer
 var title_label: Label
 var status_label: Label
 var objective_label: Label
+var partner_compass_label: Label
 var tips_label: Label
 var scission_bar: ProgressBar
 var hp_bar: ProgressBar
@@ -1085,8 +1086,22 @@ func _open_main_menu() -> void:
     _add_overlay_button("Genoma e fenotipo",_on_genome)
     _add_overlay_button("Obiettivi",_on_goals)
     _add_overlay_button("Fase 2 · Consorzi metabolici",_on_phase_two)
+    _add_overlay_button("Come giocare",_on_guide)
     _add_overlay_button("Salva partita",_save_game)
     _add_overlay_button("Carica partita",_load_game)
+
+func _on_guide() -> void:
+    _open_overlay("GUIDA ORIGINI", "Fase 1 e Fase 2 · versione giocabile 0.70")
+    _add_overlay_label("MUOVITI con joystick tattile o WASD/frecce. Premi CELLULA per osservare il fenotipo da vicino.")
+    _add_overlay_label("NUTRIZIONE: avvicinati ai piccoli nutrienti minerali/organici. Raccogli C, A, L, N e biomassa, poi SCISSIONE.")
+    _add_overlay_label("OGNI DIVISIONE produce due figlie vive. Scegli quale controllare; l'altra prosegue come NPC. Il genoma e la genealogia sono ereditati.")
+    _add_overlay_label("FASE 1: scegli la variante con DNA stabile e poi la linea Archaea per il percorso di cooperazione (Bacteria resta una linea distinta).")
+    _add_overlay_label("FASE 2: dopo successive divisioni Archaea scegli varianti con RECETTORI e TRASPORTATORI. Segui l'indicatore Bacteria.")
+    _add_overlay_label("Quando sei vicino, premi COOPERA. Mantieni il contatto per almeno 12 secondi di scambio e 25 secondi di stabilita.")
+    _add_overlay_label("Lo scambio usa carbonio e l'energia batterica: raccogli nuove risorse prima di SCISSIONE. Infine scegli la figlia che mantiene il consorzio.")
+    _add_overlay_label("GENOMA mostra i loci; ALBERO offre bonus numerici, ma soltanto i loci maggiori fanno apparire nuove strutture.")
+    _add_overlay_label("SALVA e CARICA sono nel MENU. Puoi cambiare linea dalla genealogia. Fumaioli caldi causano danni senza termotolleranza.")
+    _add_overlay_button("VEDI OBIETTIVI",_on_goals)
 
 func _on_goals() -> void:
     if not entities.has(player_id):
@@ -1301,6 +1316,25 @@ func _refresh_hud() -> void:
         objective_label.add_theme_color_override("font_color",Color(.98,.71,.59))
     else:
         objective_label.add_theme_color_override("font_color",Color(.83,.95,.96))
+    partner_compass_label.visible = false
+    if str(entities[player_id]["branch"]) == "archaea" and not bool(phase2_progress.get("complete",false)):
+        var closest_id: String = ""
+        var nearest: float = INF
+        for id in entities:
+            if str(id) == player_id or str(entities[id]["branch"]) != "bacteria":
+                continue
+            var d: float = entities[id]["node"].position.distance_to(player.position)
+            if d < nearest:
+                closest_id = str(id)
+                nearest = d
+        if closest_id != "":
+            var delta_partner: Vector3 = entities[closest_id]["node"].position-player.position
+            var arrow: String = "→" if delta_partner.x >= 0 else "←"
+            if absf(delta_partner.z) > absf(delta_partner.x):
+                arrow = "↓" if delta_partner.z >= 0 else "↑"
+            var ready: bool = PhaseScript.can_adhere(traits,entities[closest_id]["traits"])
+            partner_compass_label.text = "BACTERIA  %s  %.1f m  ·  %s" % [arrow,nearest,"adesione compatibile" if ready else "altro fenotipo"]
+            partner_compass_label.visible = true
     buttons["tree"].text = "ALBERO (%d)" % mutation_points
 
 func _style(color: Color, outline: Color) -> StyleBoxFlat:
@@ -1347,6 +1381,9 @@ func _build_ui() -> void:
     hud.add_child(status_label)
     objective_label = _label("Obiettivo",15)
     hud.add_child(objective_label)
+    partner_compass_label = _label("",14)
+    partner_compass_label.visible = false
+    hud.add_child(partner_compass_label)
     tips_label = _label("",14)
     tips_label.visible = false
     hud.add_child(tips_label)
@@ -1401,6 +1438,8 @@ func _layout_ui() -> void:
     status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
     objective_label.position = Vector2(20,79)
     objective_label.size = Vector2(wh.x-40,25)
+    partner_compass_label.position = Vector2(20,167)
+    partner_compass_label.size = Vector2(wh.x-40,24)
     tips_label.position = Vector2(20,132)
     tips_label.size = Vector2(wh.x-40,28)
     hp_bar.position = Vector2(20,112)
