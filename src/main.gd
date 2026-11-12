@@ -718,6 +718,37 @@ func _nearest_nutrient(at: Vector3, max_distance: float) -> int:
             best = distance
     return result
 
+func _update_npc_motion(delta: float) -> void:
+    # Render-frame interpolation. Decision-making happens every 0.22s,
+    # but motion and ATP consumption run EVERY frame: no jerky daughter NPCs.
+    for id in entities.keys():
+        if id == player_id or not entities.has(id):
+            continue
+        var e: Dictionary = entities[id]
+        var c: CellVisual = e["node"]
+        if not is_instance_valid(c):
+            continue
+        var current: Vector3 = e.get("velocity",Vector3.ZERO)
+        var desired: Vector3 = e.get("intent_velocity",Vector3.ZERO)
+        if float(e.get("energy",0.0)) <= 0.0:
+            desired = Vector3.ZERO
+        var next: Vector3 = current.move_toward(desired,Physiology.NPC_ACCELERATION*delta)
+        var before: Vector3 = c.position
+        c.position += next*delta
+        c.position.x = clampf(c.position.x,-24.0,24.0)
+        c.position.z = clampf(c.position.z,-24.0,24.0)
+        var actual_distance: float = before.distance_to(c.position)
+        e["velocity"] = next
+        e["energy"] = Physiology.npc_energy_step(float(e["energy"]),delta,actual_distance)
+        if actual_distance > .0001:
+            c.rotation.y = lerp_angle(c.rotation.y,atan2(-next.z,next.x),delta*4.0)
+        if float(e["energy"]) <= .001:
+            e["zero_energy_seconds"] = float(e.get("zero_energy_seconds",0.0))+delta
+            if float(e["zero_energy_seconds"]) >= Physiology.ZERO_ATP_DEATH_SECONDS:
+                _remove_entity(str(id),"esaurimento ATP")
+        else:
+            e["zero_energy_seconds"] = 0.0
+
 func _update_ecosystem(dt: float) -> void:
     var ids: Array = entities.keys()
     for id in ids:
@@ -735,37 +766,72 @@ func _update_ecosystem(dt: float) -> void:
             if float(e["hp"]) <= 0.0:
                 _remove_entity(str(id),"stress termico")
                 continue
-        e["energy"] = maxf(0.0,float(e["energy"])-dt*.19)
-        var target_idx: int = _nearest_nutrient(c.position,6.5)
-        var dir: Vector3 = Vector3(sin(t*.39+float(str(id).hash()%77)),0,cos(t*.31+float(str(id).hash()%63)))
-        var speed: float = 1.0*clampf(float(e["traits"].get("motility",1.0)),.55,2.6)
+        var role: String = Physiology.strategy(e["traits"])
+        e["strategy"] = role
+        var target_idx: int = _nearest_nutrient(c.position,7.5)
+        var dir: Vector3 = Vector3(sin(t*.39+float(str(id).hash()%77)),0,
+            cos(t*.31+float(str(id).hash()%63)))
+        var speed: float = Physiology.strategy_speed(e["traits"])
         if str(id) == partner_id and entities.has(player_id):
-            # Un partner aderente tende a restare vicino, pur senza saldarsi
-            # fisicamente al giocatore. L'allontanamento puo' rompere il legame.
+            # The bacterial consortium partner follows smoothly but remains a
+            # separate organism; no teleporting or snapping onto the player.
             var separation: Vector3 = player.position-c.position
             separation.y = 0.0
-            if separation.length() > 2.3:
+            if separation.length() > 2.4:
                 dir = separation
-                speed = maxf(speed,2.05)
+                speed = minf(maxf(speed,1.10),1.50)
             else:
                 dir = Vector3.ZERO
                 target_idx = -1
-        elif target_idx >= 0:
-            dir = nutrients[target_idx]["node"].position-c.position
-            dir.y = 0
-        if dir.length() > .02:
-            c.position += dir.normalized()*dt*speed
-        c.position.x = clampf(c.position.x,-24.0,24.0)
-        c.position.z = clampf(c.position.z,-24.0,24.0)
+        else:
+            var closest_threat: String = ""
+            var threat_distance: float = 4.6
+            var closest_prey: String = ""
+            var prey_distance: float = 4.1
+            for other_id in entities:
+                if other_id == id:
+                    continue
+                var other: Dictionary = entities[other_id]
+                if not is_instance_valid(other["node"]):
+                    continue
+                var distance: float = c.position.distance_to(other["node"].position)
+                if int(other["traits"].get("protease",0)) > 0 and distance < threat_distance:
+                    closest_threat = str(other_id)
+                    threat_distance = distance
+                if distance < prey_distance and str(other_id) != partner_id:
+                    closest_prey = str(other_id)
+                    prey_distance = distance
+            if role == "esploratore" and closest_threat != "":
+                dir = c.position-entities[closest_threat]["node"].position
+                dir.y = 0.0
+                target_idx = -1
+            elif role == "predatore" and closest_prey != "" and float(e["energy"]) > 8.0:
+                dir = entities[closest_prey]["node"].position-c.position
+                dir.y = 0.0
+                target_idx = -1
+            elif target_idx >= 0:
+                dir = nutrients[target_idx]["node"].position-c.position
+                dir.y = 0.0
+        if dir.length() > .02 and float(e["energy"]) > .001:
+            e["intent_velocity"] = dir.normalized()*speed
+        else:
+            e["intent_velocity"] = Vector3.ZERO
+        # Nutrient pickup uses the real, interpolated position; the decision
+        # tick NEVER translates the cell anymore.
         if target_idx >= 0 and target_idx < nutrients.size():
-            if c.position.distance_to(nutrients[target_idx]["node"].position) < .78:
+            if c.position.distance_to(nutrients[target_idx]["node"].position) < .82:
                 _consume_nutrient(target_idx,false,str(id))
-        c.set_growth(.72+.41*clampf((float(e["biomass"])-24.0)/45.0,0.0,1.0))
-        if float(e["biomass"]) >= 64.0 and float(e["energy"]) >= 28.0 and int(e["generation"]) < 24 and entities.size() < 20:
+        c.set_growth(Physiology.growth_scale(float(e["biomass"]),24.0,
+            float(NEED["biomass"])))
+        var can_replicate: bool = (float(e["biomass"]) >= 57.0
+            and float(e["energy"]) >= 23.0 and float(e["age"]) >= 18.0
+            and int(e["generation"]) < 16
+            and entities.size() < npc_population_cap)
+        if can_replicate:
             _divide_npc(str(id))
             continue
-        # Competizione emergente: necessita di capacita' litica ereditaria.
-        if int(e["generation"]) >= 3 and GenomeScript.has(e["traits"],"hydrolase_secretion") and float(e["energy"]) > 8.0:
+        # Real ecological competition among predators and prey.
+        if int(e["generation"]) >= 3 and role == "predatore" and float(e["energy"]) > 8.0:
             var nearest_id: String = ""
             var best: float = 1.12
             for other_id in entities:
@@ -784,9 +850,10 @@ func _update_ecosystem(dt: float) -> void:
                     prey["hp"] = float(prey["hp"])-dt*5.0/maxf(.5,float(prey["traits"].get("defense",1.0)))
                     if float(prey["hp"]) <= 0:
                         _remove_entity(nearest_id,"predazione")
-                        e["biomass"] = minf(72.0,float(e["biomass"])+9.0)
+                        e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),
+                            float(e["biomass"])+9.0)
                         e["energy"] = minf(85.0,float(e["energy"])+12.0)
-    # I partner batterici sono linee indipendenti, non figli della tua Archaea.
+    # The Phase 2 bacterial partner arises from an independent lineage.
     if generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 12.0:
         _create_external_bacterium()
 
@@ -823,16 +890,29 @@ func _divide_npc(id: String) -> void:
     var player_bond_before: Dictionary = PhaseScript.normalize(phase2_progress)
     var inherited_phase: Dictionary = PhaseScript.normalize(parent.get("phase2_progress",{}))
     var older_purchased: Dictionary = parent["purchased"].duplicate(true)
+    phase1_progress["autonomous_divisions"] = int(phase1_progress["autonomous_divisions"])+1
     _remove_entity(id,"scissione")
     var first_id: String = ""
     for i in range(2):
         var new_id: String = ("E-%03d" if external else "C-%03d") % next_id
         next_id += 1
         var mutated: Dictionary = _mutated_traits(traits,gen,branch)
+        # Occasional heritable ecological specialization. Runner: fast escape,
+        # predator: hydrolase and high attack but significantly slower.
+        if gen >= 3 and rng.randf() < .52:
+            if i == 0:
+                mutated = GenomeScript.grant(mutated,"pili_twitch",gen,"specializzazione","%s" % branch)
+                mutated["motility"] = maxf(1.20,float(mutated.get("motility",1.0)))
+            else:
+                mutated = GenomeScript.grant(mutated,"hydrolase_secretion",gen,"specializzazione","%s" % branch)
+                mutated["attack"] = maxf(1.16,float(mutated.get("attack",1.0)))
+                mutated["motility"] = minf(.83,float(mutated.get("motility",1.0)))
+            mutated = GenomeScript.express(mutated,branch)
         _create_entity(new_id,id,gen,branch,mutated,pos+Vector3(-.70 if i == 0 else .70,0,.45 if i == 0 else -.45),false,external)
         var child: Dictionary = entities[new_id]
         child["biomass"] = 24.0
         child["energy"] = float(parent["energy"])*.45
+        child["strategy"] = Physiology.strategy(mutated)
         child["hp"] = maxf(35.0,float(parent["hp"])*.8)
         child["purchased"] = older_purchased.duplicate(true)
         child["points"] = int(parent["points"])
