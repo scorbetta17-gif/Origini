@@ -22,12 +22,13 @@ func _run() -> void:
     var fissures: int = 0
     var heated_lights: int = 0
     for child in seabed.get_children():
-        if child.name == "Camino_vulcanico_minerale":
+        if child.is_in_group("primordial_volcano"):
             volcanoes += 1
-        if child.name == "Termico_luce_arancio":
+        if child.is_in_group("thermal_source"):
             heated_lights += 1
-        if child is MeshInstance3D and child.material_override == seabed.get("dark_crack"):
+        if child.is_in_group("harmless_gas_fissure"):
             fissures += 1
+    print("GEOMETRY volcanic=%d hot_lights=%d inert_fissures=%d" % [volcanoes,heated_lights,fissures])
     assert(volcanoes == 2, "Exactly two volcanoes, no visual overcrowding")
     assert(heated_lights == 2, "Two local hazard lights")
     assert(fissures == 4, "Four harmless mineral cracks")
