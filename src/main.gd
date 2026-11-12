@@ -175,13 +175,23 @@ func _new_game() -> void:
     _create_entity("C-000", "", 0, "pre_luca", starter, Vector3.ZERO, true)
     # Anche il primo minuto offre nutrienti visibili vicino alla cellula,
     # con materiali abiotici distribuiti nel resto dell'oceano.
-    for i in range(68):
-        var center_spawn: bool = i < 24
-        var spread: float = 7.0 if center_spawn else 22.0
-        var x: float = rng.randf_range(-spread,spread)
-        var z: float = rng.randf_range(-spread,spread)
-        if center_spawn and Vector2(x,z).length() < 1.8:
-            x += 2.0 if x >= 0 else -2.0
+    for i in range(76):
+        var x: float = 0.0
+        var z: float = 0.0
+        if i < 20:
+            # Guaranteed early resource ring, not a hidden search in empty ocean.
+            var angle: float = TAU*float(i)/20.0+rng.randf_range(-.07,.07)
+            var distance: float = rng.randf_range(1.85,3.05)
+            x = cos(angle)*distance
+            z = sin(angle)*distance
+        elif i < 52:
+            x = rng.randf_range(-4.7,4.7)
+            z = rng.randf_range(-4.7,4.7)
+            if Vector2(x,z).length() < 1.65:
+                x += 2.2 if x >= 0 else -2.2
+        else:
+            x = rng.randf_range(-20.0,20.0)
+            z = rng.randf_range(-20.0,20.0)
         _create_nutrient(TYPES[i % 4], Vector3(x,.19,z))
     _close_overlay()
     _refresh_hud()
