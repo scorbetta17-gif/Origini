@@ -41,6 +41,9 @@ func _draw() -> void:
             continue
         if position.x < 13 or position.x > size.x-13:
             continue
+        # Avoid covering contextual action buttons at the bottom corners.
+        if position.y > size.y-404 and (position.x < 184 or position.x > size.x-184):
+            continue
         var kind: String = str(m.get("kind","carbon"))
         var r: float = clampf(float(m.get("scale",1.0))*14.5,11.0,16.0)
         var c: Color
