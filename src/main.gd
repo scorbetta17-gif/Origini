@@ -1508,57 +1508,133 @@ func _build_ui() -> void:
     layer.add_child(overlay)
     _layout_ui()
 
+func _theme_button(b: Button, bg: Color, rim: Color, font_size: int = 16, roundness: int = 16) -> void:
+    var normal: StyleBoxFlat = _style(bg,rim)
+    normal.set_corner_radius_all(roundness)
+    normal.shadow_color = Color(.0,.01,.03,.35)
+    normal.shadow_size = 4
+    b.add_theme_stylebox_override("normal",normal)
+    var hover: StyleBoxFlat = _style(bg.lightened(.13),rim.lightened(.18))
+    hover.set_corner_radius_all(roundness)
+    b.add_theme_stylebox_override("hover",hover)
+    var pressed: StyleBoxFlat = _style(bg.lightened(.23),rim.lightened(.23))
+    pressed.set_corner_radius_all(roundness)
+    b.add_theme_stylebox_override("pressed",pressed)
+    var focus_style: StyleBoxFlat = _style(Color.TRANSPARENT,rim.lightened(.28))
+    focus_style.set_corner_radius_all(roundness)
+    b.add_theme_stylebox_override("focus",focus_style)
+    b.add_theme_color_override("font_color",Color(.92,.97,.97))
+    b.add_theme_font_size_override("font_size",font_size)
+    b.clip_text = true
+
 func _layout_ui() -> void:
     if not is_instance_valid(hud):
         return
     var wh: Vector2 = get_viewport().get_visible_rect().size
+    if wh.x < 1 or wh.y < 1:
+        return
     hud.size = wh
     var portrait: bool = wh.y > wh.x
-    title_label.position = Vector2(20,14)
-    title_label.size = Vector2(wh.x-40,30)
-    status_label.position = Vector2(20,48)
-    status_label.size = Vector2(wh.x-40,29)
-    status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-    objective_label.position = Vector2(20,79)
-    objective_label.size = Vector2(wh.x-40,25)
-    partner_compass_label.position = Vector2(20,167)
-    partner_compass_label.size = Vector2(wh.x-40,24)
-    tips_label.position = Vector2(20,132)
-    tips_label.size = Vector2(wh.x-40,28)
-    hp_bar.position = Vector2(20,112)
-    hp_bar.size = Vector2(minf(wh.x*.16,175),8)
-    atp_bar.position = Vector2(30+hp_bar.size.x,112)
-    atp_bar.size = Vector2(minf(wh.x*.16,175),8)
-    joystick.size = Vector2(112,112)
-    joystick.position = Vector2(22,wh.y-150)
-    scission_bar.size = Vector2(minf(wh.x*.27,235),7)
-    scission_bar.position = Vector2(wh.x-scission_bar.size.x-16,wh.y-89)
-    # Gli strumenti secondari restano nel menu, ma le azioni sono conservate.
-    var primary: Array[String] = ["divide","enzymes","lysis","cooperate","focus","menu"]
-    for key in buttons:
-        buttons[key].visible = primary.has(str(key))
+    classic_hud.set_viewport(wh)
+    classic_hud.visible = portrait
+    for label in [title_label,status_label,objective_label]:
+        label.visible = not portrait
+    for bar in [hp_bar,atp_bar,scission_bar]:
+        bar.visible = not portrait
+
     if portrait:
-        var w: float = minf((wh.x-28.0)/3.0,132.0)
-        for i in range(primary.size()):
-            var b: Button = buttons[primary[i]]
-            b.position = Vector2(wh.x - 3*w - 12 + float(i%3)*w,wh.y-146 + float(i/3)*58)
-            b.size = Vector2(w-5,49)
-            b.add_theme_font_size_override("font_size",12)
+        # Coordinates are mobile-first based on a 720 px portrait canvas,
+        # then scaled together to retain original JavaScript-style spacing.
+        var ui: float = clampf(wh.x/720.0,.62,1.65)
+        var bw: float = wh.x/ui
+        var bh: float = wh.y/ui
+        var compact: bool = bh < 1120
+        var tab_y: float = 365.0 if compact else 391.0
+        var tabs: Array[String] = ["nutrients","tree","goals","genealogy"]
+        var actions: Array[String] = ["regen","cooperate","focus","enzymes","lysis","menu"]
+        for key in buttons:
+            buttons[key].visible = tabs.has(str(key)) or actions.has(str(key)) or str(key) == "divide"
+        var tab_width: float = (bw-38.0-3.0*8.0)/4.0
+        for i in range(tabs.size()):
+            var tab: Button = buttons[tabs[i]]
+            tab.position = Vector2(19+float(i)*(tab_width+8.0),tab_y)*ui
+            tab.size = Vector2(tab_width,43)*ui
+            tab.text = ("RISORSE" if i == 0 else ("EVOLUZIONE" if i == 1 else ("META" if i == 2 else "LINEA"))) if i != 1 else "EVOLUZIONE (%d)" % mutation_points
+            _theme_button(tab,Color(.025,.19,.225,.97),Color(.25,.67,.66,.85),14)
+        var left: Array[String] = ["regen","cooperate","focus"]
+        var right: Array[String] = ["enzymes","lysis","menu"]
+        var action_top: float = bh-383.0
+        for i in range(3):
+            var b_left: Button = buttons[left[i]]
+            b_left.position = Vector2(18,action_top+float(i)*68.0)*ui
+            b_left.size = Vector2(151,60)*ui
+            _theme_button(b_left,Color(.025,.16,.195,.94),Color(.28,.70,.69,.82),14)
+            var b_right: Button = buttons[right[i]]
+            b_right.position = Vector2(bw-169,action_top+float(i)*68.0)*ui
+            b_right.size = Vector2(151,60)*ui
+            _theme_button(b_right,Color(.16,.12,.18,.93) if i == 0 else Color(.075,.13,.17,.94),
+                Color(.84,.57,.46,.85) if i == 0 else Color(.34,.52,.61,.75),14)
+        joystick.radius = 62.0*ui
+        joystick.size = Vector2(150,150)*ui
+        joystick.position = Vector2(19,bh-181)*ui
+        scission_button.position = Vector2(bw-169,bh-177)*ui
+        scission_button.size = Vector2(150,145)*ui
+        _theme_button(scission_button,Color(.38,.28,.57,.99),Color(.79,.66,.96,.98),21,73)
+        partner_compass_label.position = Vector2(181,bh*.59)*ui
+        partner_compass_label.size = Vector2(maxf(170,bw-362),34)*ui
+        partner_compass_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        partner_compass_label.add_theme_color_override("font_color",Color(.67,.94,.85))
+        partner_compass_label.add_theme_font_size_override("font_size",14)
+        toast_back.position = Vector2(173,bh*.48)*ui
+        toast_back.size = Vector2(maxf(173,bw-346),78)*ui
+        tips_label.position = toast_back.position+Vector2(12,12)*ui
+        tips_label.size = toast_back.size-Vector2(24,22)*ui
+        tips_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        tips_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+        tips_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        tips_label.add_theme_font_size_override("font_size",14)
     else:
-        var w: float = minf(108.0,(wh.x-160.0)/6.0)
-        for i in range(primary.size()):
-            var b: Button = buttons[primary[i]]
-            b.position = Vector2(wh.x-(6.0*w+18.0)+float(i)*w,wh.y-70)
-            b.size = Vector2(w-6,51)
-            b.add_theme_font_size_override("font_size",13)
+        # Preserve functional landscape support for desktop Godot and tests.
+        title_label.position = Vector2(18,12)
+        title_label.size = Vector2(wh.x-36,28)
+        status_label.position = Vector2(18,45)
+        status_label.size = Vector2(wh.x-36,25)
+        objective_label.position = Vector2(18,78)
+        objective_label.size = Vector2(wh.x-36,26)
+        hp_bar.position = Vector2(18,116)
+        hp_bar.size = Vector2(170,9)
+        atp_bar.position = Vector2(196,116)
+        atp_bar.size = Vector2(170,9)
+        scission_bar.position = Vector2(wh.x-250,wh.y-100)
+        scission_bar.size = Vector2(230,8)
+        var landscape_keys: Array[String] = ["divide","regen","enzymes","lysis","cooperate","focus","menu"]
+        for key in buttons:
+            buttons[key].visible = landscape_keys.has(str(key))
+        for i in range(landscape_keys.size()):
+            var btn: Button = buttons[landscape_keys[i]]
+            btn.position = Vector2(wh.x-(landscape_keys.size()-float(i))*119.0-6.0,wh.y-85)
+            btn.size = Vector2(113,61)
+            _theme_button(btn,Color(.031,.15,.185,.94),Color(.29,.69,.71,.81),13)
+        joystick.radius = 49.0
+        joystick.size = Vector2(116,116)
+        joystick.position = Vector2(18,wh.y-140)
+        partner_compass_label.position = Vector2(24,148)
+        partner_compass_label.size = Vector2(wh.x-48,25)
+        toast_back.position = Vector2(wh.x*.32,wh.y*.48)
+        toast_back.size = Vector2(wh.x*.36,62)
+        tips_label.position = toast_back.position+Vector2(12,8)
+        tips_label.size = toast_back.size-Vector2(24,16)
+
     overlay.size = wh
     if is_instance_valid(overlay_scroll):
-        overlay_scroll.position = Vector2(14,92)
-        overlay_scroll.size = Vector2(maxf(100.0,wh.x-28),maxf(100.0,wh.y-107))
+        var ov_scale: float = clampf(wh.x/720.0,.62,1.65) if portrait else 1.0
+        overlay_scroll.position = Vector2(14,92)*ov_scale
+        overlay_scroll.size = Vector2(maxf(100.0,wh.x-28*ov_scale),maxf(100.0,wh.y-107*ov_scale))
     for child in overlay.get_children():
         if child is MutationTree or child is LineageView:
-            child.position = Vector2(10,92)
-            child.size = Vector2(wh.x-20,wh.y-116)
+            var u: float = clampf(wh.x/720.0,.62,1.65) if portrait else 1.0
+            child.position = Vector2(10,92)*u
+            child.size = Vector2(wh.x-20*u,wh.y-116*u)
 
 func _open_overlay(title: String, subtitle: String) -> void:
     overlay.visible = true
