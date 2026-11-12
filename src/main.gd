@@ -9,6 +9,8 @@ const OceanScript = preload("res://src/primordial_ocean.gd")
 const TreeScript = preload("res://src/mutation_tree.gd")
 const LineageScript = preload("res://src/lineage_view.gd")
 const JoystickScript = preload("res://src/virtual_joystick.gd")
+const ClassicHudScript = preload("res://src/classic_hud.gd")
+const PhenotypePortraitScript = preload("res://src/phenotype_portrait.gd")
 const SAVE_PATH = "user://origini_067.json"
 # Biomi termici localizzati: il resto dell'oceano resta temperato e spoglio.
 const THERMAL_SOURCES = [Vector2(-11.0, 3.0), Vector2(16.0, -14.0)]
@@ -94,6 +96,8 @@ var eco_tick: float = 0.0
 var autosave_timer: float = 0.0
 var notice_expires: float = -1.0
 var hud: Control
+var classic_hud: OriginiClassicHud
+var toast_back: Panel
 var overlay: ColorRect
 var overlay_scroll: ScrollContainer
 var overlay_list: VBoxContainer
@@ -392,6 +396,8 @@ func _process(delta: float) -> void:
     t += delta
     if is_instance_valid(tips_label) and notice_expires >= 0 and t > notice_expires:
         tips_label.visible = false
+        if is_instance_valid(toast_back):
+            toast_back.visible = false
     regeneration_cooldown = maxf(0.0,regeneration_cooldown-delta)
     skill_cooldown = maxf(0.0,skill_cooldown-delta)
     autosave_timer += delta
@@ -1020,6 +1026,22 @@ func _on_cooperate() -> void:
     else:
         _notice("Adesione stabilita: mantieni la vicinanza per lo scambio metabolico")
 
+func _on_resources() -> void:
+    if not entities.has(player_id):
+        return
+    _open_overlay("NUTRIENTI E RISORSE", "Raccogli le sostanze necessarie per scissione ed energia.")
+    for info in [
+        ["Carbonio", "carbon", 24.0, "Fonte di scheletri carboniosi per biomassa"],
+        ["Amminoacidi", "amino", 15.0, "Precursori per sistemi catalitici"],
+        ["Lipidi", "lipid", 12.0, "Costituenti di membrana e vescicole"],
+        ["Nucleotidi", "nucleic", 8.0, "Precursori dei polimeri ereditari"],
+        ["Biomassa", "biomass", 65.0, "Crescita complessiva e preparazione alla divisione"]
+    ]:
+        var value: float = float(resources.get(str(info[1]),0.0))
+        _add_overlay_label("%s   %d / %d\n%s" % [str(info[0]),int(value),int(float(info[2])),str(info[3])])
+    _add_overlay_label("ATP: %d / 100  ·  HP: %d / 100" % [int(atp),int(hp)])
+    _add_overlay_button("COME GIOCARE",_on_guide)
+
 func _on_tree() -> void:
     _open_overlay("ALBERO EVOLUTIVO", "Specializza la tua linea: 288 nodi collegati, sei rami")
     overlay_scroll.visible = false
@@ -1284,6 +1306,8 @@ func _notice(message: String) -> void:
     if is_instance_valid(tips_label):
         tips_label.text = message
         tips_label.visible = true
+        if is_instance_valid(toast_back):
+            toast_back.visible = true
         tips_label.add_theme_color_override("font_color",Color(.95,.90,.71))
         notice_expires = t+5.0
 
@@ -1335,7 +1359,55 @@ func _refresh_hud() -> void:
             var ready: bool = PhaseScript.can_adhere(traits,entities[closest_id]["traits"])
             partner_compass_label.text = "BACTERIA  %s  %.1f m  ·  %s" % [arrow,nearest,"adesione compatibile" if ready else "altro fenotipo"]
             partner_compass_label.visible = true
-    buttons["tree"].text = "ALBERO (%d)" % mutation_points
+    buttons["tree"].text = "EVOLUZIONE (%d)" % mutation_points
+    if is_instance_valid(classic_hud):
+        var step: int = 1
+        var chapter_title: String = "1/3 · PRIMA DISCENDENZA"
+        var chapter_detail: String = "LA TUA PRIMA SCISSIONE"
+        var chapter_fraction: float = clampf(scission_bar.value/100.0,0.0,1.0)
+        if bool(traits.get("dna",false)):
+            step = 2
+            chapter_title = "2/3 · DIVERSIFICAZIONE"
+            chapter_detail = "BACTERIA E ARCHAEA: LINEE SORELLE"
+            chapter_fraction = 1.0 if str(entities[player_id]["branch"]) in ["bacteria","archaea"] else .50
+        if str(entities[player_id]["branch"]) == "archaea":
+            step = 3
+            chapter_title = "3/3 · COOPERAZIONE CELLULARE"
+            chapter_detail = "ASSOCIAZIONE PROCARIOTICA · FASE 2"
+            var done: int = 0
+            for key in ["discovered","adhesion","exchanged","stable","transmitted"]:
+                if bool(phase2_progress.get(key,false)):
+                    done += 1
+            chapter_fraction = float(done)/5.0
+        if bool(phase2_progress.get("complete",false)):
+            chapter_title = "FASE 2 COMPLETATA · CONSORZIO STABILE"
+            chapter_detail = "NUOVE GENERAZIONI · NUOVE POSSIBILITA"
+            chapter_fraction = 1.0
+        var elapsed_seconds: int = int(t)
+        var simple_objective: String = objective_label.text
+        if simple_objective.length() > 68:
+            simple_objective = simple_objective.substr(0,65)+"..."
+        classic_hud.configure({
+            "gen":generation,"branch":stage,
+            "elapsed":"%02d:%02d" % [int(elapsed_seconds/60),elapsed_seconds%60],
+            "temp":_temperature_at(player.position),
+            "atp":atp,"hp":hp,
+            "carbon":resources["carbon"],"amino":resources["amino"],
+            "lipid":resources["lipid"],"nucleic":resources["nucleic"],
+            "chapter":chapter_title,"chapter_detail":chapter_detail,
+            "objective":simple_objective,"chapter_progress":chapter_fraction,
+            "fission":clampf(scission_bar.value/100.0,0.0,1.0),
+            "can_divide":_can_divide(),
+            "requirements_1":"C %d/24    A %d/15" % [int(resources["carbon"]),int(resources["amino"])],
+            "requirements_2":"L %d/12    N %d/8" % [int(resources["lipid"]),int(resources["nucleic"])],
+            "requirements_3":"BIO %d/65   ATP %d/30" % [int(resources["biomass"]),int(atp)]
+        })
+        buttons["enzymes"].text = "✦ ENZIMI\n12 ATP · PRONTI" if GenomeScript.has(traits,"hydrolase_secretion") else "✦ ENZIMI\nGENE RICHIESTO"
+        buttons["lysis"].text = "✷ LISI\n18 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"
+        buttons["cooperate"].text = "∞ COOPERA\nFASE 2" if str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nARCHAEA"
+        buttons["regen"].text = "✚ RIGENERA\n30 HP"
+        buttons["menu"].text = "☰ MENU\nOPZIONI"
+        scission_button.text = "◌  ◌\nDIVIDI"
 
 func _style(color: Color, outline: Color) -> StyleBoxFlat:
     var s := StyleBoxFlat.new()
@@ -1375,6 +1447,9 @@ func _build_ui() -> void:
     hud = Control.new()
     hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
     layer.add_child(hud)
+    classic_hud = ClassicHudScript.new()
+    classic_hud.name = "MobileClassicHUD"
+    hud.add_child(classic_hud)
     title_label = _label("ORIGINI",21)
     hud.add_child(title_label)
     status_label = _label("ATP · HP · biomassa",15)
@@ -1410,14 +1485,22 @@ func _build_ui() -> void:
     _button("ENZIMI",func():_on_skill("enzyme"),"enzymes")
     _button("LISI",func():_on_skill("lysis"),"lysis")
     _button("COOPERA",_on_cooperate,"cooperate")
+    _button("RISORSE",_on_resources,"nutrients")
     _button("ALBERO",_on_tree,"tree")
-    _button("LINEE",_on_genealogy,"genealogy")
-    _button("OBIETTIVO",_on_goals,"goals")
+    _button("LINEA",_on_genealogy,"genealogy")
+    _button("META",_on_goals,"goals")
     _button("SALVA",_save_game,"save")
     _button("CARICA",_load_game,"load")
     _button("GENOMA",_on_genome,"genome")
     _button("CELLULA",_toggle_focus,"focus")
     _button("MENU",_open_main_menu,"menu")
+    toast_back = Panel.new()
+    toast_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    toast_back.add_theme_stylebox_override("panel",_style(Color(.018,.12,.16,.94),Color(.37,.74,.75,.85)))
+    toast_back.visible = false
+    hud.add_child(toast_back)
+    tips_label.reparent(hud)
+    hud.move_child(tips_label,hud.get_child_count()-1)
     overlay = ColorRect.new()
     overlay.color = Color(.005,.025,.040,.97)
     overlay.visible = false
