@@ -16,6 +16,8 @@ var molten: StandardMaterial3D
 var dust_root: MultiMeshInstance3D
 var bubbles: MultiMeshInstance3D
 var bubble_sources: Array[Dictionary] = []
+# CPU world state is readable even when headless Godot disables GPU readback.
+var bubble_positions: Array[Vector3] = []
 var bubble_time: float = 0.0
 
 func setup(rng: RandomNumberGenerator) -> void:
@@ -267,6 +269,7 @@ func _build_bubbles() -> void:
     bubbles = MultiMeshInstance3D.new()
     bubbles.name = "Bolle_che_risalgo"
     bubbles.multimesh = multimesh
+    bubble_positions.resize(bubble_sources.size())
     bubbles.material_override = bubble_mat
     bubbles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(bubbles)
@@ -290,6 +293,7 @@ func _animate_bubbles() -> void:
             sin(seed+bubble_time*.48+rise*6.0)*sway,h,
             cos(seed*1.72+bubble_time*.37+rise*5.0)*sway)
         var radius: float = float(b["radius"])*(1.0+.20*sin(bubble_time*.6+seed))
+        bubble_positions[i] = pos
         var transform := Transform3D(Basis.IDENTITY.scaled(Vector3.ONE*radius),pos)
         mesh.set_instance_transform(i,transform)
 
