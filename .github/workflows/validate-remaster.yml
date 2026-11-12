@@ -96,10 +96,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: App di test separata per non sovrascrivere demo-6
         run: |
-          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.classic"@' export_presets.cfg
+          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.classic73"@' export_presets.cfg
           sed -i 's@package/name="ORIGINI"@package/name="ORIGINI CLASSIC"@' export_presets.cfg
-          sed -i 's@version/name="0.67-demo"@version/name="0.72-classic-vulkan"@' export_presets.cfg
-          sed -i 's@version/code=67@version/code=72@' export_presets.cfg
+          sed -i 's@version/name="0.67-demo"@version/name="0.73-classic-vulkan"@' export_presets.cfg
+          sed -i 's@version/code=67@version/code=73@' export_presets.cfg
           grep -q 'org.origini.mobile.classic' export_presets.cfg
       - name: Installa Godot e modelli di esportazione
         uses: chickensoft-games/setup-godot@v2
@@ -144,14 +144,14 @@ jobs:
           test -s build/android/ORIGINI-VULKAN-PREVIEW.apk
           unzip -t build/android/ORIGINI-VULKAN-PREVIEW.apk >/dev/null
           unzip -Z1 build/android/ORIGINI-VULKAN-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
-          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging build/android/ORIGINI-VULKAN-PREVIEW.apk | grep -q "org.origini.mobile.classic"
+          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging build/android/ORIGINI-VULKAN-PREVIEW.apk | grep -q "org.origini.mobile.classic73"
       - name: Crea variante OpenGL Compatibility per telefoni non Vulkan
         run: |
           sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
           sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
           sed -i 's@org.origini.mobile.classic@org.origini.mobile.classic.compat@' export_presets.cfg
           sed -i 's@ORIGINI CLASSIC@ORIGINI CLASSIC COMPAT@' export_presets.cfg
-          sed -i 's@0.72-classic-vulkan@0.72-classic-compat@' export_presets.cfg
+          sed -i 's@0.73-classic-vulkan@0.73-classic-compat@' export_presets.cfg
           godot --headless --path . --editor --quit
       - name: Esporta APK Android Compatibility
         run: godot --headless --path . --export-debug Android build/android/ORIGINI-COMPAT-PREVIEW.apk
