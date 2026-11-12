@@ -1146,6 +1146,21 @@ func _on_tree() -> void:
     tree_view.mutation_unlocked.connect(_on_tree_mutation)
     overlay.add_child(tree_view)
     _layout_ui()
+    var scale_factor: float = clampf(overlay.size.x/720.0,.62,1.65) if overlay.size.y > overlay.size.x else 1.0
+    var right: float = overlay.size.x-81.0*scale_factor
+    for i in range(3):
+        var control := Button.new()
+        control.text = ["−","+","◎"][i]
+        control.position = Vector2(right,277.0*scale_factor+float(i)*59.0*scale_factor)
+        control.size = Vector2(49,49)*scale_factor
+        _theme_button(control,Color(.034,.18,.23,.94),Color(.32,.63,.69,.80),22,14)
+        overlay.add_child(control)
+        if i == 0:
+            control.pressed.connect(func(): tree_view.zoom_by(.83))
+        elif i == 1:
+            control.pressed.connect(func(): tree_view.zoom_by(1.20))
+        else:
+            control.pressed.connect(func(): tree_view.center_view())
 
 func _on_tree_mutation(id: int,stat: String,value: float,cost: int) -> void:
     if purchased.has(str(id)) or mutation_points < cost:
@@ -1733,8 +1748,8 @@ func _layout_ui() -> void:
     for child in overlay.get_children():
         if child is MutationTree or child is LineageView:
             var u: float = clampf(wh.x/720.0,.62,1.65) if portrait else 1.0
-            child.position = Vector2(10,92)*u
-            child.size = Vector2(wh.x-20*u,wh.y-116*u)
+            child.position = Vector2(34,145)*u
+            child.size = Vector2(wh.x-68*u,wh.y-183*u)
 
 func _open_overlay(title: String, subtitle: String) -> void:
     overlay.visible = true
@@ -1757,7 +1772,8 @@ func _open_overlay(title: String, subtitle: String) -> void:
     panel_style.set_border_width_all(2)
     overlay_panel.add_theme_stylebox_override("panel",panel_style)
     overlay.add_child(overlay_panel)
-    var eyebrow := _label("DISCENDENZA  ·  SELEZIONE DEI CARATTERI",13)
+    var eyebrow_text: String = "DISCENDENZA  ·  SELEZIONE DEI CARATTERI" if title.begins_with("DIVISIONE") else "ORIGINI  ·  ARCHIVIO EVOLUTIVO"
+    var eyebrow := _label(eyebrow_text,13)
     eyebrow.add_theme_color_override("font_color",Color(.43,.90,.78))
     eyebrow.position = Vector2(36,34)*u
     eyebrow.size = Vector2(wh.x/u-178,20)*u
