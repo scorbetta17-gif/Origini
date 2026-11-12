@@ -1,5 +1,5 @@
 extends Node3D
-## ORIGINI 0.67 — prima ricostruzione grafica e giocabile con Godot 4.x.
+## ORIGINI — campagna cellulare, Fasi 1 e 2.
 ## Scene 3D reali, camera isometrica, fenotipi procedurali, UI mobile.
 
 const Balance = preload("res://src/mutation_balance.gd")
@@ -21,6 +21,9 @@ const PhenotypePortraitScript = preload("res://src/phenotype_portrait.gd")
 const NutrientMarkersScript = preload("res://src/nutrient_markers.gd")
 const CellWorldGlyphScript = preload("res://src/cell_world_glyphs.gd")
 const SAVE_PATH = "user://origini_067.json"
+const PHASE_TWO_CHECKPOINT = "user://origini_phase_two.json"
+var cooperation_target: String = ""
+var exchange_active: bool = false
 # Biomi termici localizzati: il resto dell'oceano resta temperato e spoglio.
 const THERMAL_SOURCES = [Vector2(-11.0, 3.0), Vector2(16.0, -14.0)]
 const THERMAL_AMPLITUDE = [92.0, 62.0]
@@ -179,6 +182,8 @@ func _new_game() -> void:
     skill_cooldown = 0.0
     selected_target_id = ""
     selected_nutrient = null
+    cooperation_target = ""
+    exchange_active = false
     attack_mode = ""
     division_options.clear()
     is_paused = false
@@ -407,6 +412,8 @@ func _activate_lineage(id: String) -> void:
     selected_target_id = ""
     selected_nutrient = null
     selected_substrate = null
+    cooperation_target = ""
+    exchange_active = false
     attack_mode = ""
     if is_instance_valid(joystick):
         joystick.set_controls_enabled(true)
@@ -470,8 +477,11 @@ func _process(delta: float) -> void:
         selected_target_id = ""
         selected_nutrient = null
         selected_substrate = null
+        cooperation_target = ""
         attack_mode = ""
         _move_player(direction.normalized(),delta)
+    elif atp > 0.0 and cooperation_target != "":
+        _approach_partner(delta)
     elif atp > 0.0 and (selected_target_id != "" or is_instance_valid(selected_nutrient) or is_instance_valid(selected_substrate)):
         _follow_attack(delta)
     else:
@@ -505,6 +515,9 @@ func _process(delta: float) -> void:
     if eco_tick >= .22:
         _update_ecosystem(eco_tick)
         eco_tick = 0.0
+    if hp<=0.0:
+        _game_over()
+        return
     _advance_phase_one(delta)
     # Phase 2 is a separately unlocked mission, not a forced part of Phase 1.
     if bool(phase1_progress.get("complete",false)):
@@ -513,6 +526,7 @@ func _process(delta: float) -> void:
     _cache_current()
     if hp <= 0:
         _game_over()
+        return
     if autosave_timer > 24.0:
         _save_game()
         autosave_timer = 0.0
@@ -543,7 +557,7 @@ func _setup_metabolic_visuals() -> void:
         metabolism_particles.append(n)
 
 func _update_metabolic_visuals() -> void:
-    var active: bool = entities.has(player_id) and partner_id != "" and entities.has(partner_id)
+    var active: bool = exchange_active and entities.has(player_id) and partner_id != "" and entities.has(partner_id)
     if active:
         var archaeal: Dictionary = entities[player_id]["traits"]
         var bacterial: Dictionary = entities[partner_id]["traits"]
@@ -570,6 +584,7 @@ func _advance_phase_one(delta: float) -> void:
         # Capture the actual distribution after a prolonged final-generation
         # competition. We do not artificially force intermediate dominance.
         _save_game()
+        _save_game(PHASE_TWO_CHECKPOINT)
         _open_phase_intro(2)
 
 func _open_phase_intro(number: int) -> void:
@@ -597,9 +612,10 @@ func _open_phase_intro(number: int) -> void:
         for line in PhaseScript.objective_lines(phase2_progress):
             _add_overlay_label(line)
         _add_overlay_label("Crea un consorzio Bacteria–Archaea stabile e trasmissibile, senza endosimbiosi in questa fase.")
-        _add_overlay_button("INIZIA · FASE 2",_close_overlay)
+        _add_overlay_button("INIZIA · FASE 2",_on_phase_two)
 
 func _advance_phase_two(delta: float) -> void:
+    exchange_active = false
     if not entities.has(player_id) or str(entities[player_id]["branch"]) != "archaea":
         return
     for id in entities:
@@ -624,6 +640,7 @@ func _advance_phase_two(delta: float) -> void:
         entities[player_id]["traits"],partner["traits"],
         float(resources.get("carbon",0.0)),float(partner.get("energy",0.0)))
     phase2_progress = result["progress"]
+    exchange_active = bool(result["exchange_active"])
     resources["carbon"] = maxf(0.0,float(resources["carbon"])-float(result["carbon_cost"]))
     atp = minf(100.0,atp+float(result["atp_gain"]))
     partner["energy"] = clampf(float(partner["energy"])+float(result["bacterial_energy_delta"]),0.0,85.0)
@@ -917,7 +934,7 @@ func _update_npc_motion(delta: float) -> void:
     # Render-frame interpolation. Decision-making happens every 0.22s,
     # but motion and ATP consumption run EVERY frame: no jerky daughter NPCs.
     for id in entities.keys():
-        if id == player_id or not entities.has(id):
+        if id == player_id or not entities.has(id) or float(entities[id].get("hp",0))<=0.0:
             continue
         var e: Dictionary = entities[id]
         var c: CellVisual = e["node"]
@@ -948,7 +965,7 @@ func _update_npc_motion(delta: float) -> void:
 func _update_ecosystem(dt: float) -> void:
     var ids: Array = entities.keys()
     for id in ids:
-        if id == player_id or not entities.has(id):
+        if id == player_id or not entities.has(id) or float(entities[id].get("hp",0))<=0.0:
             continue
         var e: Dictionary = entities[id]
         var c: CellVisual = e["node"]
@@ -978,14 +995,15 @@ func _update_ecosystem(dt: float) -> void:
                 speed = minf(maxf(speed,1.10),1.50)
             else:
                 dir = Vector3.ZERO
-                target_idx = -1
+                if target_idx>=0 and float(e["energy"])<18.0 and nutrients[target_idx]["node"].position.distance_to(player.position)<2.8:
+                    dir = nutrients[target_idx]["node"].position-c.position
         else:
             var closest_threat: String = ""
             var threat_distance: float = 4.6
             var closest_prey: String = ""
             var prey_distance: float = 4.1
             for other_id in entities:
-                if other_id == id:
+                if other_id == id or (str(id)==partner_id and str(other_id)==player_id):
                     continue
                 var other: Dictionary = entities[other_id]
                 if not is_instance_valid(other["node"]):
@@ -1031,7 +1049,7 @@ func _update_ecosystem(dt: float) -> void:
             var nearest_id: String = ""
             var best: float = 1.12
             for other_id in entities:
-                if other_id == id:
+                if other_id == id or (str(id)==partner_id and str(other_id)==player_id):
                     continue
                 var other: Dictionary = entities[other_id]
                 var dist: float = c.position.distance_to(other["node"].position)
@@ -1051,7 +1069,7 @@ func _update_ecosystem(dt: float) -> void:
                         _remove_entity(nearest_id,"predazione")
                         _award_bundle(Balance.KILL_REWARD,false,str(id))
     # The Phase 2 bacterial partner arises from an independent lineage.
-    if bool(phase1_progress.get("complete",false)) and generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 12.0:
+    if bool(phase1_progress.get("complete",false)) and generation >= 3 and entities[player_id]["branch"] == "archaea" and _compatible_partner(24.0)=="" and entities.size()<npc_population_cap and t-last_external_arrival >= 20.0:
         _create_external_bacterium()
 
 func _has_external_bacteria() -> bool:
@@ -1071,7 +1089,7 @@ func _create_external_bacterium() -> void:
     traits = GenomeScript.grant(traits,"membrane_transport",0,"linea_esterna","bacteria")
     var new_id: String = "E-%03d" % next_id
     next_id += 1
-    _create_entity(new_id,"",0,"bacteria",traits,player.position+Vector3(rng.randf_range(2.5,3.3),0,rng.randf_range(-1.4,1.4)),false,true)
+    _create_entity(new_id,"",0,"bacteria",traits,_world_position(player.position+Vector3(rng.randf_range(2.5,3.3),0,rng.randf_range(-1.4,1.4))),false,true)
 
 func _divide_npc(id: String) -> void:
     if not entities.has(id):
@@ -1166,6 +1184,8 @@ func _mutated_traits(source: Dictionary, child_generation: int, branch: String) 
     return GenomeScript.express(traits,branch)
 
 func _can_divide() -> bool:
+    if hp<=0.0:
+        return false
     for key in NEED:
         if float(resources[key]) < float(NEED[key]) - 0.001:
             return false
@@ -1339,6 +1359,8 @@ func _choose_daughter(choice: int) -> void:
     var gen: int = generation+1
     var old_partner: String = partner_id
     var old_phase: float = phase_two
+    if bool(phase1_progress.get("complete",false)):
+        _advance_phase_two(0.0)
     var parent_phase: Dictionary = PhaseScript.normalize(phase2_progress)
     var old_resources: Dictionary = resources.duplicate(true)
     var old_hp: float = hp
@@ -1383,7 +1405,7 @@ func _choose_daughter(choice: int) -> void:
     var phase2_finished: bool = bool(phase2_progress.get("complete",false))
     _close_overlay()
     _save_game()
-    if phase2_finished:
+    if phase2_finished and not bool(parent_phase.get("complete",false)):
         _open_overlay("FASE 2 COMPLETATA", "Un consorzio metabolico stabile ha trasmesso la capacita di cooperare a una figlia.")
         _add_overlay_label("Il genoma eredita adesine e trasportatori; il partner rimane una cellula Bacteria distinta.")
         _add_overlay_label("Traguardo: associazione procariotica cooperativa. NON endosimbiosi, nucleo o mitocondri.")
@@ -1393,6 +1415,8 @@ func _choose_daughter(choice: int) -> void:
         _notice("Scissione completata · %s · +2 punti" % chosen_id)
 
 func _on_regen() -> void:
+    if hp<=0.0:
+        return
     if atp <= 0.0:
         _notice("ATP esaurito: non puoi rigenerare finché non assorbi nutrienti")
         return
@@ -1411,6 +1435,7 @@ func _on_regen() -> void:
     _notice("+30 HP · consumato il 10% delle riserve")
 
 func _on_skill(mode: String) -> void:
+    cooperation_target = ""
     if atp <= 0.0:
         _notice("ATP esaurito: nessuna capacità attivabile")
         return
@@ -1445,7 +1470,7 @@ func _on_skill(mode: String) -> void:
     var dist: float = 8.0
     if mode == "lysis" or attack_strength >= 1.10:
         for id in entities:
-            if id == player_id:
+            if id == player_id or str(id)==partner_id:
                 continue
             var d: float = player.position.distance_to(entities[id]["node"].position)
             if d < dist:
@@ -1533,7 +1558,7 @@ func _on_cooperate() -> void:
         _notice("La Fase 2 segue una linea Archaea; Bacteria resta separata")
         return
     if partner_id != "" and entities.has(partner_id) and bool(phase2_progress.get("bonded",false)):
-        _notice("Adesione attiva: mantieni vicinanza e scambia metaboliti")
+        _on_phase_two()
         return
     var traits: Dictionary = entities[player_id]["traits"]
     if not GenomeScript.has(traits,"surface_recognition") and not GenomeScript.has(traits,"eps_biosynthesis"):
@@ -1545,14 +1570,14 @@ func _on_cooperate() -> void:
         if id == player_id or str(entities[id]["branch"]) != "bacteria":
             continue
         var bacterial: Dictionary = entities[id]["traits"]
-        if not PhaseScript.can_adhere(traits,bacterial):
+        if not PhaseScript.can_adhere(traits,bacterial) or int(bacterial.get("transporters",0))<=0:
             continue
         var d: float = entities[id]["node"].position.distance_to(player.position)
         if d < distance:
             closest = str(id)
             distance = d
     if closest == "":
-        _notice("Nessuna Bacteria compatibile vicino. Raggiungila e riprova.")
+        _seek_partner()
         return
     phase2_progress = PhaseScript.bind(phase2_progress,traits,entities[closest]["traits"],closest,distance)
     if not bool(phase2_progress["bonded"]):
@@ -1667,10 +1692,12 @@ func _on_genealogy() -> void:
     _layout_ui()
 
 func _switch_lineage(id: String) -> void:
-    if id == player_id or not entities.has(id):
+    if id == player_id or not entities.has(id) or float(entities[id].get("hp",0))<=0.0:
         _notice("Linea non viva oppure gia' controllata")
         return
     _cache_current()
+    if hp<=0.0:
+        _remove_entity(player_id,"morte")
     _activate_lineage(id)
     # Il legame appartiene alla linea attiva: non azzerare un consorzio
     # valido quando il giocatore torna a una Archaea precedentemente legata.
@@ -1688,9 +1715,11 @@ func _open_main_menu() -> void:
     _add_overlay_button("Come giocare",_on_guide)
     _add_overlay_button("Salva partita",_save_game)
     _add_overlay_button("Carica partita",_load_game)
+    if FileAccess.file_exists(PHASE_TWO_CHECKPOINT):
+        _add_overlay_button("Rigioca dall'inizio della Fase 2",_load_game.bind(PHASE_TWO_CHECKPOINT))
 
 func _on_guide() -> void:
-    _open_overlay("GUIDA ORIGINI", "Fase 1 e Fase 2 · versione giocabile 0.70")
+    _open_overlay("GUIDA ORIGINI", "Origine, diversificazione e cooperazione procariotica")
     _add_overlay_label("MUOVITI con joystick tattile o WASD/frecce. Premi CELLULA per osservare il fenotipo da vicino.")
     _add_overlay_label("NUTRIZIONE: avvicinati ai piccoli nutrienti minerali/organici. Raccogli C, A, L, N e biomassa, poi SCISSIONE.")
     _add_overlay_label("OGNI DIVISIONE produce due figlie vive. Scegli quale controllare; l'altra prosegue come NPC. Il genoma e la genealogia sono ereditati.")
@@ -1700,6 +1729,7 @@ func _on_guide() -> void:
     _add_overlay_label("Quando sei vicino, premi COOPERA. Mantieni il contatto per almeno 12 secondi di scambio e 25 secondi di stabilita.")
     _add_overlay_label("Lo scambio usa carbonio e l'energia batterica: raccogli nuove risorse prima di SCISSIONE. Infine scegli la figlia che mantiene il consorzio.")
     _add_overlay_label("GENOMA mostra i loci; ALBERO offre bonus numerici, ma soltanto i loci maggiori fanno apparire nuove strutture.")
+    _add_overlay_label("COOPERA: cerca un partner compatibile, gestisci lo scambio o separa il consorzio. Sospendi lo scambio per conservare carbonio prima della divisione.")
     _add_overlay_label("SALVA e CARICA sono nel MENU. Puoi cambiare linea dalla genealogia. Fumaioli caldi causano danni senza termotolleranza.")
     _add_overlay_button("VEDI OBIETTIVI",_on_goals)
 
@@ -1726,28 +1756,124 @@ func _on_goals() -> void:
             _add_overlay_label(line)
         _add_overlay_button("GUIDA FASE 2",_on_phase_two)
 
+func _world_position(at: Vector3) -> Vector3:
+    return Vector3(clampf(at.x,-world_radius,world_radius),at.y,clampf(at.z,-world_radius,world_radius))
+
+func _compatible_partner(radius: float = INF) -> String:
+    var best: String = ""
+    for id in entities:
+        var e: Dictionary = entities[id]
+        if str(id)==player_id or str(e["branch"])!="bacteria" or float(e["hp"])<=0:
+            continue
+        if not bool(e["traits"].get("adhesion",false)) or int(e["traits"].get("transporters",0))<=0:
+            continue
+        var distance: float = player.position.distance_to(e["node"].position)
+        if distance<radius:
+            best = str(id)
+            radius = distance
+    return best
+
+func _seek_partner() -> void:
+    if not bool(phase1_progress.get("complete",false)) or str(entities[player_id]["branch"])!="archaea":
+        return
+    cooperation_target = _compatible_partner(24.0)
+    if cooperation_target=="" and entities.size()<npc_population_cap and t-last_external_arrival>=20.0:
+        _create_external_bacterium()
+        cooperation_target = _compatible_partner(24.0)
+    if cooperation_target=="":
+        _notice("Esplora la zona: attendi l'arrivo di una Bacteria compatibile")
+        _close_overlay()
+        return
+    selected_target_id = ""
+    selected_nutrient = null
+    selected_substrate = null
+    _close_overlay()
+    _notice("Avvicinamento al partner · il joystick annulla la ricerca")
+
+func _approach_partner(delta: float) -> void:
+    if not entities.has(cooperation_target):
+        cooperation_target = ""
+        return
+    var offset: Vector3 = entities[cooperation_target]["node"].position-player.position
+    if offset.length()>2.8:
+        _move_player(Vector2(offset.x,offset.z).normalized(),delta)
+    else:
+        cooperation_target = ""
+        _on_cooperate()
+
+func _release_partner() -> void:
+    phase2_progress = PhaseScript.release(phase2_progress)
+    partner_id = ""
+    cooperation_target = ""
+    exchange_active = false
+    phase_two = 0.0
+    _cache_current()
+    _on_phase_two()
+
+func _toggle_exchange() -> void:
+    phase2_progress["exchange_enabled"] = not bool(phase2_progress.get("exchange_enabled",true))
+    exchange_active = false
+    _cache_current()
+    _close_overlay()
+    _notice("Scambio ripreso" if bool(phase2_progress["exchange_enabled"]) else "Scambio sospeso: raccogli le risorse per dividerti")
+
+func _follow_archaeal_lineage() -> void:
+    if not bool(phase1_progress.get("complete",false)):
+        return
+    for id in entities:
+        if str(entities[id]["branch"])=="archaea" and float(entities[id]["hp"])>0:
+            _switch_lineage(str(id))
+            return
+    # An independent immigrant: never convert a bacterium into an archaeon.
+    if entities.size()>=npc_population_cap:
+        _notice("Popolazione al limite: consulta LINEE o attendi un posto nella nicchia")
+        return
+    var traits: Dictionary = _base_traits()
+    traits = GenomeScript.grant(traits,"dna_stabilization",3,"linea_indipendente","archaea")
+    traits = GenomeScript.grant(traits,"archaeal_envelope",3,"linea_indipendente","archaea")
+    var id: String = "E-%03d" % next_id
+    next_id += 1
+    _create_entity(id,"",3,"archaea",traits,_world_position(player.position+Vector3(5,0,0)),false,true)
+    _switch_lineage(id)
+
 func _on_phase_two() -> void:
     if not entities.has(player_id):
         return
-    var branch: String = str(entities[player_id]["branch"])
-    var traits: Dictionary = entities[player_id]["traits"]
     if not bool(phase1_progress.get("complete",false)):
         _on_goals()
         return
-    _open_overlay("FASE 2 · COOPERAZIONE", "Cinque traguardi per un consorzio stabile e trasmissibile")
+    var traits: Dictionary = entities[player_id]["traits"]
+    _open_overlay("FASE 2 · CONSORZIO", "Riconoscimento → adesione → scambio → stabilita → trasmissione")
     for line in PhaseScript.objective_lines(phase2_progress):
         _add_overlay_label(line)
-    if branch != "archaea":
-        _add_overlay_label("Per questa campagna scegli una discendente Archaea. Le Bacteria restano linee separate.")
-    else:
-        var surface_ok: bool = GenomeScript.has(traits,"surface_recognition") or GenomeScript.has(traits,"eps_biosynthesis")
-        var transporter_ok: bool = GenomeScript.has(traits,"membrane_transport")
-        _add_overlay_label(("✓" if surface_ok else "○")+" Gene: recettori di riconoscimento oppure adesione EPS")
-        _add_overlay_label(("✓" if transporter_ok else "○")+" Gene: trasportatore di membrana")
-        _add_overlay_label("Quando dividi una Archaea, una delle figlie puo acquisire una nuova variante maggiore.")
-        _add_overlay_label("Avvicinati a una Bacteria compatibile e premi COOPERA; mantenetevi abbastanza vicine.")
-        _add_overlay_label("Il flusso scambia risorse con costi per entrambe le cellule. Dopo 25 s e 12 s di scambio, dividiti.")
-    _add_overlay_label("Nota biologica: l'aggregazione cellulare e la sintrofia sono diverse dall'endosimbiosi.")
+    if str(entities[player_id]["branch"])!="archaea":
+        _add_overlay_label("Segui una linea Archaea per questa missione. La tua cellula attuale rimane nell'oceano.")
+        _add_overlay_button("SEGUI UNA LINEA ARCHEALE",_follow_archaeal_lineage)
+        _add_overlay_label("Se non ne sopravvive una, incontrerai una linea indipendente: nessuna Bacteria viene trasformata.")
+        return
+    var anchor: bool = bool(traits.get("adhesion",false)) or bool(traits.get("eps",false))
+    var transport: bool = int(traits.get("transporters",0))>0
+    _add_overlay_label(("✓" if anchor else "○")+" Recettori/EPS · "+("✓" if transport else "○")+" Trasportatori")
+    if not anchor or not transport:
+        _add_overlay_label("Seleziona la figlia con recettori, poi quella con trasportatori alle prossime scissioni. Puoi anche acquisire questi loci nell'albero.")
+        _add_overlay_button("APRI EVOLUZIONE",_on_tree)
+    if partner_id!="" and entities.has(partner_id):
+        var e: Dictionary = entities[partner_id]
+        _add_overlay_label("PARTNER %s · energia %.0f/85 · distanza %.1f/3,7" % [partner_id,float(e["energy"]),player.position.distance_to(e["node"].position)])
+        _add_overlay_label("Scambio %.1f/12 s · contatto %.1f/25 s" % [minf(12,float(phase2_progress["exchange_seconds"])),minf(25,float(phase2_progress["contact_seconds"]))])
+        _add_overlay_label("Costo: 0,10 C/s. Il partner fornisce metaboliti energetici. Sospendi lo scambio per conservare il carbonio prima della scissione.")
+        if float(e["energy"])<4.0:
+            _add_overlay_label("Partner esausto: raggiungete nutrienti o scegli un altro partner.")
+        _add_overlay_button("SOSPENDI SCAMBIO" if bool(phase2_progress.get("exchange_enabled",true)) else "RIPRENDI SCAMBIO",_toggle_exchange)
+        _add_overlay_button("SEPARA IL CONSORZIO",_release_partner)
+        if bool(phase2_progress.get("active_stable",false)):
+            _add_overlay_label("Consorzio pronto: raccogli C24, AA15, L12, N8, biomassa65 e ATP30, poi DIVIDI.")
+            if _can_divide():
+                _add_overlay_button("DIVIDI E TRASMETTI",_divide_pressed)
+    elif anchor:
+        _add_overlay_button("CERCA PARTNER COMPATIBILE",_seek_partner)
+    _add_overlay_button("TORNA ALL'OCEANO",_close_overlay)
+    _add_overlay_label("Due cellule distinte: questa fase non introduce nucleo o mitocondri.")
 
 func _game_over() -> void:
     is_paused = true
@@ -1762,6 +1888,7 @@ func _game_over() -> void:
             rec["cause"] = "morte"
             break
     _open_overlay("LINEA ESTINTA", "La tua cellula non e sopravvissuta. Puoi ricominciare o ricaricare il salvataggio.")
+    _add_overlay_button("SEGUI UNA LINEA SOPRAVVISSUTA",_on_genealogy)
     _add_overlay_button("NUOVA PARTITA",_new_game)
     _add_overlay_button("RICARICA SALVATAGGIO",_load_game)
 
@@ -1772,7 +1899,7 @@ func _on_joystick_changed(v: Vector2) -> void:
         selected_nutrient = null
         attack_mode = ""
 
-func _save_game() -> void:
+func _save_game(path: String = SAVE_PATH) -> void:
     _cache_current()
     var cells: Array = []
     for id in entities:
@@ -1800,16 +1927,48 @@ func _save_game() -> void:
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
         "last_external_arrival":last_external_arrival,"world_age":world_age}
-    var file: FileAccess = FileAccess.open(SAVE_PATH,FileAccess.WRITE)
+    var file: FileAccess = FileAccess.open(path,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
         file.close()
 
-func _load_game() -> void:
-    if not FileAccess.file_exists(SAVE_PATH):
+func _valid_save(data: Dictionary) -> bool:
+    for key in ["entities","genealogy","nutrients","substrates"]:
+        if data.has(key) and not data[key] is Array:
+            return false
+    for key in ["phase1_progress","phase2_progress"]:
+        if data.has(key) and not data[key] is Dictionary:
+            return false
+    var seen: Dictionary = {}
+    for record in data.get("entities",[]):
+        if not record is Dictionary:
+            return false
+        var id: String = str(record.get("id",""))
+        if id=="" or seen.has(id):
+            return false
+        seen[id] = true
+        var pos = record.get("pos",null)
+        if not pos is Array or pos.size()!=3:
+            return false
+        for number in pos:
+            if not (number is float or number is int) or not is_finite(float(number)):
+                return false
+        for key in ["traits","resources","purchased","phase2_progress"]:
+            if record.has(key) and not record[key] is Dictionary:
+                return false
+        for key in ["generation","hp","atp","energy","biomass","points","age"]:
+            if record.has(key) and (not (record[key] is float or record[key] is int) or not is_finite(float(record[key]))):
+                return false
+        for value in record.get("resources",{}).values():
+            if not (value is float or value is int) or not is_finite(float(value)):
+                return false
+    return seen.has(str(data.get("player_id","")))
+
+func _load_game(path: String = SAVE_PATH) -> void:
+    if not FileAccess.file_exists(path):
         _notice("Non esiste ancora una partita salvata")
         return
-    var file: FileAccess = FileAccess.open(SAVE_PATH,FileAccess.READ)
+    var file: FileAccess = FileAccess.open(path,FileAccess.READ)
     if file == null:
         _notice("Impossibile leggere il salvataggio")
         return
@@ -1818,17 +1977,11 @@ func _load_game() -> void:
     if not (loaded is Dictionary) or not [67,70,71].has(int(loaded.get("version",0))):
         _notice("Salvataggio incompatibile: supportate versioni 0.67, 0.70 e 0.71")
         return
-    var cell_list: Array = loaded.get("entities",[])
-    var controlled: String = str(loaded.get("player_id",""))
-    var seen: Dictionary = {}
-    for e in cell_list:
-        if not(e is Dictionary) or str(e.get("id","")) == "" or seen.has(str(e.get("id",""))):
-            _notice("Salvataggio non valido: ID duplicato")
-            return
-        seen[str(e["id"])] = true
-    if not seen.has(controlled):
-        _notice("Salvataggio non valido: cellula giocatore assente")
+    if not _valid_save(loaded):
+        _notice("Salvataggio non valido: la partita attuale e stata conservata")
         return
+    var cell_list: Array = loaded["entities"]
+    var controlled: String = str(loaded["player_id"])
     for child in cells_root.get_children():
         cells_root.remove_child(child)
         child.queue_free()
@@ -1863,6 +2016,9 @@ func _load_game() -> void:
     substrate_respawn = clampf(float(loaded.get("substrate_respawn",0)),0,20)
     t = maxf(0.0,float(loaded.get("elapsed",0.0)))
     next_id = maxi(1,int(loaded.get("next_id",1)))
+    for rec in genealogy+cell_list:
+        if rec is Dictionary:
+            next_id = maxi(next_id,str(rec.get("id","")).get_slice("-",1).to_int()+1)
     partner_id = str(loaded.get("partner",""))
     if int(loaded.get("version",0)) >= 70:
         phase2_progress = PhaseScript.normalize(loaded.get("phase2_progress",{}))
@@ -1910,6 +2066,8 @@ func _load_game() -> void:
     is_paused = false
     _close_overlay()
     _refresh_hud()
+    if bool(phase1_progress.get("complete",false)) and not FileAccess.file_exists(PHASE_TWO_CHECKPOINT):
+        _save_game(PHASE_TWO_CHECKPOINT)
     _notice("Partita caricata · fasi, genoma, energia e genealogia ripristinati")
 
 func _notice(message: String) -> void:
@@ -1951,15 +2109,8 @@ func _refresh_hud() -> void:
         objective_label.add_theme_color_override("font_color",Color(.83,.95,.96))
     partner_compass_label.visible = false
     if bool(phase1_progress.get("complete",false)) and str(entities[player_id]["branch"]) == "archaea" and not bool(phase2_progress.get("complete",false)):
-        var closest_id: String = ""
-        var nearest: float = INF
-        for id in entities:
-            if str(id) == player_id or str(entities[id]["branch"]) != "bacteria":
-                continue
-            var d: float = entities[id]["node"].position.distance_to(player.position)
-            if d < nearest:
-                closest_id = str(id)
-                nearest = d
+        var closest_id: String = partner_id if entities.has(partner_id) else _compatible_partner()
+        var nearest: float = player.position.distance_to(entities[closest_id]["node"].position) if closest_id!="" else INF
         if closest_id != "":
             var delta_partner: Vector3 = entities[closest_id]["node"].position-player.position
             var arrow: String = "→" if delta_partner.x >= 0 else "←"
@@ -2022,7 +2173,7 @@ func _refresh_hud() -> void:
         })
         buttons["enzymes"].text = "✦ ENZIMI\n6 ATP · PRONTI" if GenomeScript.has(traits,"hydrolase_secretion") else ("✦ ENZIMI\nACQUISTA · 2 P" if generation>=1 else "✦ ENZIMI\nDALLA GEN 1")
         buttons["lysis"].text = "✷ LISI\n10 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"
-        buttons["cooperate"].text = "∞ COOPERA\nFASE 2" if bool(phase1_progress.get("complete",false)) and str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nBLOCCATA"
+        buttons["cooperate"].text = ("∞ CONSORZIO\nGESTISCI" if partner_id!="" else "∞ COOPERA\nFASE 2") if bool(phase1_progress.get("complete",false)) and str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nBLOCCATA"
         buttons["regen"].text = "✚ RIGENERA\n30 HP"
         buttons["menu"].text = "☰ MENU\nOPZIONI"
         scission_button.text = "◌  ◌\nDIVIDI"
@@ -2352,6 +2503,9 @@ func _add_overlay_button(text: String, action: Callable) -> void:
     overlay_list.add_child(b)
 
 func _close_overlay() -> void:
+    if hp<=0.0:
+        _game_over()
+        return
     if is_instance_valid(overlay):
         overlay.visible = false
     is_paused = false

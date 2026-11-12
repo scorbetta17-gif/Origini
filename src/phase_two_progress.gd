@@ -13,7 +13,7 @@ static func empty() -> Dictionary:
         "discovered":false, "adhesion":false, "exchanged":false,
         "stable":false, "transmitted":false, "complete":false,
         "partner_id":"", "last_partner_id":"", "bonded":false,
-        "active_stable":false,
+        "active_stable":false, "exchange_enabled":true,
         "exchange_seconds":0.0, "contact_seconds":0.0,
         "metabolites_exchanged":0.0, "transmitted_from":"",
         "generation_completed":-1
@@ -68,6 +68,7 @@ static func bind(source: Dictionary, archaeal_traits: Dictionary, bacterial_trai
     result["last_partner_id"] = other_id
     result["contact_seconds"] = 0.0
     result["exchange_seconds"] = 0.0
+    result["exchange_enabled"] = true
     return result
 
 static func release(source: Dictionary) -> Dictionary:
@@ -82,6 +83,7 @@ static func release(source: Dictionary) -> Dictionary:
 static func advance(source: Dictionary, dt: float, distance: float,
                     archaeal_traits: Dictionary, bacterial_traits: Dictionary,
                     available_carbon: float, bacterial_energy: float) -> Dictionary:
+    dt = maxf(0.0,dt)
     var progress: Dictionary = normalize(source)
     var result: Dictionary = {
         "progress":progress, "carbon_cost":0.0, "atp_gain":0.0,
@@ -98,9 +100,10 @@ static func advance(source: Dictionary, dt: float, distance: float,
             result["progress"] = release(progress)
         return result
     progress["contact_seconds"] = float(progress["contact_seconds"])+maxf(0.0,dt)
-    if can_exchange(archaeal_traits,bacterial_traits) and available_carbon >= .1 and bacterial_energy >= 4.0:
-        var shared: float = minf(.10*dt,available_carbon)
-        var donor_cost: float = minf(.22*dt,bacterial_energy-4.0)
+    if bool(progress["exchange_enabled"]) and can_exchange(archaeal_traits,bacterial_traits) and available_carbon > 0.0 and bacterial_energy > 4.0:
+        var active_seconds: float = minf(dt,minf(available_carbon/.10,(bacterial_energy-4.0)/.22))
+        var shared: float = .10*active_seconds
+        var donor_cost: float = .22*active_seconds
         if shared > 0.0 and donor_cost > 0.0:
             result["exchange_active"] = true
             result["carbon_cost"] = shared
@@ -110,12 +113,14 @@ static func advance(source: Dictionary, dt: float, distance: float,
             result["bacterial_energy_delta"] = shared*2.8-donor_cost
             result["bacterial_biomass_gain"] = shared*.14
             progress["metabolites_exchanged"] = float(progress["metabolites_exchanged"])+shared+donor_cost
-            progress["exchange_seconds"] = float(progress["exchange_seconds"])+maxf(0.0,dt)
+            progress["exchange_seconds"] = float(progress["exchange_seconds"])+active_seconds
             if float(progress["exchange_seconds"]) >= EXCHANGE_REQUIRED:
                 progress["exchanged"] = true
-    if bool(progress["exchanged"]) and float(progress["contact_seconds"]) >= STABILITY_REQUIRED:
+    progress["active_stable"] = (can_exchange(archaeal_traits,bacterial_traits)
+        and bacterial_energy >= 4.0 and float(progress["exchange_seconds"]) >= EXCHANGE_REQUIRED
+        and float(progress["contact_seconds"]) >= STABILITY_REQUIRED)
+    if bool(progress["active_stable"]):
         progress["stable"] = true
-        progress["active_stable"] = true
     return result
 
 static func inherit(source: Dictionary, daughter_traits: Dictionary,
@@ -130,6 +135,7 @@ static func inherit(source: Dictionary, daughter_traits: Dictionary,
         progress["generation_completed"] = generation
         progress["contact_seconds"] = 0.0
         progress["exchange_seconds"] = 0.0
+        progress["active_stable"] = false
     else:
         progress = release(progress)
     return progress
@@ -148,6 +154,8 @@ static func short_objective(source: Dictionary) -> String:
     var p: Dictionary = normalize(source)
     if bool(p["complete"]):
         return "FASE 2 COMPLETATA · Consorzio metabolico trasmesso"
+    if bool(p["bonded"]) and not bool(p["exchange_enabled"]) and not bool(p["active_stable"]):
+        return "FASE 2 · Scambio sospeso: riprendi dal pannello COOPERA"
     if not bool(p["discovered"]):
         return "FASE 2 · Cerca una cellula Bacteria (non discende da Archaea)"
     if not bool(p["adhesion"]):
