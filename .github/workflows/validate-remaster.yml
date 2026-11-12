@@ -89,6 +89,9 @@ jobs:
           if-no-files-found: error
 
   android-preview:
+    # The user requested source changes and testing, NOT a new APK yet.
+    # Build APKs only when explicitly dispatched, never for every push.
+    if: github.event_name == 'workflow_dispatch'
     needs: qa
     runs-on: ubuntu-24.04
     timeout-minutes: 45
