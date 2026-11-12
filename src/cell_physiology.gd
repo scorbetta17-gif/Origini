@@ -19,7 +19,7 @@ static func reserve_cap(need: float) -> float:
     return need * MAX_RESOURCE_FACTOR
 
 static func growth_scale(biomass: float, birth_biomass: float, fission_biomass: float, initial_scale: float = .72) -> float:
-    var progress: float = clampf((biomass-birth_biom)/maxf(1.0,fission_biomass-birth_biom),0.0,1.0)
+    var progress: float = clampf((biomass-birth_biomass)/maxf(1.0,fission_biomass-birth_biomass),0.0,1.0)
     return initial_scale * (1.0 + (MAX_GROWTH_FACTOR-1.0)*progress)
 
 static func player_speed(traits: Dictionary) -> float:
