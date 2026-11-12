@@ -164,6 +164,7 @@ func _volcano(at: Vector3, radius: float, height: float, rng: RandomNumberGenera
     crust.generate_normals()
     var volcano := MeshInstance3D.new()
     volcano.name = "Camino_vulcanico_minerale"
+    volcano.add_to_group("primordial_volcano")
     volcano.mesh = crust.commit()
     volcano.material_override = mineral_mats[2]
     volcano.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -195,6 +196,7 @@ func _volcano(at: Vector3, radius: float, height: float, rng: RandomNumberGenera
         ],.055,molten)
     var light := OmniLight3D.new()
     light.name = "Termico_luce_arancio"
+    light.add_to_group("thermal_source")
     light.light_color = Color(1.0,.40,.13)
     light.light_energy = .92
     light.omni_range = radius*2.25
@@ -225,6 +227,8 @@ func _strip(path: Array[Vector3], width: float, material: Material) -> void:
     surface.generate_normals()
     var mesh := MeshInstance3D.new()
     mesh.mesh = surface.commit()
+    if material == dark_crack:
+        mesh.add_to_group("harmless_gas_fissure")
     mesh.material_override = material
     mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(mesh)
