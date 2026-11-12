@@ -31,7 +31,10 @@ static func player_speed(traits: Dictionary) -> float:
 static func npc_speed(traits: Dictionary) -> float:
     var motorized: bool = int(traits.get("archaella",0)) > 0 or int(traits.get("flagella",0)) > 0
     var pili: bool = int(traits.get("pili",0)) > 0
-    return NPC_BASE_SPEED * clampf(float(traits.get("motility",1.0)),.35,2.6) * (1.0 if motorized else (.87 if pili else .78))
+    # 0.74 NPC baseline was 1.00 world-units/s. Unmotorized cells now
+    # move at exactly 0.90; engines/pili provide only earned extra mobility.
+    return NPC_BASE_SPEED * clampf(float(traits.get("motility",1.0)),.35,2.6) * (
+        1.15 if motorized else (1.03 if pili else 1.0))
 
 static func motion_cost(distance: float, traits: Dictionary) -> float:
     # Evolution can make active movement less costly, never energy-free.
@@ -40,7 +43,7 @@ static func motion_cost(distance: float, traits: Dictionary) -> float:
 
 static func energy_step(atp: float, zero_seconds: float, elapsed: float,
                         distance: float, traits: Dictionary) -> Dictionary:
-    var remaining: float = maxf(0.0,atp-MOVEMENT_ATP_PER_WORLD_UNIT*0.0)
+    var remaining: float = maxf(0.0,atp)
     remaining = maxf(0.0,remaining-BASE_ATP_UPKEEP*maxf(0.0,elapsed)-motion_cost(distance,traits))
     var shortage: float = 0.0 if remaining > .001 else zero_seconds+maxf(0.0,elapsed)
     return {"atp":remaining,"zero_seconds":shortage,"dead":shortage >= ZERO_ATP_DEATH_SECONDS}
