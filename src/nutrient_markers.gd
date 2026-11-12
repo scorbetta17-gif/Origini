@@ -42,7 +42,7 @@ func _draw() -> void:
         if position.x < 13 or position.x > size.x-13:
             continue
         var kind: String = str(m.get("kind","carbon"))
-        var r: float = clampf(float(m.get("scale",1.0))*11.0,8.0,13.0)
+        var r: float = clampf(float(m.get("scale",1.0))*14.5,11.0,16.0)
         var c: Color
         match kind:
             "carbon":
