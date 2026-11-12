@@ -48,6 +48,25 @@ func _run() -> void:
     assert(GENES.has(game.entities[game.player_id]["traits"],"surface_recognition"))
     assert(GENES.has(game.entities[game.player_id]["traits"],"membrane_transport"))
 
+    # Entire Phase 1 must end before Phase 2 is playable.
+    _daughter(game,0) # gen 6: final cohort available
+    assert(game.generation == 6)
+    for i in range(3):
+        var autonomous_id: String = ""
+        for candidate_id in game.entities:
+            if str(candidate_id) != game.player_id:
+                autonomous_id = str(candidate_id)
+                break
+        assert(autonomous_id != "")
+        game.call("_divide_npc",autonomous_id)
+    assert(int(game.phase1_progress["autonomous_divisions"]) >= 3)
+    assert(game.entities.size() >= 10)
+    game.call("_advance_phase_one",74.0)
+    assert(not bool(game.phase1_progress["complete"]))
+    game.call("_advance_phase_one",1.1)
+    assert(bool(game.phase1_progress["complete"]))
+    assert(game.overlay.visible)
+    game.call("_close_overlay")
     game.call("_create_external_bacterium")
     game.call("_advance_phase_two",.2)
     assert(bool(game.phase2_progress["discovered"]))
@@ -60,15 +79,15 @@ func _run() -> void:
     assert(bool(game.phase2_progress["stable"]))
     assert(bool(game.phase2_progress["active_stable"]))
     assert(bool(game.phase2_progress["exchanged"]))
-    _daughter(game,0) # gen 6: inherited collaboration into selected daughter
-    assert(game.generation == 6)
+    _daughter(game,0) # gen 7: inherited collaboration into selected daughter
+    assert(game.generation == 7)
     assert(bool(game.phase2_progress["complete"]))
     assert(bool(game.phase2_progress["transmitted"]))
     assert(game.partner_id != "")
     game.call("_save_game")
     game.call("_load_game")
     assert(bool(game.phase2_progress["complete"]))
-    assert(game.generation == 6)
-    assert(game.genealogy.size() >= 13)
-    print("PASS: full campaign — primordial cell, RNA→DNA, LUCA, Bacteria/Archaea divergence, inherited adhesion/transport, 12s metabolism, 25s consortium, daughter transmission, genealogy and saves")
+    assert(game.generation == 7)
+    assert(game.genealogy.size() >= 20)
+    print("PASS: full campaign — primordial cell, RNA/DNA, Bacteria/Archaea, autonomous population, 75s Phase 1, 12s metabolism, 25s consortium, daughter and save")
     quit(0)
