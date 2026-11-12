@@ -45,6 +45,8 @@ jobs:
         run: timeout 120s godot --headless --path . --script res://tests/physiology_balance_smoke.gd
       - name: Fase 1 - missioni e censimento popolazioni
         run: timeout 120s godot --headless --path . --script res://tests/phase_one_smoke.gd
+      - name: Albero maggiore, icone, geni e fenotipo
+        run: timeout 120s godot --headless --path . --script res://tests/skill_tree_major_smoke.gd
       - name: Fase 2 completa - da riconoscimento a trasmissione
         run: timeout 120s godot --headless --path . --script res://tests/phase_two_smoke.gd
       - name: Campagna completa dal protocellula alla Fase 2
