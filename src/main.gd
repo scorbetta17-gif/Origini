@@ -542,6 +542,46 @@ func _update_metabolic_visuals() -> void:
         n.position = player.position.lerp(bacterial_pos,alpha)+Vector3(0,.72+sin(alpha*PI)*.24,0)
         n.scale = Vector3.ONE*(.72+.28*sin(alpha*PI))
 
+func _advance_phase_one(delta: float) -> void:
+    if bool(phase1_progress.get("complete",false)):
+        return
+    phase_one_population = PhaseOneScript.population(entities)
+    var was_complete: bool = bool(phase1_progress.get("complete",false))
+    phase1_progress = PhaseOneScript.advance(phase1_progress,delta,generation,
+        phase_one_population,t)
+    if bool(phase1_progress["complete"]) and not was_complete:
+        # Capture the actual distribution after a prolonged final-generation
+        # competition. We do not artificially force intermediate dominance.
+        _save_game()
+        _open_phase_intro(2)
+
+func _open_phase_intro(number: int) -> void:
+    if number == 1:
+        phase1_progress["intro_seen"] = true
+        _open_overlay("FASE 1 · CONQUISTA DELLA NICCHIA",
+            "Origine, replicazione autonoma e selezione naturale")
+        _add_overlay_label("Parti da una singola cellula a RNA. Raccogli nutrienti, sopravvivi e dividi la tua linea.")
+        _add_overlay_label("Le figlie non controllate diventeranno popolazioni indipendenti: devono nutrirsi, riprodursi e competere.")
+        _add_overlay_label("MISSIONI PER COMPLETARE LA FASE 1")
+        for line in PhaseOneScript.mission_lines(phase1_progress,
+            PhaseOneScript.population(entities),generation):
+            _add_overlay_label(line)
+        _add_overlay_label("L'ultima coorte viene osservata per 75 s per confrontare popolazioni iniziali, intermedie e recenti.")
+        _add_overlay_button("INIZIA · FASE 1",_close_overlay)
+    else:
+        phase1_progress["phase_two_intro_seen"] = true
+        _open_overlay("FASE 2 · COOPERAZIONE CELLULARE",
+            "Fase 1 completata: l'oceano è popolato da linee in competizione")
+        _add_overlay_label("RISULTATI DEL CENSIMENTO · FINE FASE 1")
+        for line in PhaseOneScript.report_lines(phase1_progress):
+            _add_overlay_label(line)
+        _add_overlay_label("Le percentuali derivano dalle cellule vive al termine dell'osservazione; non sono quote imposte dal gioco.")
+        _add_overlay_label("NUOVE MISSIONI · FASE 2")
+        for line in PhaseScript.objective_lines(phase2_progress):
+            _add_overlay_label(line)
+        _add_overlay_label("Crea un consorzio Bacteria–Archaea stabile e trasmissibile, senza endosimbiosi in questa fase.")
+        _add_overlay_button("INIZIA · FASE 2",_close_overlay)
+
 func _advance_phase_two(delta: float) -> void:
     if not entities.has(player_id) or str(entities[player_id]["branch"]) != "archaea":
         return
@@ -854,7 +894,7 @@ func _update_ecosystem(dt: float) -> void:
                             float(e["biomass"])+9.0)
                         e["energy"] = minf(85.0,float(e["energy"])+12.0)
     # The Phase 2 bacterial partner arises from an independent lineage.
-    if generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 12.0:
+    if bool(phase1_progress.get("complete",false)) and generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 12.0:
         _create_external_bacterium()
 
 func _has_external_bacteria() -> bool:
@@ -1162,6 +1202,7 @@ func _choose_daughter(choice: int) -> void:
         if i == choice:
             chosen_id = id
     division_options.clear()
+    phase1_progress["player_divisions"] = int(phase1_progress.get("player_divisions",0))+1
     _activate_lineage(chosen_id)
     var phase2_finished: bool = bool(phase2_progress.get("complete",false))
     _close_overlay()
@@ -1284,6 +1325,9 @@ func _follow_attack(delta: float) -> void:
         _notice("Danno %.0f · HP preda %.0f" % [damage,maxf(0.0,float(target["hp"]))])
 
 func _on_cooperate() -> void:
+    if not bool(phase1_progress.get("complete",false)):
+        _notice("Cooperazione disponibile all'apertura della FASE 2")
+        return
     if not entities.has(player_id) or entities[player_id]["branch"] != "archaea":
         _notice("La Fase 2 segue una linea Archaea; Bacteria resta separata")
         return
@@ -1427,8 +1471,9 @@ func _on_guide() -> void:
     _add_overlay_label("MUOVITI con joystick tattile o WASD/frecce. Premi CELLULA per osservare il fenotipo da vicino.")
     _add_overlay_label("NUTRIZIONE: avvicinati ai piccoli nutrienti minerali/organici. Raccogli C, A, L, N e biomassa, poi SCISSIONE.")
     _add_overlay_label("OGNI DIVISIONE produce due figlie vive. Scegli quale controllare; l'altra prosegue come NPC. Il genoma e la genealogia sono ereditati.")
-    _add_overlay_label("FASE 1: scegli la variante con DNA stabile e poi la linea Archaea per il percorso di cooperazione (Bacteria resta una linea distinta).")
-    _add_overlay_label("FASE 2: dopo successive divisioni Archaea scegli varianti con RECETTORI e TRASPORTATORI. Segui l'indicatore Bacteria.")
+    _add_overlay_label("FASE 1: completa le divisioni, favorisci la riproduzione autonoma di almeno tre cellule e popola l'oceano.")
+    _add_overlay_label("FASE 1: raggiungi il ciclo 6 e confronta le coorti dopo 75 secondi di competizione.")
+    _add_overlay_label("FASE 2: si apre soltanto dopo la conclusione della Fase 1. Segui una linea Archaea, evolvi RECETTORI e TRASPORTATORI.")
     _add_overlay_label("Quando sei vicino, premi COOPERA. Mantieni il contatto per almeno 12 secondi di scambio e 25 secondi di stabilita.")
     _add_overlay_label("Lo scambio usa carbonio e l'energia batterica: raccogli nuove risorse prima di SCISSIONE. Infine scegli la figlia che mantiene il consorzio.")
     _add_overlay_label("GENOMA mostra i loci; ALBERO offre bonus numerici, ma soltanto i loci maggiori fanno apparire nuove strutture.")
@@ -1438,27 +1483,34 @@ func _on_guide() -> void:
 func _on_goals() -> void:
     if not entities.has(player_id):
         return
-    var branch: String = str(entities[player_id]["branch"])
-    var traits: Dictionary = entities[player_id]["traits"]
-    _open_overlay("CAMPAGNA EVOLUTIVA", "Dalla cellula primordiale al consorzio metabolico")
-    _add_overlay_label("LINEA: %s  ·  GENERAZIONE %d" % [branch.to_upper(),generation])
-    var dna_achieved: bool = bool(traits.get("dna",false))
-    var divergent: bool = branch == "bacteria" or branch == "archaea"
-    _add_overlay_label(("✓" if generation >= 1 else "○")+" FASE 1 · Scissione in due figlie vive e genealogia")
-    _add_overlay_label(("✓" if dna_achieved else "○")+" FASE 1 · DNA stabile (tappa di evoluzione semplificata)")
-    _add_overlay_label(("✓" if divergent else "○")+" FASE 1 · Divergenza Bacteria / Archaea da antenato comune")
-    _add_overlay_label("FASE 2 · Consorzi procariotici opzionali, NON un passaggio obbligato verso eucarioti.")
-    for line in PhaseScript.objective_lines(phase2_progress):
-        _add_overlay_label(line)
-    _add_overlay_label("La prima cellula ha RNA singolo e enzimi semplici; organelli e mitocondri appartengono a capitoli futuri.")
-    if branch == "archaea":
-        _add_overlay_button("SUGGERIMENTI PER LA FASE 2",_on_phase_two)
+    var snapshot: Dictionary = PhaseOneScript.population(entities)
+    if not bool(phase1_progress.get("complete",false)):
+        _open_overlay("FASE 1 · CONQUISTA DELLA NICCHIA",
+            "Prima la popolazione, poi l'associazione tra cellule")
+        for line in PhaseOneScript.mission_lines(phase1_progress,snapshot,generation):
+            _add_overlay_label(line)
+        _add_overlay_label("CELLULE VIVE: %d  ·  Prime %d · Intermedie %d · Recenti %d" % [
+            int(snapshot["totale"]),int(snapshot["prime"]),int(snapshot["intermedie"]),int(snapshot["recenti"])])
+        _add_overlay_label("Le divisioni autonome e la competizione determinano l'effettiva distribuzione.")
+        _add_overlay_button("COME GIOCARE",_on_guide)
+    else:
+        _open_overlay("FASE 2 · COOPERAZIONE PROCARIOTICA",
+            "Cinque missioni per un consorzio metabolico ereditabile")
+        for line in PhaseScript.objective_lines(phase2_progress):
+            _add_overlay_label(line)
+        _add_overlay_label("RIEPILOGO STATISTICO · FASE 1")
+        for line in PhaseOneScript.report_lines(phase1_progress):
+            _add_overlay_label(line)
+        _add_overlay_button("GUIDA FASE 2",_on_phase_two)
 
 func _on_phase_two() -> void:
     if not entities.has(player_id):
         return
     var branch: String = str(entities[player_id]["branch"])
     var traits: Dictionary = entities[player_id]["traits"]
+    if not bool(phase1_progress.get("complete",false)):
+        _on_goals()
+        return
     _open_overlay("FASE 2 · COOPERAZIONE", "Cinque traguardi per un consorzio stabile e trasmissibile")
     for line in PhaseScript.objective_lines(phase2_progress):
         _add_overlay_label(line)
