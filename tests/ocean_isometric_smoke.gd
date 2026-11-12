@@ -39,10 +39,10 @@ func _run() -> void:
     var bubbles: MultiMeshInstance3D = seabed.get_node("Bolle_che_risalgo")
     assert(bubbles != null)
     assert(bubbles.multimesh.instance_count >= 65)
-    var before: Vector3 = bubbles.multimesh.get_instance_transform(0).origin
+    var before: Vector3 = seabed.get("bubble_positions")[0]
     var t_before: float = float(seabed.get("bubble_time"))
     seabed.call("_process",.7)
-    var after: Vector3 = bubbles.multimesh.get_instance_transform(0).origin
+    var after: Vector3 = seabed.get("bubble_positions")[0]
     var t_after: float = float(seabed.get("bubble_time"))
     print("BUBBLE_DYNAMICS before=",before," after=",after," t=",t_before," -> ",t_after)
     if t_after <= t_before or after.y <= before.y+.00001:
