@@ -22,12 +22,11 @@ void vertex() {
 }
 void fragment() {
     vec2 p = seabed_pos.xz;
-    float n = noise2(p*1.25)*0.55+noise2(p*4.0)*0.25+noise2(p*11.0)*0.20;
-    float s = sin(p.x*.32 + sin(p.y*.18)*2.3) * 0.045;
-    vec3 base = mix(sand_dark,sand_light,clamp(n*0.85+s+0.1,0.0,1.0));
-    float grain = hash21(floor(p*9.0));
-    float ripple = sin(p.y*2.5 + noise2(p*.27)*3.0);
-    base += (grain-.5)*.008 + ripple*.011;
+    float n = noise2(p*.42)*.59+noise2(p*1.35)*.30+noise2(p*3.8)*.11;
+    float s = sin(p.x*.25 + sin(p.y*.14)*1.5) * .030;
+    vec3 base = mix(sand_dark,sand_light,clamp(n*.75+s+.18,0.0,1.0));
+    float ripple = sin(p.y*1.35 + noise2(p*.24)*2.0);
+    base += (noise2(p*9.0)-.5)*.002 + ripple*.006;
     ALBEDO = base;
     ROUGHNESS = .96;
     SPECULAR = .13;
