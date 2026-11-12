@@ -1,43 +1,33 @@
 shader_type spatial;
-render_mode diffuse_burley, specular_schlick_ggx, cull_back;
-
-// Teal / blue sandy rock sediment seen from the TOP-DOWN isometric camera.
-// Sparse shifting underwater caustics, not bright lava or magical terrain.
-uniform vec3 sand_dark : source_color = vec3(0.050,0.174,0.212);
-uniform vec3 sand_light : source_color = vec3(0.112,0.295,0.332);
+render_mode diffuse_burley, specular_disabled, cull_back;
+// Static geological detail, with no moving light pattern.
+uniform vec3 basalt : source_color = vec3(.12,.24,.28);
+uniform vec3 sediment : source_color = vec3(.22,.33,.35);
 varying vec3 seabed_pos;
-
-float hash21(vec2 p) {
-    return fract(sin(dot(p,vec2(127.1,311.7))) * 43758.5453);
-}
+float hash21(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
 float noise2(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    f = f*f*(3.0-2.0*f);
-    return mix(mix(hash21(i),hash21(i+vec2(1,0)),f.x),
-               mix(hash21(i+vec2(0,1)),hash21(i+vec2(1,1)),f.x),f.y);
+    vec2 i=floor(p); vec2 f=fract(p); f=f*f*(3.0-2.0*f);
+    return mix(mix(hash21(i),hash21(i+vec2(1,0)),f.x),mix(hash21(i+vec2(0,1)),hash21(i+vec2(1,1)),f.x),f.y);
 }
-void vertex() {
-    seabed_pos = VERTEX;
-    VERTEX.y += (sin(VERTEX.x*0.37+VERTEX.z*0.16)
-               + cos(VERTEX.z*0.49-VERTEX.x*0.17)) * 0.042;
+// Mineral plates form irregular patches, without luminous borders.
+float plates(vec2 p) {
+    vec2 cell=floor(p); vec2 f=fract(p); float nearest=10.0; float tone=0.0;
+    for(int y=-1;y<=1;y++) { for(int x=-1;x<=1;x++) {
+        vec2 tile=vec2(float(x),float(y));
+        vec2 jitter=vec2(hash21(cell+tile),hash21(cell+tile+vec2(19.7,6.3)));
+        vec2 v=tile+jitter-f; float d=dot(v,v);
+        if(d<nearest) { nearest=d; tone=hash21(cell+tile+43.7); }
+    }}
+    return tone;
 }
+void vertex() { seabed_pos=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz; }
 void fragment() {
-    vec2 p = seabed_pos.xz;
-    float broad = noise2(p*.23)*.55 + noise2(p*.57)*.31 +
-                  noise2(p*2.2)*.14;
-    float sand_waves = sin(p.y*2.0 + noise2(p*.23)*3.0)*.018;
-    vec3 base = mix(sand_dark,sand_light,clamp(.12+broad*.86+sand_waves,0.0,1.0));
-    // Subtle bottom-of-sea color variation.
-    float sediment = noise2(p*8.0);
-    base += vec3(.008,.017,.015)*(sediment-.50);
-    // Soft moving dappled highlights: intentionally low contrast so cell
-    // silhouettes and molecular nutrients retain higher visual priority.
-    float beam1 = sin((p.x+p.y*.32)*1.35 + TIME*.20 + noise2(p*.34)*2.4);
-    float beam2 = sin((p.y-p.x*.50)*1.20 - TIME*.14);
-    float caustic = pow(max(0.0,beam1*beam2),4.0);
-    base += vec3(.025,.062,.065)*caustic;
-    ALBEDO = base;
-    ROUGHNESS = .92;
-    SPECULAR = .18;
+    vec2 p=seabed_pos.xz;
+    float deposits=smoothstep(.25,.78,noise2(p*.09)+noise2(p*.37)*.18);
+    float grain=noise2(p*13.0)-.5;
+    float strata=sin(p.y*5.5+noise2(p*.32)*5.0)*.008;
+    float depth=clamp((-seabed_pos.y-.8)*.10,0.0,.25);
+    ALBEDO=mix(basalt,sediment,deposits)*(1.0-depth+grain*.025+strata+(plates(p*.35)-.5)*.045);
+    ROUGHNESS=.98;
+    SPECULAR=0.0;
 }

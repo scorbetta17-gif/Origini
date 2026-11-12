@@ -95,7 +95,7 @@ var last_external_arrival: float = -60.0
 var camera_offset := Vector3(0.0,24.0,13.0)
 const ISOMETRIC_CAMERA_SIZE: float = 19.5
 var camera_focus: bool = false
-var world_radius: float = 25.0
+var world_radius: float = preload("res://src/seabed_palette.gd").WORLD_RADIUS
 var attack_mode: String = ""
 var move_vector: Vector2 = Vector2.ZERO
 var touch_index: int = -1
@@ -654,8 +654,8 @@ func _move_player(direction: Vector2, delta: float) -> void:
     var speed: float = Physiology.player_speed(traits)
     player.position.x += direction.x * speed * delta
     player.position.z += direction.y * speed * delta
-    player.position.x = clampf(player.position.x, -25,25)
-    player.position.z = clampf(player.position.z, -25,25)
+    player.position.x = clampf(player.position.x, -world_radius,world_radius)
+    player.position.z = clampf(player.position.z, -world_radius,world_radius)
     if direction.length() > .2:
         player.rotation.y = lerp_angle(player.rotation.y, atan2(-direction.y,direction.x), delta*4)
 
@@ -708,6 +708,7 @@ func _collect_nearby() -> void:
             continue
         _consume_nutrient(i,true)
 func _respawn_nutrients(delta: float) -> void:
+    _recycle_distant_nutrients()
     # Accumulate elapsed simulation time exactly once, independent of FPS.
     # eco_tick is cumulative and must never be added again on every frame.
     if nutrients.size() >= Physiology.nutrient_goal():
@@ -715,10 +716,36 @@ func _respawn_nutrients(delta: float) -> void:
         return
     nutrient_respawn += maxf(0.0,delta)
     while nutrient_respawn + .000001 >= .22 and nutrients.size() < Physiology.nutrient_goal():
-        _create_nutrient(TYPES[rng.randi_range(0,3)], Vector3(rng.randf_range(-23,23),.29,rng.randf_range(-23,23)))
+        _create_nutrient(TYPES[rng.randi_range(0,3)], _nearby_nutrient_position())
         nutrient_respawn = maxf(0.0,nutrient_respawn-.22)
     if nutrients.size() >= Physiology.nutrient_goal():
         nutrient_respawn = 0.0
+
+func _nearby_nutrient_position() -> Vector3:
+    var center: Vector3 = player.position if is_instance_valid(player) else Vector3.ZERO
+    var angle: float = rng.randf()*TAU
+    var distance: float = rng.randf_range(5.0,20.0)
+    return Vector3(clampf(center.x+cos(angle)*distance,-world_radius+1,world_radius-1),
+        .29,clampf(center.z+sin(angle)*distance,-world_radius+1,world_radius-1))
+
+func _recycle_distant_nutrients() -> void:
+    if not is_instance_valid(player):
+        return
+    # Preserve biological remains and resources close to autonomous cells.
+    for nutrient in nutrients:
+        if str(nutrient["kind"]) == "detritus" or not is_instance_valid(nutrient["node"]):
+            continue
+        var node: Node3D = nutrient["node"]
+        if node.position.distance_squared_to(player.position)<1600.0:
+            continue
+        var occupied: bool = false
+        for entity in entities.values():
+            if is_instance_valid(entity["node"]) and entity["node"].position.distance_squared_to(node.position)<625.0:
+                occupied = true
+                break
+        if not occupied:
+            node.position = _nearby_nutrient_position()
+            nutrient["origin_y"] = .29
 
 func _update_nutrient_markers() -> void:
     if not is_instance_valid(nutrient_markers) or not nutrient_markers.visible:
@@ -806,8 +833,8 @@ func _update_npc_motion(delta: float) -> void:
         var next: Vector3 = current.move_toward(desired,Physiology.NPC_ACCELERATION*delta)
         var before: Vector3 = c.position
         c.position += next*delta
-        c.position.x = clampf(c.position.x,-24.0,24.0)
-        c.position.z = clampf(c.position.z,-24.0,24.0)
+        c.position.x = clampf(c.position.x,-world_radius+1,world_radius-1)
+        c.position.z = clampf(c.position.z,-world_radius+1,world_radius-1)
         var actual_distance: float = before.distance_to(c.position)
         e["velocity"] = next
         e["energy"] = Physiology.npc_energy_step(float(e["energy"]),delta,actual_distance)

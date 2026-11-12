@@ -1,6 +1,7 @@
 extends Node3D
 ## Reference-driven basalt vent. All features are world-space geometry.
 ## Incandescent basin and plume are an artistic abstraction, not a fluid model.
+const Palette = preload("res://src/seabed_palette.gd")
 const LAVA = preload("res://shaders/volcanic_lava.gdshader")
 const PLUME = preload("res://shaders/hydrothermal_plume.gdshader")
 const CONTACT = preload("res://shaders/cell_contact_shadow.gdshader")
@@ -47,7 +48,7 @@ func setup(radius: float, height: float, visual_seed: int) -> void:
         var next: int = (i + 1) % SECTORS
         var left: PackedVector3Array = rings[i]
         var right: PackedVector3Array = rings[next]
-        var tint := Color(.105, .155, .23).lightened(rng.randf_range(.0, .075))
+        var tint := Palette.BASALT.lightened(rng.randf_range(.0, .045))
         for level in range(5):
             var face_color: Color = tint.darkened(.16 if level == 0 else .0)
             if level == 3:
@@ -99,7 +100,7 @@ func setup(radius: float, height: float, visual_seed: int) -> void:
         var angle: float = rng.randf() * TAU
         var size: float = radius * rng.randf_range(.045, .12)
         _boulder(rock, _radial(angle, radius * rng.randf_range(1.08, 1.35), .0),
-            Vector3(size, size * .65, size * .83), rng, Color(.18, .27, .32))
+            Vector3(size, size * .65, size * .83), rng, Palette.BASALT)
     var basalt := StandardMaterial3D.new()
     basalt.vertex_color_use_as_albedo = true
     basalt.vertex_color_is_srgb = true
