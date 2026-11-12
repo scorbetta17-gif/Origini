@@ -681,7 +681,7 @@ func _collect_nearby() -> void:
         if player.position.distance_to(n["node"].position) > 1.08:
             continue
         var kind: String = str(n["kind"])
-        if kind != "detritus" and float(resources[kind]) >= Physiology.reserve_cap(float(NEED[kind]))-.001 and float(resources["biomass"])>=Physiology.reserve_cap(float(NEED["biomass"]))-.001:
+        if kind != "detritus" and float(resources[kind]) >= Physiology.reserve_cap(float(NEED[kind]))-.001 and float(resources["biomass"])>=Physiology.reserve_cap(float(NEED["biomass"]))-.001 and atp >= 95.0:
             continue
         _consume_nutrient(i,true)
     # Redistribuzione limitata; i detriti cellulari non emergono spontaneamente.
@@ -1219,6 +1219,9 @@ func _choose_daughter(choice: int) -> void:
         _notice("Scissione completata · %s · +2 punti" % chosen_id)
 
 func _on_regen() -> void:
+    if atp <= 0.0:
+        _notice("ATP esaurito: non puoi rigenerare finché non assorbi nutrienti")
+        return
     if hp >= 99.99 or regeneration_cooldown > 0:
         _notice("Rigenerazione non necessaria o in ricarica")
         return
@@ -1234,6 +1237,9 @@ func _on_regen() -> void:
     _notice("+30 HP · consumato il 10% delle riserve")
 
 func _on_skill(mode: String) -> void:
+    if atp <= 0.0:
+        _notice("ATP esaurito: nessuna capacità attivabile")
+        return
     if skill_cooldown > 0.0:
         _notice("Abilita' in ricarica")
         return
@@ -1317,9 +1323,9 @@ func _follow_attack(delta: float) -> void:
     if float(target["hp"]) <= 0:
         var prey_id: String = selected_target_id
         _remove_entity(prey_id,"predazione")
-        resources["carbon"] = minf(float(NEED["carbon"])*1.1,float(resources["carbon"])+4.5)
-        resources["amino"] = minf(float(NEED["amino"])*1.1,float(resources["amino"])+3.2)
-        resources["biomass"] = minf(float(NEED["biomass"])*1.1,float(resources["biomass"])+6.0)
+        resources["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(resources["carbon"])+4.5)
+        resources["amino"] = minf(Physiology.reserve_cap(float(NEED["amino"])),float(resources["amino"])+3.2)
+        resources["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(resources["biomass"])+6.0)
         selected_target_id = ""
         attack_mode = ""
         _notice("Predazione completata · detriti rilasciati")
@@ -1327,6 +1333,9 @@ func _follow_attack(delta: float) -> void:
         _notice("Danno %.0f · HP preda %.0f" % [damage,maxf(0.0,float(target["hp"]))])
 
 func _on_cooperate() -> void:
+    if atp <= 0.0:
+        _notice("ATP esaurito: non puoi instaurare un nuovo legame")
+        return
     if not bool(phase1_progress.get("complete",false)):
         _notice("Cooperazione disponibile all'apertura della FASE 2")
         return
