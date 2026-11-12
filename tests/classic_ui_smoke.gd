@@ -30,6 +30,11 @@ func _run() -> void:
     var tab_rect: Rect2 = game.buttons["nutrients"].get_rect()
     assert(tab_rect.position.y > 0 and tab_rect.position.y < viewport_size.y*.45)
     assert(tab_rect.position.y+tab_rect.size.y < divide_rect.position.y)
+    game.call("_update_nutrient_markers")
+    assert(game.nutrient_markers != null)
+    var visible_marker_count: int = game.nutrient_markers.markers.size()
+    print("PORTRAIT_VISIBLE_NUTRIENTS=",visible_marker_count)
+    assert(visible_marker_count >= 3, "Initial gameplay must have visible chemical nutrient symbols")
 
     game.call("_on_resources")
     assert(game.overlay.visible)
