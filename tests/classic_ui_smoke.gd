@@ -11,7 +11,7 @@ func _run() -> void:
     await process_frame
     var viewport_size: Vector2 = game.get_viewport().get_visible_rect().size
     assert(viewport_size.y > viewport_size.x,"Android design must be portrait-first")
-    var classic: Control = game.get("classic_hud")
+    var classic: OriginiClassicHud = game.get("classic_hud")
     assert(classic != null and classic.visible)
     assert(classic.size.x > 0 and classic.size.y > 0)
     for key in ["nutrients","tree","goals","genealogy","divide","regen","cooperate","focus","enzymes","lysis","menu"]:
@@ -29,8 +29,9 @@ func _run() -> void:
     game.call("_on_resources")
     assert(game.overlay.visible)
     game.call("_close_overlay")
-    for k in {"carbon":24.0,"amino":15.0,"lipid":12.0,"nucleic":8.0,"biomass":65.0}:
-        game.resources[k] = {"carbon":24.0,"amino":15.0,"lipid":12.0,"nucleic":8.0,"biomass":65.0}[k]
+    var required: Dictionary = {"carbon":24.0,"amino":15.0,"lipid":12.0,"nucleic":8.0,"biomass":65.0}
+    for k in required:
+        game.resources[k] = required[k]
     game.atp = 96.0
     game.call("_divide_pressed")
     assert(game.division_options.size() == 2)
