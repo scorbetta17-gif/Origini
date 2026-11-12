@@ -46,13 +46,13 @@ jobs:
       - name: Import effettivo Blender 3D e moduli per gene
         run: timeout 90s godot --headless --path . --script res://tests/blender_asset_smoke.gd
       - name: Interfaccia classica Android verticale, figlie e albero
-        run: timeout 120s godot --headless --path . --script res://tests/classic_ui_smoke.gd
+        run: timeout 45s godot --headless --resolution 720x1280 --path . --script res://tests/classic_ui_smoke.gd
       - name: Driver per capture 3D
         run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers vulkan-tools
       - name: Screenshot autentici (Godot con display virtuale)
         run: |
           mkdir -p build/previews
-          timeout 90s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_preview.gd
+          timeout 90s xvfb-run -a -s "-screen 0 900x1600x24" godot --resolution 720x1280 --path . --rendering-method gl_compatibility --script res://tests/capture_preview.gd
           test -s build/previews/primordiale-godot.png
           test -s build/previews/primordiale-macro-godot.png
           test -s build/previews/fenotipo-macro-godot.png
@@ -72,7 +72,7 @@ jobs:
           if test -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json; then
             export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
           fi
-          timeout 180s xvfb-run -a godot --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_preview.gd 2>&1 | tee build/mobile-vulkan.log
+          timeout 180s xvfb-run -a -s "-screen 0 900x1600x24" godot --resolution 720x1280 --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_preview.gd 2>&1 | tee build/mobile-vulkan.log
           grep -q 'ORIGIN_ACTUAL_RENDERER=mobile DRIVER=vulkan' build/mobile-vulkan.log
           test -s build/previews/mobile-primordiale-macro-godot.png
           test -s build/previews/mobile-fenotipo-macro-godot.png
