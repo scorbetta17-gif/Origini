@@ -94,35 +94,41 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: App di test separata per non sovrascrivere demo-6
+      - name: Versione 0.74 Android Compatibility con pacchetto nuovo
         run: |
-          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.classic73"@' export_presets.cfg
-          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI CLASSIC"@' export_presets.cfg
-          sed -i 's@version/name="0.67-demo"@version/name="0.73-classic-vulkan"@' export_presets.cfg
-          sed -i 's@version/code=67@version/code=73@' export_presets.cfg
-          grep -q 'org.origini.mobile.classic' export_presets.cfg
-      - name: Installa Godot e modelli di esportazione
+          set -euo pipefail
+          sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
+          sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
+          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.classic74"@' export_presets.cfg
+          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI 0.74"@' export_presets.cfg
+          sed -i 's@version/name="0.67-demo"@version/name="0.74-native-fix"@' export_presets.cfg
+          sed -i 's@version/code=67@version/code=74@' export_presets.cfg
+          grep -q 'org.origini.mobile.classic74' export_presets.cfg
+      - name: Installa Godot 4.7.2 + export templates corrispondenti
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.7.2
           use-dotnet: false
           include-templates: true
-      - name: Importa il progetto
-        run: godot --headless --path . --editor --quit
+      - name: Importa progetto e verifica renderer Compatibility
+        run: |
+          godot --headless --path . --editor --quit
+          grep -q 'renderer/rendering_method="gl_compatibility"' project.godot
       - name: Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Android SDK
+      - name: Android SDK e strumenti nativi
         uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Android API 35
+      - name: SDK + build tools per zipalign/apksigner
         run: sdkmanager --install 'platform-tools' 'build-tools;35.0.1' 'platforms;android-35'
-      - name: Firma debug locale alla CI
+      - name: Prepara firma debug pulita
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.config/godot build/android
           cat > ~/.config/godot/editor_settings-4.7.tres <<EOF
           [gd_resource type="EditorSettings" format=3]
@@ -130,46 +136,50 @@ jobs:
           export/android/android_sdk_path = "${ANDROID_HOME}"
           export/android/java_sdk_path = "${JAVA_HOME}"
           EOF
-          keytool -genkeypair -v -keystore "${RUNNER_TEMP}/origini-remaster-debug.keystore" \
+          keytool -genkeypair -keystore "${RUNNER_TEMP}/origini-native-fix.keystore" \
             -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass android -keypass android \
-            -dname "CN=ORIGINI Preview,O=Test,C=IT" -noprompt
-          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/origini-remaster-debug.keystore" >> "${GITHUB_ENV}"
+            -dname "CN=ORIGINI 074 Preview,O=Game,C=IT" -noprompt
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/origini-native-fix.keystore" >> "${GITHUB_ENV}"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "${GITHUB_ENV}"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "${GITHUB_ENV}"
-      - name: Esporta APK Android Mobile/Vulkan
-        run: godot --headless --path . --export-debug Android build/android/ORIGINI-VULKAN-PREVIEW.apk
-      - name: Verifica Vulkan APK
+      - name: Crea APK Android Compatibility
+        run: godot --headless --path . --export-debug Android build/android/ORIGINI-base.apk
+      - name: Ricompone librerie native Godot senza compressione
         run: |
-          test -s build/android/ORIGINI-VULKAN-PREVIEW.apk
-          unzip -t build/android/ORIGINI-VULKAN-PREVIEW.apk >/dev/null
-          unzip -Z1 build/android/ORIGINI-VULKAN-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
-          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging build/android/ORIGINI-VULKAN-PREVIEW.apk | grep -q "org.origini.mobile.classic73"
-      - name: Crea variante OpenGL Compatibility per telefoni non Vulkan
+          set -euo pipefail
+          python3 tools/android/harden_apk_native.py build/android/ORIGINI-base.apk build/android/ORIGINI-native-unsigned.apk
+      - name: Allinea librerie native a 16 KiB
+        shell: bash
         run: |
-          sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
-          sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
-          sed -i 's@org.origini.mobile.classic@org.origini.mobile.classic.compat@' export_presets.cfg
-          sed -i 's@ORIGINI CLASSIC@ORIGINI CLASSIC COMPAT@' export_presets.cfg
-          sed -i 's@0.73-classic-vulkan@0.73-classic-compat@' export_presets.cfg
-          godot --headless --path . --editor --quit
-      - name: Esporta APK Android Compatibility
-        run: godot --headless --path . --export-debug Android build/android/ORIGINI-COMPAT-PREVIEW.apk
-      - name: Verifica Compatibility APK
+          set -euo pipefail
+          "${ANDROID_HOME}/build-tools/35.0.1/zipalign" -P 16 -f -v 4 \
+            build/android/ORIGINI-native-unsigned.apk build/android/ORIGINI-native-aligned.apk
+      - name: Firma nuovamente APK con v1 v2 v3
+        shell: bash
         run: |
-          test -s build/android/ORIGINI-COMPAT-PREVIEW.apk
-          unzip -t build/android/ORIGINI-COMPAT-PREVIEW.apk >/dev/null
-          unzip -Z1 build/android/ORIGINI-COMPAT-PREVIEW.apk | grep -q '^AndroidManifest.xml$'
-          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging build/android/ORIGINI-COMPAT-PREVIEW.apk | grep -q "org.origini.mobile.classic.compat"
-      - name: APK Android Mobile/Vulkan solo come artefatto (no release)
+          set -euo pipefail
+          "${ANDROID_HOME}/build-tools/35.0.1/apksigner" sign \
+            --ks "${RUNNER_TEMP}/origini-native-fix.keystore" \
+            --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --out build/android/ORIGINI-0.74-ANDROID-FIX.apk \
+            build/android/ORIGINI-native-aligned.apk
+      - name: Verifica APK finale, caricamento ABI e firma
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=build/android/ORIGINI-0.74-ANDROID-FIX.apk
+          test -s "${apk}"
+          unzip -t "${apk}" >/dev/null
+          "${ANDROID_HOME}/build-tools/35.0.1/zipalign" -c -P 16 -v 4 "${apk}"
+          "${ANDROID_HOME}/build-tools/35.0.1/apksigner" verify --verbose --print-certs "${apk}"
+          python3 tools/android/verify_apk_native.py "${apk}"
+          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging "${apk}" | grep -q "org.origini.mobile.classic74"
+          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump xmltree "${apk}" AndroidManifest.xml | grep -q 'extractNativeLibs'
+      - name: Unico APK installabile da smartphone (no release automatica)
         uses: actions/upload-artifact@v4
         with:
-          name: ORIGIN-Android-Mobile-Vulkan
-          path: build/android/ORIGINI-VULKAN-PREVIEW.apk
-          if-no-files-found: error
-      - name: APK Android Compatibility solo come artefatto (no release)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ORIGIN-Android-Compatibility
-          path: build/android/ORIGINI-COMPAT-PREVIEW.apk
+          name: ORIGINI-074-ANDROID-NATIVE-FIX
+          path: build/android/ORIGINI-0.74-ANDROID-FIX.apk
           if-no-files-found: error
