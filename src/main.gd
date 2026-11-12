@@ -91,7 +91,9 @@ var selected_nutrient: MeshInstance3D = null
 var nutrient_respawn: float = 0.0
 var world_age: float = 0.0
 var last_external_arrival: float = -60.0
-var camera_offset := Vector3(0.0, 7.5, 8.7)
+# Overhead orthographic gameplay, unlike the prior low perspective.
+var camera_offset := Vector3(0.0,24.0,13.0)
+const ISOMETRIC_CAMERA_SIZE: float = 19.5
 var camera_focus: bool = false
 var world_radius: float = 25.0
 var attack_mode: String = ""
@@ -176,9 +178,10 @@ func _new_game() -> void:
     division_options.clear()
     is_paused = false
     camera_focus = false
-    camera_offset = Vector3(0,7.5,8.7)
+    camera_offset = Vector3(0,24.0,13.0)
     if is_instance_valid(camera):
-        camera.fov = 34.0
+        camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+        camera.size = ISOMETRIC_CAMERA_SIZE
     if is_instance_valid(joystick):
         joystick.set_controls_enabled(true)
         joystick.reset_input()
@@ -241,9 +244,10 @@ func _make_3d_scene() -> void:
     sun.light_energy = 1.02
     add_child(sun)
     camera = Camera3D.new()
-    # Prospettiva vera: la dimensione apparente varia con la distanza.
-    camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-    camera.fov = 34.0
+    # FONDAMENTALE: vista dall'alto in proiezione ortografica isometrica.
+    # Tutti gli affioramenti, i vulcani e le fessure sono geometria 3D vera.
+    camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+    camera.size = ISOMETRIC_CAMERA_SIZE
     camera.near = .08
     camera.far = 115.0
     camera.position = camera_offset
@@ -313,7 +317,8 @@ func _vent(pos: Vector3, height: float) -> void:
 
 func _create_nutrient(kind: String, at: Vector3) -> void:
     var sphere := SphereMesh.new()
-    sphere.radius = .13 if kind == "detritus" else (.085 if kind != "nucleic" else .067)
+    # Il pickup fisico (vista landscape/macro) cresce del 10% come l'icona 2D.
+    sphere.radius = .143 if kind == "detritus" else (.0935 if kind != "nucleic" else .0737)
     sphere.height = .145
     sphere.radial_segments = 12
     sphere.rings = 7
@@ -632,9 +637,14 @@ func _temperature_at(where: Vector3) -> float:
 
 func _toggle_focus() -> void:
     camera_focus = not camera_focus
-    # Tre quarti: il volume 3D diventa leggibile anche nelle mutazioni laterali.
-    camera_offset = Vector3(1.3,2.1,3.4) if camera_focus else Vector3(0,7.5,8.7)
-    camera.fov = 38.0 if camera_focus else 34.0
+    # Macro 3D ravvicinato solo su richiesta. Ritorno al vero isometrico.
+    camera_offset = Vector3(1.3,2.1,3.4) if camera_focus else Vector3(0,24.0,13.0)
+    if camera_focus:
+        camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+        camera.fov = 38.0
+    else:
+        camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+        camera.size = ISOMETRIC_CAMERA_SIZE
     _layout_ui()
     buttons["focus"].text = "MONDO" if camera_focus else "CELLULA"
 
@@ -720,7 +730,7 @@ func _update_nutrient_markers() -> void:
         var screen: Vector2 = camera.unproject_position(where)
         if screen.y < top_safe or screen.y > bottom_safe:
             continue
-        points.append({"pos":screen,"kind":str(n["kind"]),"scale":1.0})
+        points.append({"pos":screen,"kind":str(n["kind"]),"scale":1.10})
     nutrient_markers.configure(points,top_safe,bottom_safe,rect)
 
 func _update_cell_world_glyphs() -> void:
