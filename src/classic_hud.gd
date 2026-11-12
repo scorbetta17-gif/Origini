@@ -74,7 +74,7 @@ func _draw() -> void:
 
     # Header: title, version and lineage at a glance.
     _tx(Vector2(22,47),"O R I G I N I",30,PAPER)
-    _tx(Vector2(24,71),"FASE 1 + 2  ·  EVOLUZIONE CELLULARE",13,Color(.43,.83,.78))
+    _tx(Vector2(24,71),str(state.get("phase_title","FASE 1 · CONQUISTA DELLA NICCHIA")),13,Color(.43,.83,.78))
     _tx(Vector2(w*.55,37),"GEN %d  ·  %s" % [int(state.get("gen",0)),str(state.get("branch","PRIMORDIALE"))],17,PAPER,w*.42)
     _tx(Vector2(w*.55,62),"TEMPO %s  ·  %.0f°C" % [str(state.get("elapsed","00:00")),float(state.get("temp",29.0))],12,MUTED,w*.43)
 
@@ -89,6 +89,9 @@ func _draw() -> void:
         _tx(Vector2(32,y+30),"⚡ ATP" if energy else "♥ HP",18,c,97)
         _fillbar(126,y+18,w-290,13,value/maximum,c)
         _tx(Vector2(w-139,y+30),"%d/100" % int(round(value)),18,PAPER,112)
+        if energy and value < .01:
+            var remains: int = maxi(0,15-int(floor(float(state.get("zero_atp",0.0)))))
+            _tx(Vector2(161,y+31),"ATP ESAURITO · %d s" % remains,13,PINK,w-320)
 
     # Four resources in four framed cards, not one dense stats string.
     var names: Array[String] = ["CARBONIO","AMMINOACIDI","LIPIDI","NUCLEOTIDI"]
