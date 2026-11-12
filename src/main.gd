@@ -1384,10 +1384,10 @@ func _on_resources() -> void:
     _add_overlay_button("COME GIOCARE",_on_guide)
 
 func _on_tree() -> void:
-    _open_overlay("ALBERO EVOLUTIVO", "Specializza la tua linea: 288 nodi collegati, sei rami")
+    _open_overlay("ALBERO EVOLUTIVO", "288 nodi: piccoli bonus numerici e geni maggiori con icone dedicate")
     overlay_scroll.visible = false
     tree_view = TreeScript.new()
-    tree_view.configure(purchased, mutation_points)
+    tree_view.configure(purchased, mutation_points, entities[player_id]["traits"])
     tree_view.mutation_unlocked.connect(_on_tree_mutation)
     overlay.add_child(tree_view)
     _layout_ui()
@@ -1408,20 +1408,36 @@ func _on_tree() -> void:
             control.pressed.connect(func(): tree_view.center_view())
 
 func _on_tree_mutation(id: int,stat: String,value: float,cost: int) -> void:
-    if purchased.has(str(id)) or mutation_points < cost:
-        return
-    purchased[str(id)] = true
-    mutation_points -= cost
-    if not entities.has(player_id):
+    if purchased.has(str(id)) or mutation_points < cost or not entities.has(player_id):
         return
     var traits: Dictionary = entities[player_id]["traits"]
+    var branch: String = str(entities[player_id]["branch"])
+    if id % 48 >= 40:
+        var locus: String = tree_view.major_locus(id)
+        if GenomeScript.allele(traits,locus) >= int(GenomeScript.GENE_INFO[locus]["max"]):
+            return
+        traits = GenomeScript.grant(traits,locus,generation,"albero_gene_maggiore",branch)
+    purchased[str(id)] = true
+    mutation_points -= cost
+    # All nodes retain the quantified bonus. Major icons ALSO have a real
+    # heritable gene with a visible phenotypic module when applicable.
     traits[stat] = clampf(float(traits.get(stat,0.0 if stat=="mutation" else 1.0))+value,-.30,4.0)
-    # Il vecchio albero a 288 nodi conferisce SOLO bonus passivi:
-    # non crea flagelli, archaella o EPS senza mutazioni maggiori nel genoma.
-    traits = GenomeScript.express(traits,str(entities[player_id]["branch"]))
+    traits = GenomeScript.express(traits,branch)
     entities[player_id]["traits"] = traits
+    for record in genealogy:
+        if str(record.get("id","")) == player_id:
+            record["traits"] = traits.duplicate(true)
+            break
+    if id % 48 >= 40:
+        var old_position: Vector3 = player.position
+        var old_rotation: Vector3 = player.rotation
+        player.setup(traits,branch,true)
+        player.position = old_position
+        player.rotation = old_rotation
+        player.set_growth(Physiology.growth_scale(float(resources["biomass"]),23.0,
+            float(NEED["biomass"])))
     _cache_current()
-    tree_view.configure(purchased,mutation_points)
+    tree_view.configure(purchased,mutation_points,traits)
     _refresh_hud()
 
 func _on_genome() -> void:
@@ -1433,7 +1449,7 @@ func _on_genome() -> void:
     _add_overlay_label("Genotipo: %d loci attivi  |  Mutazioni minori: %d" % [entries.size(),tr.get("mutations",[]).size()])
     for entry in entries:
         _add_overlay_label(entry)
-    _add_overlay_label("I piccoli bonus statistici non introducono strutture: l'albero passivo agisce separatamente.")
+    _add_overlay_label("I nodi piccoli danno bonus numerici; i grandi contengono loci maggiori con conseguenze fenotipiche.")
     _add_overlay_label("Nota: i loci rappresentano moduli funzionali astratti, non sequenze genomiche ricostruite.")
 
 func _on_genealogy() -> void:
