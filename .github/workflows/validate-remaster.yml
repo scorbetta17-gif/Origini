@@ -27,6 +27,8 @@ jobs:
         run: python3 tools/blender/validate_cell_assets.py
       - name: Controlli statici
         run: python3 tests/qa_static.py
+      - name: Parsing mirato UI biologica 2.5D
+        run: godot --headless --path . --check-only --script res://src/cell_world_glyphs.gd
       - name: Import e parsing del progetto
         shell: bash
         run: |
