@@ -311,6 +311,9 @@ func _create_nutrient(kind: String, at: Vector3) -> void:
     node.position = at
     node.material_override = _solid(Color(.39,.37,.31) if kind == "detritus" else TYPE_COLORS[kind].lerp(Color(.24,.33,.32),.70), .0)
     nutrient_root.add_child(node)
+    # Portrait classic mode shows the chemically meaningful projected icon
+    # instead of duplicating it with an overlapping generic 3D sphere.
+    node.visible = not (is_instance_valid(nutrient_markers) and nutrient_markers.visible)
     nutrients.append({"kind": kind, "node": node, "origin_y": at.y, "bob": rng.randf_range(0,TAU)})
 
 func _create_entity(id: String, parent: String, gen: int, branch: String, traits: Dictionary, at: Vector3, controlled: bool = false, external: bool = false) -> void:
@@ -623,11 +626,11 @@ func _update_nutrient_markers() -> void:
         return
     var rect: Vector2 = get_viewport().get_visible_rect().size
     var points: Array[Dictionary] = []
-    var top_safe: float = classic_hud.panel_height()+8.0
-    var bottom_safe: float = rect.y-160.0
+    var top_safe: float = classic_hud.panel_height()+29.0
+    var bottom_safe: float = rect.y-189.0
     for n in nutrients:
         var node: MeshInstance3D = n["node"]
-        if not is_instance_valid(node) or not node.visible:
+        if not is_instance_valid(node):
             continue
         var where: Vector3 = node.position+Vector3(0,.12,0)
         if camera.is_position_behind(where):
@@ -1694,6 +1697,9 @@ func _layout_ui() -> void:
     classic_hud.visible = portrait
     nutrient_markers.size = wh
     nutrient_markers.visible = portrait
+    for n in nutrients:
+        if is_instance_valid(n["node"]):
+            n["node"].visible = not portrait
     for label in [title_label,status_label,objective_label]:
         label.visible = not portrait
     for bar in [hp_bar,atp_bar,scission_bar]:
