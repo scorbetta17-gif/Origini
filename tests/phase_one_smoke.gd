@@ -26,7 +26,9 @@ func _run() -> void:
     mission = PHASE.advance(mission,2.0,6,census,122.0)
     assert(bool(mission["complete"]))
     assert(mission["final_report"]["intermedie_pct"] == 50.0)
-    assert(PHASE.report_lines(mission).size() == 5)
+    assert(PHASE.report_lines(mission).size() >= 9)
+    assert(int(mission["observation_start"]["totale"]) == 10)
+    assert(is_equal_approx(float(mission["final_report"]["intermedie_pct"]) - float(mission["observation_start"]["intermedie_pct"]),0.0))
     var incomplete: Dictionary = PHASE.empty()
     incomplete["player_divisions"] = 6
     incomplete["autonomous_divisions"] = 2
@@ -39,6 +41,7 @@ func _run() -> void:
     population.erase("T8")
     incomplete = PHASE.advance(incomplete,1.0,7,PHASE.population(population),181.0)
     assert(float(incomplete["observation_seconds"]) == 0.0)
+    assert(incomplete["observation_start"].is_empty())
     assert(not bool(incomplete["complete"]))
 
     # Real Godot mission transition, not only an isolated pure-state test.
