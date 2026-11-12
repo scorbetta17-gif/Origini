@@ -896,13 +896,18 @@ func _divide_pressed() -> void:
                 var locus: String = str(event.get("locus",""))
                 if GenomeScript.GENE_INFO.has(locus):
                     option["name"] = "MAJOR: "+str(GenomeScript.GENE_INFO[locus]["name"])
-    _open_overlay("DIVISIONE COMPLETATA", "Quale figlia controllerai? Entrambe continueranno a vivere.")
+    _open_overlay("QUALE FIGLIA CONTROLLERAI?", "Divisione completata · entrambe le cellule continueranno a vivere.")
     _add_daughter_cards()
     _add_overlay_label("Le mutazioni hanno effetti ereditabili: scegli la tua linea senza cancellare l'altra.")
 
 func _add_daughter_cards() -> void:
     if division_options.size() != 2 or not is_instance_valid(overlay_list):
         return
+    var is_portrait: bool = get_viewport().get_visible_rect().size.y > get_viewport().get_visible_rect().size.x
+    if is_portrait:
+        var top_spacer := Control.new()
+        top_spacer.custom_minimum_size = Vector2(0,65)
+        overlay_list.add_child(top_spacer)
     var duo := HBoxContainer.new()
     duo.add_theme_constant_override("separation",12)
     duo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -915,7 +920,7 @@ func _add_daughter_cards() -> void:
         var title: String = "FIGLIA A" if i == 0 else "FIGLIA B"
         var accent: Color = Color(.43,.88,.80) if i == 0 else Color(.79,.67,.99)
         var card := PanelContainer.new()
-        card.custom_minimum_size = Vector2(card_width,520.0)
+        card.custom_minimum_size = Vector2(card_width,705.0 if is_portrait else 520.0)
         card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         var style: StyleBoxFlat = _style(Color(.024,.13,.17,.99) if i == 0 else Color(.087,.105,.20,.99),accent.darkened(.37))
         style.set_corner_radius_all(22)
@@ -929,12 +934,12 @@ func _add_daughter_cards() -> void:
         var column := VBoxContainer.new()
         column.add_theme_constant_override("separation",10)
         card.add_child(column)
-        var id_label: Label = _label(title,21)
+        var id_label: Label = _label(title,23)
         id_label.add_theme_color_override("font_color",accent)
         id_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
         column.add_child(id_label)
         var cell_illustration: PhenotypePortrait = PhenotypePortraitScript.new()
-        cell_illustration.custom_minimum_size = Vector2(0,170)
+        cell_illustration.custom_minimum_size = Vector2(0,215 if is_portrait else 170)
         cell_illustration.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         cell_illustration.set_cell(daughter_traits,str(option["branch"]))
         column.add_child(cell_illustration)
@@ -971,20 +976,27 @@ func _add_daughter_cards() -> void:
         second_stat.add_theme_color_override("font_color",Color(.77,.91,.91))
         second_stat.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
         column.add_child(second_stat)
-        var variation: String = "Mutazioni piccole: bonus e costi numerici."
-        var changes: Array[String] = []
+        # Vantaggi e costi separati come nel client web. Non confondere
+        # le piccole variazioni numeriche con un nuovo locus genetico.
+        var delta_caption: Label = _label("EFFETTI DELLA VARIANTE",12)
+        delta_caption.add_theme_color_override("font_color",Color(.63,.82,.84))
+        column.add_child(delta_caption)
+        var changes: int = 0
         for key in ["motility","defense","attack","uptake","metabolism"]:
             var delta: float = float(daughter_traits.get(key,1.0))-float(parent_traits.get(key,1.0))
-            if absf(delta) >= .025:
-                var name: String = {"motility":"Mobilita","defense":"Difesa","attack":"Attacco","uptake":"Assorb.","metabolism":"Energia"}[key]
-                changes.append("%s %+.0f%%" % [name,delta*100.0])
-        if not changes.is_empty():
-            variation = " · ".join(changes.slice(0,3))
-        var variation_label: Label = _label(variation,13)
-        variation_label.add_theme_color_override("font_color",Color(.67,.86,.82))
-        variation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-        variation_label.custom_minimum_size = Vector2(0,56)
-        column.add_child(variation_label)
+            if absf(delta) < .025:
+                continue
+            var stat_name: String = {"motility":"Mobilità","defense":"Difesa","attack":"Attacco","uptake":"Assorbimento","metabolism":"Energia"}[key]
+            var positive: bool = delta > 0.0
+            var label: Label = _label("%s  %s %d%%" % ["▲" if positive else "▼",stat_name,int(round(absf(delta)*100.0))],15)
+            label.add_theme_color_override("font_color",Color(.54,.95,.76) if positive else Color(1,.61,.69))
+            column.add_child(label)
+            changes += 1
+        if changes == 0:
+            var same: Label = _label("≃  Nessuna variazione statistica rilevante",14)
+            same.add_theme_color_override("font_color",Color(.69,.85,.89))
+            same.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+            column.add_child(same)
         var space := Control.new()
         space.size_flags_vertical = Control.SIZE_EXPAND_FILL
         column.add_child(space)
@@ -1874,7 +1886,7 @@ func _open_overlay(title: String, subtitle: String) -> void:
     panel_style.set_border_width_all(2)
     overlay_panel.add_theme_stylebox_override("panel",panel_style)
     overlay.add_child(overlay_panel)
-    var eyebrow_text: String = "DISCENDENZA  ·  SELEZIONE DEI CARATTERI" if title.begins_with("DIVISIONE") else "ORIGINI  ·  ARCHIVIO EVOLUTIVO"
+    var eyebrow_text: String = "DIVISIONE COMPLETATA  ·  SCEGLI LA DISCENDENZA" if title.begins_with("QUALE FIGLIA") else "ORIGINI  ·  ARCHIVIO EVOLUTIVO"
     var eyebrow := _label(eyebrow_text,13)
     eyebrow.add_theme_color_override("font_color",Color(.43,.90,.78))
     eyebrow.position = Vector2(36,34)*u
