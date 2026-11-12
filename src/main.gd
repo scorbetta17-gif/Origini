@@ -812,10 +812,105 @@ func _divide_pressed() -> void:
                 var locus: String = str(event.get("locus",""))
                 if GenomeScript.GENE_INFO.has(locus):
                     option["name"] = "MAJOR: "+str(GenomeScript.GENE_INFO[locus]["name"])
-    _open_overlay("SCISSIONE CELLULARE", "Scegli una discendente. La sorella segue la propria linea.")
-    _add_overlay_button("FIGLIA A · %s" % str(division_options[0]["name"]),func():_choose_daughter(0))
-    _add_overlay_button("FIGLIA B · %s" % str(division_options[1]["name"]),func():_choose_daughter(1))
-    _add_overlay_label("Le mutazioni sono casuali; la tua scelta seleziona la discendenza.")
+    _open_overlay("DIVISIONE COMPLETATA", "Quale figlia controllerai? Entrambe continueranno a vivere.")
+    _add_daughter_cards()
+    _add_overlay_label("Le mutazioni hanno effetti ereditabili: scegli la tua linea senza cancellare l'altra.")
+
+func _add_daughter_cards() -> void:
+    if division_options.size() != 2 or not is_instance_valid(overlay_list):
+        return
+    var duo := HBoxContainer.new()
+    duo.add_theme_constant_override("separation",12)
+    duo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    overlay_list.add_child(duo)
+    var card_width: float = maxf(120.0,(overlay_scroll.size.x-30.0)/2.0)
+    for i in range(2):
+        var option: Dictionary = division_options[i]
+        var daughter_traits: Dictionary = option["traits"]
+        var parent_traits: Dictionary = entities[player_id]["traits"]
+        var title: String = "FIGLIA A" if i == 0 else "FIGLIA B"
+        var accent: Color = Color(.43,.88,.80) if i == 0 else Color(.79,.67,.99)
+        var card := PanelContainer.new()
+        card.custom_minimum_size = Vector2(card_width,520.0)
+        card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        var style: StyleBoxFlat = _style(Color(.024,.13,.17,.99) if i == 0 else Color(.087,.105,.20,.99),accent.darkened(.37))
+        style.set_corner_radius_all(22)
+        style.set_border_width_all(2)
+        style.content_margin_left = 14
+        style.content_margin_right = 14
+        style.content_margin_top = 17
+        style.content_margin_bottom = 16
+        card.add_theme_stylebox_override("panel",style)
+        duo.add_child(card)
+        var column := VBoxContainer.new()
+        column.add_theme_constant_override("separation",10)
+        card.add_child(column)
+        var id_label: Label = _label(title,21)
+        id_label.add_theme_color_override("font_color",accent)
+        id_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        column.add_child(id_label)
+        var cell_illustration: PhenotypePortrait = PhenotypePortraitScript.new()
+        cell_illustration.custom_minimum_size = Vector2(0,170)
+        cell_illustration.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        cell_illustration.set_cell(daughter_traits,str(option["branch"]))
+        column.add_child(cell_illustration)
+        var divider := HSeparator.new()
+        column.add_child(divider)
+        var selected_gene: String = "Variazione quantitativa"
+        var genelist: Array[String] = []
+        var inherited_genome: Dictionary = daughter_traits.get("genome",{})
+        var new_loci: Dictionary = inherited_genome.get("loci",{})
+        var old_loci: Dictionary = parent_traits.get("genome",{}).get("loci",{})
+        for locus in new_loci:
+            var new_allele: int = int(new_loci[locus].get("allele",0))
+            var old_allele: int = int(old_loci.get(locus,{}).get("allele",0))
+            if new_allele > old_allele and GenomeScript.GENE_INFO.has(locus):
+                genelist.append(str(GenomeScript.GENE_INFO[locus]["name"]))
+        if not genelist.is_empty():
+            selected_gene = "GENE MAGGIORE · "+", ".join(genelist)
+        elif str(option["branch"]) != str(entities[player_id]["branch"]):
+            selected_gene = "NUOVA LINEA · "+str(option["branch"]).to_upper()
+        var gene_label: Label = _label(selected_gene,15)
+        gene_label.add_theme_color_override("font_color",Color(.99,.86,.58) if not genelist.is_empty() else accent)
+        gene_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        gene_label.custom_minimum_size = Vector2(0,55)
+        column.add_child(gene_label)
+        var first_stat: Label = _label("Mobilita %d%%  ·  Difesa %d%%" % [
+            int(float(daughter_traits.get("motility",1.0))*100.0),
+            int(float(daughter_traits.get("defense",1.0))*100.0)],14)
+        first_stat.add_theme_color_override("font_color",Color(.77,.91,.91))
+        first_stat.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        column.add_child(first_stat)
+        var second_stat: Label = _label("Attacco %d%%  ·  Assorb. %d%%" % [
+            int(float(daughter_traits.get("attack",1.0))*100.0),
+            int(float(daughter_traits.get("uptake",1.0))*100.0)],14)
+        second_stat.add_theme_color_override("font_color",Color(.77,.91,.91))
+        second_stat.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        column.add_child(second_stat)
+        var variation: String = "Mutazioni piccole: bonus e costi numerici."
+        var changes: Array[String] = []
+        for key in ["motility","defense","attack","uptake","metabolism"]:
+            var delta: float = float(daughter_traits.get(key,1.0))-float(parent_traits.get(key,1.0))
+            if absf(delta) >= .025:
+                var name: String = {"motility":"Mobilita","defense":"Difesa","attack":"Attacco","uptake":"Assorb.","metabolism":"Energia"}[key]
+                changes.append("%s %+.0f%%" % [name,delta*100.0])
+        if not changes.is_empty():
+            variation = " · ".join(changes.slice(0,3))
+        var variation_label: Label = _label(variation,13)
+        variation_label.add_theme_color_override("font_color",Color(.67,.86,.82))
+        variation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        variation_label.custom_minimum_size = Vector2(0,56)
+        column.add_child(variation_label)
+        var space := Control.new()
+        space.size_flags_vertical = Control.SIZE_EXPAND_FILL
+        column.add_child(space)
+        var choose := Button.new()
+        choose.text = "SEGUI LA FIGLIA A" if i == 0 else "SEGUI LA FIGLIA B"
+        choose.custom_minimum_size = Vector2(0,56)
+        _theme_button(choose,Color(.24,.68,.61) if i == 0 else Color(.55,.42,.75),
+            accent,15,13)
+        choose.pressed.connect(_choose_daughter.bind(i))
+        column.add_child(choose)
 
 func _choose_daughter(choice: int) -> void:
     if choice < 0 or choice > 1 or division_options.size() != 2 or not entities.has(player_id):
