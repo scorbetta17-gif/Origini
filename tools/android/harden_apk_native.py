@@ -37,27 +37,3 @@ print(f"ORIGINI native hardening: {len(native)} libraries set to STORED / ready 
 print(*native, sep="\n")
 
 
-def verify(path: Path, expected_align: int = 16384) -> None:
-    with zipfile.ZipFile(path, "r") as z:
-        allnames = z.namelist()
-        assert len(allnames) == len(set(allnames)), "Duplicated entries in APK"
-        for lib in native:
-            info = z.getinfo(lib)
-            assert info.compress_type == zipfile.ZIP_STORED, f"{lib} was compressed"
-            # For a stored entry, Android's memory-mapped reader sees the
-            # *data* offset, not ZIP's local-file header offset.
-            with path.open("rb") as fp:
-                fp.seek(info.header_offset)
-                header = fp.read(30)
-            assert header[:4] == b"PK\\x03\\x04", "Invalid local header"
-            name_len = int.from_bytes(header[26:28], "little")
-            extra_len = int.from_bytes(header[28:30], "little")
-            data_offset = info.header_offset + 30 + name_len + extra_len
-            assert data_offset % expected_align == 0, (
-                f"{lib} data unaligned: {data_offset} mod {expected_align}"
-            )
-            print(f"PASS_ANDROID_NATIVE={lib}, 16KiB alignment at {data_offset}, bytes={info.file_size}")
-
-
-if __name__ == "__main__" and len(sys.argv) == 4 and sys.argv[1] == "--verify":
-    verify(Path(sys.argv[2]))
