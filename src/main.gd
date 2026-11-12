@@ -5,6 +5,8 @@ extends Node3D
 const CellScript = preload("res://src/cell_visual.gd")
 const GenomeScript = preload("res://src/cell_genome.gd")
 const PhaseScript = preload("res://src/phase_two_progress.gd")
+const PhaseOneScript = preload("res://src/phase_one_progress.gd")
+const Physiology = preload("res://src/cell_physiology.gd")
 const OceanScript = preload("res://src/primordial_ocean.gd")
 const TreeScript = preload("res://src/mutation_tree.gd")
 const LineageScript = preload("res://src/lineage_view.gd")
@@ -76,6 +78,10 @@ var mutation_points: int = 0
 var purchased: Dictionary = {}
 var phase_two: float = 0.0 # Legacy alias for progress bar
 var phase2_progress: Dictionary = PhaseScript.empty()
+var phase1_progress: Dictionary = PhaseOneScript.empty()
+var zero_atp_seconds: float = 0.0
+var phase_one_population: Dictionary = {}
+var npc_population_cap: int = 32
 var partner_id: String = ""
 var metabolism_particles: Array[MeshInstance3D] = []
 var metabolism_particle_material: StandardMaterial3D
@@ -153,6 +159,9 @@ func _new_game() -> void:
     partner_id = ""
     phase_two = 0.0
     phase2_progress = PhaseScript.empty()
+    phase1_progress = PhaseOneScript.empty()
+    zero_atp_seconds = 0.0
+    phase_one_population = {}
     t = 0.0
     world_age = 0.0
     last_external_arrival = -60.0
@@ -177,16 +186,16 @@ func _new_game() -> void:
     _create_entity("C-000", "", 0, "pre_luca", starter, Vector3.ZERO, true)
     # Anche il primo minuto offre nutrienti visibili vicino alla cellula,
     # con materiali abiotici distribuiti nel resto dell'oceano.
-    for i in range(76):
+    for i in range(Physiology.initial_nutrients()):
         var x: float = 0.0
         var z: float = 0.0
-        if i < 20:
-            # Guaranteed early resource ring, not a hidden search in empty ocean.
-            var angle: float = TAU*float(i)/20.0+rng.randf_range(-.07,.07)
+        if i < 22:
+            # +10% starting ring compared with v0.74 (20 -> 22).
+            var angle: float = TAU*float(i)/22.0+rng.randf_range(-.07,.07)
             var distance: float = rng.randf_range(1.85,3.05)
             x = cos(angle)*distance
             z = sin(angle)*distance
-        elif i < 52:
+        elif i < 57:
             x = rng.randf_range(-4.7,4.7)
             z = rng.randf_range(-4.7,4.7)
             if Vector2(x,z).length() < 1.65:
@@ -195,8 +204,8 @@ func _new_game() -> void:
             x = rng.randf_range(-20.0,20.0)
             z = rng.randf_range(-20.0,20.0)
         _create_nutrient(TYPES[i % 4], Vector3(x,.19,z))
-    _close_overlay()
     _refresh_hud()
+    _open_phase_intro(1)
 
 func _base_traits() -> Dictionary:
     var starter: Dictionary = {"motility": 1.0, "attack": 1.0, "defense": 1.0, "mutation": 0.0,
@@ -328,11 +337,14 @@ func _create_entity(id: String, parent: String, gen: int, branch: String, traits
     node.setup(inherited, branch, controlled)
     var screen: Vector2 = get_viewport().get_visible_rect().size
     node.visible = not (screen.y > screen.x and not camera_focus)
-    node.set_growth(.72 if branch == "pre_luca" and gen == 0 else .78)
+    node.set_growth(Physiology.growth_scale(24.0,23.0,65.0))
     var inventory: Dictionary = {"carbon":6.0,"amino":4.0,"lipid":3.0,"nucleic":1.0,"biomass":24.0}
     entities[id] = {"node":node,"parent":parent,"generation":gen,"branch":branch,
         "traits":inherited.duplicate(true),"external":external,"age":0.0,
         "biomass":24.0,"energy":46.0,"hp":100.0,"atp":65.0,
+        "velocity":Vector3.ZERO,"intent_velocity":Vector3.ZERO,
+        "zero_energy_seconds":0.0,"zero_atp_seconds":0.0,
+        "strategy":Physiology.strategy(inherited),
         "resources":inventory,"points":0,"purchased":{},"fission_count":0,
         "phase2_progress":PhaseScript.empty()}
     genealogy.append({"id":id,"parent":parent,"generation":gen,"branch":branch,
@@ -354,6 +366,7 @@ func _cache_current() -> void:
     e["purchased"] = purchased.duplicate(true)
     e["biomass"] = float(resources.get("biomass",22.0))
     e["phase2_progress"] = phase2_progress.duplicate(true)
+    e["zero_atp_seconds"] = zero_atp_seconds
 
 func _activate_lineage(id: String) -> void:
     if not entities.has(id):
@@ -367,9 +380,10 @@ func _activate_lineage(id: String) -> void:
     generation = int(e["generation"])
     hp = clampf(float(e.get("hp",100.0)),0.0,100.0)
     atp = clampf(float(e.get("atp",65.0)),0.0,100.0)
+    zero_atp_seconds = maxf(0.0,float(e.get("zero_atp_seconds",0.0)))
     resources = e.get("resources", {}).duplicate(true)
     for key in NEED:
-        resources[key] = clampf(float(resources.get(key,0.0)),0.0,float(NEED[key])*1.1)
+        resources[key] = clampf(float(resources.get(key,0.0)),0.0,Physiology.reserve_cap(float(NEED[key])))
     mutation_points = int(e.get("points",0))
     purchased = e.get("purchased", {}).duplicate(true)
     phase2_progress = PhaseScript.normalize(e.get("phase2_progress",{}))
@@ -438,36 +452,46 @@ func _process(delta: float) -> void:
     if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
         direction.y += 1.0
     direction += move_vector
-    if direction.length() > 0.12:
+    var position_before_movement: Vector3 = player.position
+    if direction.length() > 0.12 and atp > 0.0:
         selected_target_id = ""
         selected_nutrient = null
         attack_mode = ""
         _move_player(direction.normalized(),delta)
-    elif selected_target_id != "" or is_instance_valid(selected_nutrient):
+    elif atp > 0.0 and (selected_target_id != "" or is_instance_valid(selected_nutrient)):
         _follow_attack(delta)
-    atp = maxf(0.0,atp-delta*.28)
+    var travelled: float = player.position.distance_to(position_before_movement)
+    var physiology_state: Dictionary = Physiology.energy_step(atp,zero_atp_seconds,delta,
+        travelled,entities[player_id]["traits"])
+    atp = float(physiology_state["atp"])
+    zero_atp_seconds = float(physiology_state["zero_seconds"])
+    if bool(physiology_state["dead"]):
+        hp = 0.0
     var player_temperature: float = _temperature_at(player.position)
     var tolerance: float = 43.0+18.0*float(entities[player_id]["traits"].get("thermotolerance",0.0))
     if player_temperature > tolerance:
         hp = maxf(0.0,hp-delta*(player_temperature-tolerance)*.075)
-    if atp < 1.0:
-        hp = maxf(0.0,hp-delta*.55)
-    # Cresce con la biomassa, ma la dimensione massima e' limitata.
-    player.set_growth(.72 + .41 * clampf((float(resources["biomass"])-23.0)/42.0,0.0,1.0))
+    # Nutrizione consentita entro il 12% oltre la soglia di divisione.
+    # La cellula non supera mai il 120% della dimensione alla nascita.
+    player.set_growth(Physiology.growth_scale(float(resources["biomass"]),23.0,
+        float(NEED["biomass"])))
     camera.position = camera.position.lerp(player.position+camera_offset,minf(1.0,delta*3.2))
     camera.look_at(player.position+Vector3(0,.55,0))
     for n in nutrients:
         if is_instance_valid(n["node"]):
             n["node"].position.y = float(n["origin_y"]) + sin(t*1.8+float(n["bob"]))*0.04
     _collect_nearby()
+    _update_npc_motion(delta)
     _update_nutrient_markers()
     _update_cell_world_glyphs()
     eco_tick += delta
     if eco_tick >= .22:
         _update_ecosystem(eco_tick)
         eco_tick = 0.0
-    # Phase 2: riconoscimento, adesione, metaboliti, stabilita e discendenza.
-    _advance_phase_two(delta)
+    _advance_phase_one(delta)
+    # Phase 2 is a separately unlocked mission, not a forced part of Phase 1.
+    if bool(phase1_progress.get("complete",false)):
+        _advance_phase_two(delta)
     _update_metabolic_visuals()
     _cache_current()
     if hp <= 0:
@@ -574,11 +598,7 @@ func _toggle_focus() -> void:
 
 func _move_player(direction: Vector2, delta: float) -> void:
     var traits: Dictionary = entities[player_id]["traits"]
-    var motility: float = float(traits.get("motility", 1.0))
-    var archaella: int = int(traits.get("archaella",0))
-    var motorized: bool = archaella > 0 or int(traits.get("flagella",0)) > 0
-    var tethered: bool = int(traits.get("pili",0)) > 0
-    var speed: float = 3.40 * motility * (1.0 if motorized else (.87 if tethered else .78))
+    var speed: float = Physiology.player_speed(traits)
     player.position.x += direction.x * speed * delta
     player.position.z += direction.y * speed * delta
     player.position.x = clampf(player.position.x, -25,25)
@@ -594,16 +614,20 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
     if controlled:
         var uptake: float = float(entities[player_id]["traits"].get("uptake",1.0))
         if kind == "detritus":
-            resources["carbon"] = minf(float(NEED["carbon"])*1.1,float(resources["carbon"])+2.0*uptake)
-            resources["amino"] = minf(float(NEED["amino"])*1.1,float(resources["amino"])+1.5*uptake)
+            resources["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(resources["carbon"])+2.0*uptake)
+            resources["amino"] = minf(Physiology.reserve_cap(float(NEED["amino"])),float(resources["amino"])+1.5*uptake)
         else:
-            resources[kind] = minf(float(NEED[kind])*1.1,float(resources[kind])+2.15*uptake)
-        resources["biomass"] = minf(float(NEED["biomass"])*1.1,float(resources["biomass"])+1.45*uptake)
+            resources[kind] = minf(Physiology.reserve_cap(float(NEED[kind])),float(resources[kind])+2.15*uptake)
+        resources["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(resources["biomass"])+1.45*uptake)
         atp = minf(100.0,atp+1.35*float(entities[player_id]["traits"].get("metabolism",1.0)))
+        if atp > 0.0:
+            zero_atp_seconds = 0.0
     elif entities.has(cell_id):
         var e: Dictionary = entities[cell_id]
-        e["biomass"] = minf(72.0,float(e["biomass"])+2.3*float(e["traits"].get("uptake",1.0)))
+        e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(e["biomass"])+2.3*float(e["traits"].get("uptake",1.0)))
         e["energy"] = minf(85.0,float(e["energy"])+4.0)
+        if float(e["energy"]) > 0.0:
+            e["zero_energy_seconds"] = 0.0
     if is_instance_valid(n["node"]):
         n["node"].queue_free()
     nutrients.remove_at(index)
@@ -617,11 +641,11 @@ func _collect_nearby() -> void:
         if player.position.distance_to(n["node"].position) > 1.08:
             continue
         var kind: String = str(n["kind"])
-        if kind != "detritus" and float(resources[kind]) >= float(NEED[kind])*1.1-.001 and float(resources["biomass"])>=float(NEED["biomass"])*1.1-.001:
+        if kind != "detritus" and float(resources[kind]) >= Physiology.reserve_cap(float(NEED[kind]))-.001 and float(resources["biomass"])>=Physiology.reserve_cap(float(NEED["biomass"]))-.001:
             continue
         _consume_nutrient(i,true)
     # Redistribuzione limitata; i detriti cellulari non emergono spontaneamente.
-    if nutrients.size() < 85:
+    if nutrients.size() < Physiology.nutrient_goal():
         nutrient_respawn += eco_tick + .016
         if nutrient_respawn >= .22:
             _create_nutrient(TYPES[rng.randi_range(0,3)], Vector3(rng.randf_range(-23,23),.29,rng.randf_range(-23,23)))
