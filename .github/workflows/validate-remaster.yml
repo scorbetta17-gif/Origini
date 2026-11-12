@@ -97,24 +97,23 @@ jobs:
           if-no-files-found: error
 
   android-preview:
-    # The user requested source changes and testing, NOT a new APK yet.
-    # Build APKs only when explicitly dispatched, never for every push.
-    if: github.event_name == 'workflow_dispatch'
+    # User explicitly requested one installable Android APK for this test build.
+    # No release or merge: artifact only after all QA succeeds.
     needs: qa
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Versione 0.74 Android Compatibility con pacchetto nuovo
+      - name: Versione 0.76 Android Compatibility con pacchetto nuovo
         run: |
           set -euo pipefail
           sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
           sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
-          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.classic74"@' export_presets.cfg
-          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI 0.74"@' export_presets.cfg
-          sed -i 's@version/name="0.67-demo"@version/name="0.74-native-fix"@' export_presets.cfg
-          sed -i 's@version/code=67@version/code=74@' export_presets.cfg
-          grep -q 'org.origini.mobile.classic74' export_presets.cfg
+          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.isometric76"@' export_presets.cfg
+          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI 0.76"@' export_presets.cfg
+          sed -i 's@version/name="0.67-demo"@version/name="0.76-isometrico"@' export_presets.cfg
+          sed -i 's@version/code=67@version/code=76@' export_presets.cfg
+          grep -q 'org.origini.mobile.isometric76' export_presets.cfg
       - name: Installa Godot 4.7.2 + export templates corrispondenti
         uses: chickensoft-games/setup-godot@v2
         with:
@@ -150,7 +149,7 @@ jobs:
           keytool -genkeypair -keystore "${RUNNER_TEMP}/origini-native-fix.keystore" \
             -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass android -keypass android \
-            -dname "CN=ORIGINI 074 Preview,O=Game,C=IT" -noprompt
+            -dname "CN=ORIGINI 076 Preview,O=Game,C=IT" -noprompt
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/origini-native-fix.keystore" >> "${GITHUB_ENV}"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "${GITHUB_ENV}"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "${GITHUB_ENV}"
@@ -174,23 +173,23 @@ jobs:
             --ks "${RUNNER_TEMP}/origini-native-fix.keystore" \
             --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey \
             --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
-            --out build/android/ORIGINI-0.74-ANDROID-FIX.apk \
+            --out build/android/ORIGINI-0.76-ISOMETRICO.apk \
             build/android/ORIGINI-native-aligned.apk
       - name: Verifica APK finale, caricamento ABI e firma
         shell: bash
         run: |
           set -euo pipefail
-          apk=build/android/ORIGINI-0.74-ANDROID-FIX.apk
+          apk=build/android/ORIGINI-0.76-ISOMETRICO.apk
           test -s "${apk}"
           unzip -t "${apk}" >/dev/null
           "${ANDROID_HOME}/build-tools/35.0.1/zipalign" -c -P 16 -v 4 "${apk}"
           "${ANDROID_HOME}/build-tools/35.0.1/apksigner" verify --verbose --print-certs "${apk}"
           python3 tools/android/verify_apk_native.py "${apk}"
-          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging "${apk}" | grep -q "org.origini.mobile.classic74"
+          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging "${apk}" | grep -q "org.origini.mobile.isometric76"
           "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump xmltree "${apk}" AndroidManifest.xml | grep -q 'extractNativeLibs'
       - name: Unico APK installabile da smartphone (no release automatica)
         uses: actions/upload-artifact@v4
         with:
-          name: ORIGINI-074-ANDROID-NATIVE-FIX
-          path: build/android/ORIGINI-0.74-ANDROID-FIX.apk
+          name: ORIGINI-076-ISOMETRICO-APK
+          path: build/android/ORIGINI-0.76-ISOMETRICO.apk
           if-no-files-found: error
