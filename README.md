@@ -1,6 +1,6 @@
-# ORIGINI — Gioco Android 0.70 · Fase 1 + Fase 2
+# ORIGINI — Android 0.72 Classic · Fase 1 + Fase 2
 
-**Stato:** versione giocabile completa fino al traguardo della Fase 2, sviluppata in **Godot 4.7.2**, con modelli cellulari originali generati da **Blender** ed esportati in **glTF/GLB**.
+**Stato:** versione giocabile fino al traguardo della Fase 2, con interfaccia Android verticale ricostruita dalle schermate web originali 0.56–0.62, sviluppata in **Godot 4.7.2**, con modelli cellulari originali generati da **Blender** ed esportati in **glTF/GLB**.
 
 Il progetto parte da una **cellula primordiale** composta da membrana, singolo RNA e tre complessi autocatalitici. Il giocatore nutre la cellula, accumula biomassa e ATP, si divide in **due figlie vive**, sceglie quale controllare e segue la genealogia delle altre popolazioni. Le mutazioni minori modificano le statistiche; quelle maggiori cambiano loci ereditabili e introducono strutture 3D coerenti.
 
@@ -33,6 +33,16 @@ Questo NON rappresenta la formazione di mitocondri, nucleo o una cellula eucario
 - Segui l'indicatore **BACTERIA** sullo schermo. Avvicinati e premi **COOPERA**.
 - Mantieni il contatto mentre avviene lo scambio, raccogli di nuovo i nutrienti consumati e dividi la linea associata per completare Fase 2.
 - **CELLULA** apre la vista ravvicinata; **MENU** contiene **Come giocare**, **Fase 2**, **GENOMA**, **Obiettivi**, **ALBERO**, **LINEE**, **SALVA** e **CARICA**.
+
+## Interfaccia Classic (0.72)
+- Android portrait 720 × 1280, con layout che si adatta a dimensioni diverse.
+- ATP e HP su due barre separate; quattro schede nutrienti; obiettivo e progressione; quattro tab RISORSE/EVOLUZIONE/META/LINEA.
+- Joystick grande, comandi laterali, pulsante DIVIDI, lista di requisiti alla scissione.
+- Nutrienti proiettati come simboli chimici colorati sulle loro vere coordinate 3D.
+- Due card per scegliere quale figlia controllare, con disegni del fenotipo coerenti con il genoma e differenze numeriche.
+- Albero evolutivo con 6 categorie, 288 nodi, zoom, descrizione e costi; mutazioni maggiori solo in scissione.
+- Menu e risorse in schede native Godot; nessun browser, WebView o emulatore necessario nell'APK.
+- Screenshot automatici veri: `classic-main`, `classic-daughters`, `classic-evolution`, `classic-lineage`.
 
 I salvataggi usano il formato logico v70; la lettura delle partite v67 precedenti è supportata con migrazione controllata dei campi genetici e di consorzio, senza attribuire retroattivamente mutazioni mai osservate.
 
