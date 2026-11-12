@@ -99,6 +99,7 @@ var hud: Control
 var classic_hud: OriginiClassicHud
 var toast_back: Panel
 var overlay: ColorRect
+var overlay_panel: Panel
 var overlay_scroll: ScrollContainer
 var overlay_list: VBoxContainer
 var title_label: Label
@@ -1723,8 +1724,12 @@ func _layout_ui() -> void:
     overlay.size = wh
     if is_instance_valid(overlay_scroll):
         var ov_scale: float = clampf(wh.x/720.0,.62,1.65) if portrait else 1.0
-        overlay_scroll.position = Vector2(14,92)*ov_scale
-        overlay_scroll.size = Vector2(maxf(100.0,wh.x-28*ov_scale),maxf(100.0,wh.y-107*ov_scale))
+        overlay_scroll.position = Vector2(34,144)*ov_scale
+        overlay_scroll.size = Vector2(maxf(100.0,wh.x-68*ov_scale),maxf(100.0,wh.y-175*ov_scale))
+    if is_instance_valid(overlay_panel):
+        var p_scale: float = clampf(wh.x/720.0,.62,1.65) if portrait else 1.0
+        overlay_panel.position = Vector2(16,18)*p_scale
+        overlay_panel.size = wh-Vector2(32,36)*p_scale
     for child in overlay.get_children():
         if child is MutationTree or child is LineageView:
             var u: float = clampf(wh.x/720.0,.62,1.65) if portrait else 1.0
@@ -1739,19 +1744,38 @@ func _open_overlay(title: String, subtitle: String) -> void:
     for c in overlay.get_children():
         overlay.remove_child(c)
         c.queue_free()
+    var wh: Vector2 = get_viewport().get_visible_rect().size
+    var portrait: bool = wh.y > wh.x
+    var u: float = clampf(wh.x/720.0,.62,1.65) if portrait else 1.0
+    overlay.color = Color(.003,.016,.027,.985)
+    overlay_panel = Panel.new()
+    overlay_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    overlay_panel.position = Vector2(16,18)*u
+    overlay_panel.size = wh-Vector2(32,36)*u
+    var panel_style: StyleBoxFlat = _style(Color(.012,.083,.113,.99),Color(.27,.52,.57,.82))
+    panel_style.set_corner_radius_all(24)
+    panel_style.set_border_width_all(2)
+    overlay_panel.add_theme_stylebox_override("panel",panel_style)
+    overlay.add_child(overlay_panel)
+    var eyebrow := _label("DISCENDENZA  ·  SELEZIONE DEI CARATTERI",13)
+    eyebrow.add_theme_color_override("font_color",Color(.43,.90,.78))
+    eyebrow.position = Vector2(36,34)*u
+    eyebrow.size = Vector2(wh.x/u-178,20)*u
+    overlay.add_child(eyebrow)
     var heading := _label(title,23)
-    heading.position = Vector2(20,11)
-    heading.size.x = overlay.size.x-140
+    heading.position = Vector2(36,57)*u
+    heading.size = Vector2(wh.x/u-173,32)*u
     overlay.add_child(heading)
     var description := _label(subtitle,14)
-    description.position = Vector2(20,45)
-    description.size.x = overlay.size.x-40
+    description.position = Vector2(36,95)*u
+    description.size = Vector2(wh.x/u-65,40)*u
+    description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     overlay.add_child(description)
     var close := Button.new()
-    close.text = "CHIUDI ✕"
-    close.position = Vector2(overlay.size.x-120,8)
-    close.size = Vector2(106,40)
-    close.add_theme_stylebox_override("normal",_style(Color(.12,.29,.34),Color(.46,.77,.79)))
+    close.text = "✕"
+    close.position = Vector2(wh.x/u-87,40)*u
+    close.size = Vector2(52,46)*u
+    _theme_button(close,Color(.049,.19,.23,.97),Color(.32,.65,.69,.78),19,14)
     overlay.add_child(close)
     close.pressed.connect(_close_overlay)
     if title == "LINEA ESTINTA":
@@ -1759,12 +1783,12 @@ func _open_overlay(title: String, subtitle: String) -> void:
     overlay_scroll = ScrollContainer.new()
     overlay_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
     overlay_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-    overlay_scroll.position = Vector2(14,92)
-    overlay_scroll.size = Vector2(maxf(100,overlay.size.x-28),maxf(100,overlay.size.y-107))
+    overlay_scroll.position = Vector2(34,144)*u
+    overlay_scroll.size = Vector2(maxf(100,wh.x-68*u),maxf(100,wh.y-175*u))
     overlay.add_child(overlay_scroll)
     overlay_list = VBoxContainer.new()
     overlay_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    overlay_list.add_theme_constant_override("separation",10)
+    overlay_list.add_theme_constant_override("separation",14)
     overlay_scroll.add_child(overlay_list)
 
 func _add_overlay_label(message: String) -> void:
