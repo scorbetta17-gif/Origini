@@ -4,13 +4,18 @@ func _initialize() -> void:
     call_deferred("_run")
 
 func _run() -> void:
+    root.size = Vector2i(720,1280)
+    root.content_scale_size = Vector2i(720,1280)
     var packed: PackedScene = load("res://scenes/Main.tscn")
     assert(packed != null)
     var game: Node = packed.instantiate()
     root.add_child(game)
     await process_frame
     var viewport_size: Vector2 = game.get_viewport().get_visible_rect().size
-    assert(viewport_size.y > viewport_size.x,"Android design must be portrait-first")
+    if viewport_size.y <= viewport_size.x:
+        push_error("Portrait viewport not available: "+str(viewport_size))
+        quit(1)
+        return
     var classic: OriginiClassicHud = game.get("classic_hud")
     assert(classic != null and classic.visible)
     assert(classic.size.x > 0 and classic.size.y > 0)
