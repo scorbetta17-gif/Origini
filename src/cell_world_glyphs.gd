@@ -28,7 +28,7 @@ func _ellipse(center: Vector2, radii: Vector2, color: Color, segments: int = 32)
     draw_colored_polygon(polygon,color)
 
 func _outline(center: Vector2, radii: Vector2, color: Color, width: float,
-              phase: float = 0.0, irregular: float = .027) -> void:
+        phase: float = 0.0, irregular: float = .027) -> void:
     var outline := PackedVector2Array()
     for i in range(65):
         var a: float = TAU*float(i)/64.0
@@ -37,7 +37,7 @@ func _outline(center: Vector2, radii: Vector2, color: Color, width: float,
     draw_polyline(outline,color,width,true)
 
 func _body_polygon(center: Vector2, radii: Vector2, phase: float,
-                   count: int = 64) -> PackedVector2Array:
+        count: int = 64) -> PackedVector2Array:
     var outline := PackedVector2Array()
     for i in range(count):
         var a: float = TAU*float(i)/float(count)
