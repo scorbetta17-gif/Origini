@@ -732,14 +732,16 @@ func _update_cell_world_glyphs() -> void:
         var point: Vector2 = camera.unproject_position(center)
         if point.y < top-80.0*ui or point.y > bottom+80.0*ui:
             continue
-        silhouettes.append({"pos":point, "radius":38.0*ui,
+        var npc_growth: float = Physiology.growth_scale(float(entity.get("biomass",24.0)),24.0,float(NEED["biomass"]))/.72
+        silhouettes.append({"pos":point, "radius":38.0*ui*npc_growth,
             "traits":entity["traits"],"branch":str(entity["branch"]),
             "seed":str(id).hash()%88,"selected":false})
     if is_instance_valid(player) and entities.has(player_id):
         var center: Vector3 = player.position+Vector3(0,.81,0)
         if not camera.is_position_behind(center):
+            var controlled_growth: float = Physiology.growth_scale(float(resources["biomass"]),23.0,float(NEED["biomass"]))/.72
             silhouettes.append({"pos":camera.unproject_position(center),
-                "radius":65.0*ui,
+                "radius":65.0*ui*controlled_growth,
                 "traits":entities[player_id]["traits"],
                 "branch":str(entities[player_id]["branch"]),
                 "selected":true,"seed":0})
@@ -1701,14 +1703,13 @@ func _refresh_hud() -> void:
     hp_bar.value = clampf(hp,0.0,100.0)
     atp_bar.value = clampf(atp,0.0,100.0)
     scission_button.text = "SCISSIONE  ✓" if _can_divide() else "SCISSIONE · %d%%" % int(scission_bar.value)
-    if str(entities[player_id]["branch"]) == "archaea":
+    if not bool(phase1_progress.get("complete",false)):
+        objective_label.text = PhaseOneScript.current_objective(phase1_progress,
+            PhaseOneScript.population(entities),generation)
+    elif str(entities[player_id]["branch"]) == "archaea":
         objective_label.text = PhaseScript.short_objective(phase2_progress)
-    elif not bool(traits.get("dna",false)):
-        objective_label.text = "FASE 1 · Nutriti, dividi la cellula e segui una linea con DNA stabile"
-    elif str(entities[player_id]["branch"]) == "luca":
-        objective_label.text = "FASE 1 · Scegli la diversificazione in Bacteria o Archaea"
     else:
-        objective_label.text = "FASE 1 · Esplora una linea Bacteria e le sue mutazioni ereditarie"
+        objective_label.text = "FASE 2 · Segui una linea Archaea per la cooperazione metabolica"
     var danger_temperature: float = 43.0+18.0*float(traits.get("thermotolerance",0.0))
     if _temperature_at(player.position) > danger_temperature:
         objective_label.text = "STRESS TERMICO · Allontanati dalla sorgente o evolvi termotolleranza"
@@ -1716,7 +1717,7 @@ func _refresh_hud() -> void:
     else:
         objective_label.add_theme_color_override("font_color",Color(.83,.95,.96))
     partner_compass_label.visible = false
-    if str(entities[player_id]["branch"]) == "archaea" and not bool(phase2_progress.get("complete",false)):
+    if bool(phase1_progress.get("complete",false)) and str(entities[player_id]["branch"]) == "archaea" and not bool(phase2_progress.get("complete",false)):
         var closest_id: String = ""
         var nearest: float = INF
         for id in entities:
@@ -1736,19 +1737,27 @@ func _refresh_hud() -> void:
             partner_compass_label.visible = true
     buttons["tree"].text = "EVOLUZIONE (%d)" % mutation_points
     if is_instance_valid(classic_hud):
-        var step: int = 1
-        var chapter_title: String = "1/3 · PRIMA DISCENDENZA"
-        var chapter_detail: String = "LA TUA PRIMA SCISSIONE"
-        var chapter_fraction: float = clampf(scission_bar.value/100.0,0.0,1.0)
-        if bool(traits.get("dna",false)):
-            step = 2
-            chapter_title = "2/3 · DIVERSIFICAZIONE"
-            chapter_detail = "BACTERIA E ARCHAEA: LINEE SORELLE"
-            chapter_fraction = 1.0 if str(entities[player_id]["branch"]) in ["bacteria","archaea"] else .50
-        if str(entities[player_id]["branch"]) == "archaea":
-            step = 3
-            chapter_title = "3/3 · COOPERAZIONE CELLULARE"
-            chapter_detail = "ASSOCIAZIONE PROCARIOTICA · FASE 2"
+        var chapter_title: String = "FASE 1 · CONQUISTA DELLA NICCHIA"
+        var chapter_detail: String = "DIVISIONE · POPOLAZIONE · COMPETIZIONE"
+        var chapter_fraction: float = 0.0
+        var phase_label: String = "FASE 1 · CONQUISTA DELLA NICCHIA"
+        if not bool(phase1_progress.get("complete",false)):
+            var mission_fraction: float = 0.0
+            if int(phase1_progress.get("player_divisions",0)) >= 1:
+                mission_fraction += 1.0
+            if generation >= PhaseOneScript.MIN_PLAYER_GENERATION:
+                mission_fraction += 1.0
+            if int(phase1_progress.get("autonomous_divisions",0)) >= PhaseOneScript.MIN_AUTONOMOUS_DIVISIONS:
+                mission_fraction += 1.0
+            if PhaseOneScript.population(entities)["totale"] >= PhaseOneScript.MIN_LIVING_CELLS:
+                mission_fraction += 1.0
+            mission_fraction += clampf(float(phase1_progress.get("observation_seconds",0.0))/
+                PhaseOneScript.FINAL_OBSERVATION_SECONDS,0.0,1.0)
+            chapter_fraction = mission_fraction/5.0
+        else:
+            phase_label = "FASE 2 · COOPERAZIONE"
+            chapter_title = "FASE 2 · CONSORZIO PROCARIOTICO"
+            chapter_detail = "ADESIONE · SINTROFIA · TRASMISSIONE"
             var done: int = 0
             for key in ["discovered","adhesion","exchanged","stable","transmitted"]:
                 if bool(phase2_progress.get(key,false)):
@@ -1763,7 +1772,8 @@ func _refresh_hud() -> void:
         if simple_objective.length() > 68:
             simple_objective = simple_objective.substr(0,65)+"..."
         classic_hud.configure({
-            "gen":generation,"branch":stage,
+            "gen":generation,"branch":stage,"phase_title":phase_label,
+            "zero_atp":zero_atp_seconds,
             "elapsed":"%02d:%02d" % [int(elapsed_seconds/60),elapsed_seconds%60],
             "temp":_temperature_at(player.position),
             "atp":atp,"hp":hp,
@@ -1779,7 +1789,7 @@ func _refresh_hud() -> void:
         })
         buttons["enzymes"].text = "✦ ENZIMI\n12 ATP · PRONTI" if GenomeScript.has(traits,"hydrolase_secretion") else "✦ ENZIMI\nGENE RICHIESTO"
         buttons["lysis"].text = "✷ LISI\n18 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"
-        buttons["cooperate"].text = "∞ COOPERA\nFASE 2" if str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nARCHAEA"
+        buttons["cooperate"].text = "∞ COOPERA\nFASE 2" if bool(phase1_progress.get("complete",false)) and str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nBLOCCATA"
         buttons["regen"].text = "✚ RIGENERA\n30 HP"
         buttons["menu"].text = "☰ MENU\nOPZIONI"
         scission_button.text = "◌  ◌\nDIVIDI"
