@@ -41,6 +41,10 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
       - name: Genotipo, ereditarieta' e fenotipo
         run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
+      - name: Bilanciamento fisica energetica e moto fluido NPC
+        run: timeout 120s godot --headless --path . --script res://tests/physiology_balance_smoke.gd
+      - name: Fase 1 - missioni e censimento popolazioni
+        run: timeout 120s godot --headless --path . --script res://tests/phase_one_smoke.gd
       - name: Fase 2 completa - da riconoscimento a trasmissione
         run: timeout 120s godot --headless --path . --script res://tests/phase_two_smoke.gd
       - name: Campagna completa dal protocellula alla Fase 2
