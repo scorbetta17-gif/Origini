@@ -24,6 +24,7 @@ func _capture() -> void:
     var game: Node = packed.instantiate()
     root.add_child(game)
     await create_timer(1.0).timeout
+    game.call("_close_overlay")
     if not _save_frame("primordiale"):
         quit(1)
         return
@@ -59,19 +60,43 @@ func _capture() -> void:
     hero.position = Vector3(-9.8,0,3.2)
     game.call("_toggle_focus")
     await create_timer(.70).timeout
-    camera.position = hero.position+Vector3(0,7.5,8.7)
-    camera.look_at(hero.position)
+    camera.position = hero.position+Vector3(0,24.0,13.0)
+    camera.look_at(hero.position+Vector3(0,.55,0))
     if not _save_frame("bioma-idrotermale"):
         quit(1)
         return
 
     # Screenshots of real native Godot Controls in the 720x1280 portrait viewport.
     game.call("_new_game")
+    game.call("_close_overlay")
     await create_timer(.95).timeout
     game.call("_refresh_hud")
     if not _save_frame("classic-main"):
         quit(1)
         return
+    # Three TRUE in-engine screenshots of this isometric biome (not AI mockups).
+    if not _save_frame("isometric-open-seabed"):
+        quit(1)
+        return
+    hero = game.get("player")
+    hero.position = Vector3(-3.5,0,-3.1)
+    camera.position = hero.position+Vector3(0,24.0,13.0)
+    camera.look_at(hero.position+Vector3(0,.55,0))
+    await create_timer(.68).timeout
+    if not _save_frame("isometric-gas-fissures"):
+        quit(1)
+        return
+    hero.position = Vector3(-10.0,0,3.0)
+    camera.position = hero.position+Vector3(0,24.0,13.0)
+    camera.look_at(hero.position+Vector3(0,.55,0))
+    await create_timer(.52).timeout
+    if not _save_frame("isometric-volcanic-biome"):
+        quit(1)
+        return
+    # Do not alter the daughter-choice screenshot or stats with heat damage.
+    game.call("_new_game")
+    game.call("_close_overlay")
+    await create_timer(.20).timeout
     var required: Dictionary = {"carbon":24.0,"amino":15.0,"lipid":12.0,"nucleic":8.0,"biomass":65.0}
     for k in required:
         game.resources[k] = required[k]
