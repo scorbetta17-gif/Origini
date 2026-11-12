@@ -12,7 +12,7 @@ const COLORS := [
 ]
 var owned: Dictionary = {}
 var points: int = 0
-var zoom_level: float = 0.9
+var zoom_level: float = 1.22
 var pan: Vector2 = Vector2.ZERO
 var last_pointer: Vector2 = Vector2.ZERO
 var dragging: bool = false
@@ -20,10 +20,23 @@ var gesture_travel: float = 0.0
 var touch_dragged: bool = false
 var touch_seen: bool = false
 var inspected: int = 0
+var source_traits: Dictionary = {}
+const GenomeScript = preload("res://src/cell_genome.gd")
+# Eight explicit, heritable gene milestones per category, rather than a
+# misleading big passive node with no genotype.
+const MAJOR_LOCUS_BY_BRANCH := [
+    ["pili_twitch","cell_elongation","surface_recognition","membrane_transport","pili_twitch","cell_elongation","surface_recognition","membrane_transport"],
+    ["hydrolase_secretion","surface_recognition","vesicle_pathway","hydrolase_secretion","vesicle_pathway","surface_recognition","hydrolase_secretion","vesicle_pathway"],
+    ["eps_biosynthesis","thermal_membrane","chaperone_complex","cell_elongation","thermal_membrane","chaperone_complex","eps_biosynthesis","thermal_membrane"],
+    ["surface_recognition","vesicle_pathway","membrane_transport","chaperone_complex","thermal_membrane","surface_recognition","vesicle_pathway","membrane_transport"],
+    ["membrane_transport","chaperone_complex","thermal_membrane","vesicle_pathway","chaperone_complex","membrane_transport","thermal_membrane","vesicle_pathway"],
+    ["membrane_transport","vesicle_pathway","surface_recognition","pili_twitch","vesicle_pathway","membrane_transport","surface_recognition","pili_twitch"]
+]
 
-func configure(data: Dictionary, available_points: int) -> void:
+func configure(data: Dictionary, available_points: int, genome_traits: Dictionary = {}) -> void:
     owned = data.duplicate(true)
     points = available_points
+    source_traits = genome_traits.duplicate(true)
     queue_redraw()
 
 func _pos(node_id: int) -> Vector2:
@@ -46,6 +59,56 @@ func _type(node_id: int) -> int:
         return 1
     return 0
 
+func major_locus(node_id: int) -> String:
+    if _type(node_id) != 2:
+        return ""
+    var branch: int = node_id / 48
+    var lane: int = node_id % 8
+    return MAJOR_LOCUS_BY_BRANCH[branch][lane]
+
+func _draw_major_icon(center: Vector2, radius: float, branch: int, tint: Color) -> void:
+    # Six recognisably different scientific pictograms, drawn as vectors
+    # and visible even without optional mobile icon fonts.
+    var r: float = maxf(6.0,radius*.78)
+    var ink: Color = tint.lightened(.38)
+    match branch:
+        0: # Motility: directional arrow and cilium
+            draw_arc(center-Vector2(r*.12,0),r*.55,-PI*.70,PI*.35,16,ink,2.2,true)
+            draw_line(center+Vector2(r*.42,-r*.18),center+Vector2(r*.86,0),ink,2.2,true)
+            draw_line(center+Vector2(r*.86,0),center+Vector2(r*.39,r*.28),ink,2.2,true)
+        1: # Attack: pointed protease/scissor enzyme
+            draw_line(center+Vector2(-r*.65,-r*.62),center+Vector2(r*.66,r*.62),ink,2.4,true)
+            draw_line(center+Vector2(-r*.65,r*.62),center+Vector2(r*.66,-r*.62),ink,2.4,true)
+            draw_circle(center,2.1,ink)
+        2: # Defense: shield
+            var shield := PackedVector2Array([
+                center+Vector2(0,-r*.82),center+Vector2(r*.68,-r*.42),
+                center+Vector2(r*.55,r*.38),center+Vector2(0,r*.89),
+                center+Vector2(-r*.55,r*.38),center+Vector2(-r*.68,-r*.42),
+                center+Vector2(0,-r*.82)])
+            draw_polyline(shield,ink,2.3,true)
+        3: # Heredity/mutation: crossing DNA-style strands
+            for i in range(14):
+                var v: float = float(i)/13.0
+                var y: float = (v-.5)*r*1.6
+                var x: float = sin(v*TAU*1.2)*r*.43
+                draw_circle(center+Vector2(x,y),1.5,ink)
+                draw_circle(center+Vector2(-x,y),1.5,ink)
+                if i%3 == 0:
+                    draw_line(center+Vector2(x,y),center+Vector2(-x,y),ink.darkened(.18),1.1,true)
+        4: # Metabolism: energy bolt
+            var bolt := PackedVector2Array([
+                center+Vector2(r*.08,-r*.91),center+Vector2(-r*.46,r*.11),
+                center+Vector2(0,r*.11),center+Vector2(-r*.08,r*.89),
+                center+Vector2(r*.49,-r*.15),center+Vector2(r*.09,-r*.15)])
+            draw_colored_polygon(bolt,ink)
+        5: # Uptake: transport channel with incoming molecules
+            draw_arc(center,r*.55,0,TAU,24,ink,2.1,true)
+            draw_circle(center,2.3,ink)
+            draw_line(center+Vector2(-r*.97,0),center+Vector2(-r*.29,0),ink,1.8,true)
+            draw_line(center+Vector2(-r*.29,0),center+Vector2(-r*.47,-r*.19),ink,1.5,true)
+            draw_line(center+Vector2(-r*.29,0),center+Vector2(-r*.47,r*.19),ink,1.5,true)
+
 func _cost(node_id: int) -> int:
     return _type(node_id) + 1
 
@@ -53,7 +116,14 @@ func _available(node_id: int) -> bool:
     if owned.has(str(node_id)):
         return false
     var local: int = node_id % 48
-    return local < 8 or owned.has(str(node_id - 8))
+    var connected: bool = local < 8 or owned.has(str(node_id - 8))
+    if not connected:
+        return false
+    if _type(node_id) == 2 and not source_traits.is_empty():
+        var locus: String = major_locus(node_id)
+        if GenomeScript.allele(source_traits,locus) >= int(GenomeScript.GENE_INFO[locus]["max"]):
+            return false
+    return true
 
 func _draw() -> void:
     draw_rect(Rect2(Vector2.ZERO,size),Color(.011,.061,.085,.99))
@@ -77,7 +147,7 @@ func _draw() -> void:
             var color: Color = COLORS[branch]
             var active: bool = owned.has(str(id))
             var ready: bool = _available(id)
-            var radius: float = (5.2 if _type(id) == 0 else (8.2 if _type(id) == 1 else 11.0))*zoom_level
+            var radius: float = (5.8 if _type(id) == 0 else (9.1 if _type(id) == 1 else 16.2))*zoom_level
             if id == inspected:
                 draw_circle(at,radius+8.0*zoom_level,Color(1.0,.92,.64,.30))
                 draw_arc(at,radius+6.0*zoom_level,0,TAU,40,Color(1.0,.96,.73),2.2,true)
@@ -85,7 +155,9 @@ func _draw() -> void:
                 color if active else (color.darkened(.11) if ready else Color(.22,.39,.44,.76)))
             draw_circle(at,radius*.70,color.darkened(.42) if active else Color(.035,.13,.17))
             if _type(id) == 2:
-                draw_circle(at,radius*.28,color.lightened(.22) if ready else Color(.33,.49,.52))
+                draw_arc(at,radius+2.2*zoom_level,0,TAU,28,
+                    color.lightened(.42) if active else Color(.45,.64,.65,.90),1.6*zoom_level,true)
+                _draw_major_icon(at,radius,branch,color if ready or active else Color(.31,.48,.50))
     draw_circle(center,26*zoom_level,Color(.42,.87,.78))
     draw_circle(center,18*zoom_level,Color(.13,.38,.42))
     draw_string(ThemeDB.fallback_font,center+Vector2(-19,4)*zoom_level,
@@ -130,34 +202,40 @@ func _draw() -> void:
         var branch: int = inspected/48
         var kind: int = _type(inspected)
         var title: String = "MUTAZIONE PUNTIFORME" if kind == 0 else (
-            "OTTIMIZZAZIONE" if kind == 1 else "SPECIALIZZAZIONE")
+            "OTTIMIZZAZIONE" if kind == 1 else "MUTAZIONE MAGGIORE · GENE")
         var affordable: bool = _available(inspected) and points >= _cost(inspected)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-141),
             "%s · %s" % [BRANCHES[branch],title],HORIZONTAL_ALIGNMENT_LEFT,-1,17,COLORS[branch],size.x-34)
+        var genetic_name: String = ""
+        if kind == 2:
+            var locus: String = major_locus(inspected)
+            genetic_name = str(GenomeScript.GENE_INFO[locus]["name"])
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-113),
-            "Effetto: +%.1f%% %s  ·  Costo %d punti" % [
-                (0.022 if kind == 0 else (0.09 if kind == 1 else 0.18))*100.0,
-                BRANCHES[branch],_cost(inspected)],
+            ("GENE: "+genetic_name+" · Costo %d" % _cost(inspected)) if kind == 2 else (
+                "Effetto: +%.1f%% %s  ·  Costo %d punti" % [
+                    (0.022 if kind == 0 else 0.09)*100.0,
+                    BRANCHES[branch],_cost(inspected)]),
             HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.88,.96,.96),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-87),
-            "Solo bonus numerici: nessuna nuova struttura biologica.",
+            ("Locus ereditabile: può introdurre strutture visibili." if kind == 2
+                else "Solo bonus numerici: nessuna nuova struttura biologica."),
             HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.65,.86,.87),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-60),
             "TOCCA ANCORA PER ACQUISTARE" if affordable else "Servono nodi precedenti o altri punti",
             HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.57,.92,.77) if affordable else Color(.95,.77,.59),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-32),
-            "Mutazioni maggiori ereditabili: avvengono durante la scissione.",
+            "Grandi mutazioni: geni nello sviluppo o nei nodi dedicati.",
             HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(.69,.79,.88),size.x-34)
     else:
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-120),
             "Tocca un nodo per esaminarne l'effetto",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color(.90,.96,.96))
 
 func zoom_by(factor: float) -> void:
-    zoom_level = clampf(zoom_level*factor,.48,2.2)
+    zoom_level = clampf(zoom_level*factor,.62,3.0)
     queue_redraw()
 
 func center_view() -> void:
-    zoom_level = .88
+    zoom_level = 1.22
     pan = Vector2.ZERO
     queue_redraw()
 
@@ -170,7 +248,7 @@ func _pick(at: Vector2) -> int:
     var distance: float = 999.0
     for i in range(288):
         var d: float = at.distance_to(_screen(_pos(i)))
-        if d < 19.0 * zoom_level and d < distance:
+        if d < maxf(24.0,25.0*zoom_level) and d < distance:
             best = i
             distance = d
     return best
@@ -178,10 +256,10 @@ func _pick(at: Vector2) -> int:
 func _gui_input(event: InputEvent) -> void:
     if event is InputEventMouseButton and not touch_seen:
         if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-            zoom_level = minf(2.15, zoom_level * 1.12)
+            zoom_level = minf(3.0, zoom_level * 1.12)
             queue_redraw()
         elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-            zoom_level = maxf(0.42, zoom_level / 1.12)
+            zoom_level = maxf(.62, zoom_level / 1.12)
             queue_redraw()
         elif event.button_index == MOUSE_BUTTON_LEFT:
             if event.pressed:
