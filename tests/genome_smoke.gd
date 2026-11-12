@@ -54,5 +54,49 @@ func _run() -> void:
     assert(G.allele(legacy,"pili_twitch") > 0)
     assert(G.has(legacy,"dna_stabilization"))
     assert(str(legacy["genome"]["loci"]["pili_twitch"]["origin"]) == "legacy_inferred")
-    print("PASS: genotype, major loci, stat-only small changes, daughter inheritance, legacy migration")
+    # Saturated branch-specific motors must not waste a random major mutation.
+    bacteria = G.grant(bacteria,"flagellar_motor",7,"major_mutation","bacteria")
+    archaea = G.grant(archaea,"archaellar_motor",7,"major_mutation","archaea")
+    assert(not G.random_candidates("bacteria",bacteria).has("flagellar_motor"))
+    assert(not G.random_candidates("archaea",archaea).has("archaellar_motor"))
+    for locus in G.COMMON_MAJOR:
+        for level in range(int(G.GENE_INFO[locus]["max"])):
+            bacteria = G.grant(bacteria,locus,8+level,"major_mutation","bacteria")
+    bacteria = G.grant(bacteria,"monoderm_envelope",11,"major_mutation","bacteria")
+    assert(G.random_candidates("bacteria",bacteria).is_empty())
+    # Diderm may supersede an inherited monoderm; retain genealogy, express one.
+    var diderm: Dictionary = G.grant(bacteria,"diderm_envelope",12,"major_mutation","bacteria")
+    assert(str(diderm["envelope"]) == "diderm")
+    assert(G.expressed_allele(diderm,"monoderm_envelope","bacteria") == 0)
+    assert(G.expressed_allele(diderm,"diderm_envelope","bacteria") == 1)
+    assert(G.expressed_allele(diderm,"flagellar_motor","archaea") == 0)
+    var historical_size: int = diderm["genome"]["history"].size()
+    diderm = G.grant(diderm,"monoderm_envelope",13,"major_mutation","bacteria")
+    assert(diderm["genome"]["history"].size() == historical_size)
+    assert(G.has(diderm,"monoderm_envelope"),"Do not erase ancestral records")
+    # Old field-only saves preserve higher module counts and elongated forms.
+    var rich_legacy: Dictionary = G.normalize({"transporters":9,"elongation":.8,
+        "receptors":6,"flagella":3},"bacteria")
+    assert(G.allele(rich_legacy,"membrane_transport") == 3)
+    assert(G.allele(rich_legacy,"cell_elongation") == 2)
+    assert(G.allele(rich_legacy,"surface_recognition") == 3)
+    assert(G.allele(rich_legacy,"flagellar_motor") == 2)
+    # Known over-cap alleles never generate unbounded visual module counts.
+    var oversized: Dictionary = primitive.duplicate(true)
+    oversized["genome"]["loci"]["pili_twitch"] = {"allele":999,"origin":"legacy","generation":2}
+    oversized = G.normalize(oversized)
+    assert(int(oversized["pili"]) == 6)
+    assert(int(oversized["genome"]["loci"]["pili_twitch"]["allele"]) == 999,
+        "Read-time bounds must not silently discard original save metadata")
+    # Four generations retain distinct inherited combinations after JSON save/load.
+    var branches: Array[Dictionary] = [primitive.duplicate(true),primitive.duplicate(true)]
+    for generation in range(2,6):
+        branches[0] = G.grant(branches[0],"pili_twitch",generation)
+        branches[1] = G.grant(branches[1],"vesicle_pathway",generation)
+        branches[0] = G.normalize(JSON.parse_string(JSON.stringify(branches[0])))
+        branches[1] = G.normalize(JSON.parse_string(JSON.stringify(branches[1])))
+        assert(G.has(branches[0],"pili_twitch") and not G.has(branches[0],"vesicle_pathway"))
+        assert(G.has(branches[1],"vesicle_pathway") and not G.has(branches[1],"pili_twitch"))
+    assert(int(primitive["pili"]) == 0 and int(primitive["vesicles"]) == 0)
+    print("PASS: genotype, major loci, stat-only small changes, daughter inheritance across generations, caps, branch expression and legacy migration")
     quit(0)

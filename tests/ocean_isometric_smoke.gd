@@ -68,15 +68,15 @@ func _run() -> void:
     assert(carbon_count >= 18 and phospholipid_count >= 18)
     var glyphs: OriginiCellWorldGlyphs = game.get("cell_world_glyphs")
     var player: Node3D = game.get("player")
-    assert(glyphs.visible,
-        "Selected cell must have true top-down phenotype view")
-    assert(not player.visible,
-        "Hide macro 3D mesh in orthographic 2.5D gameplay")
+    assert(not glyphs.visible,
+        "Legacy 2D silhouettes must not cover the real 3D phenotype")
+    assert(player.visible,
+        "Show true 3D cell in portrait gameplay")
     game.call("_toggle_focus")
     assert(camera.projection == Camera3D.PROJECTION_PERSPECTIVE)
     assert(player.visible)
     game.call("_toggle_focus")
     assert(camera.projection == Camera3D.PROJECTION_ORTHOGONAL)
-    assert(not game.player.visible)
+    assert(game.player.visible)
     print("PASS: genuine isometric overhead world; 2 thermal volcanic cones, 4 harmless fissures, %d rising bubble particles and chemical nutrient glyphs +10 percent" % bubbles.multimesh.instance_count)
     quit(0)

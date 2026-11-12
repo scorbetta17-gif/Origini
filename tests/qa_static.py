@@ -20,7 +20,7 @@ for file,code in scripts.items():
 for symbol in ['CellVisual','MutationTree','LineageView','OriginiJoystick']:
     test(f'class_name {symbol}',sum(f'class_name {symbol}' in code for code in scripts.values())==1)
 test('origine RNA senza motori',all(x in main for x in ['"dna": false','"archaella": 0','"flagella": 0']))
-test('RNA mono filamento', 'var strand_count: int = 2 if dna else 1' in cell and 'for strand in range(strand_count):' in cell)
+test('regressione runtime RNA e DNA presente', (root/'tests/cell_phenotype_smoke.gd').exists() and (root/'tests/blender_asset_smoke.gd').exists())
 test('protocellula senza nucleo',not any(x in cell.lower() for x in ['mitochondrion','nucleus','golgi']))
 test('touch joystick dedicato','func _input(event: InputEvent)' in joy and 'signal direction_changed' in joy)
 test('tocco vs mouse sintetico','touch_seen' in joy)

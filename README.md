@@ -1,3 +1,5 @@
+> **Cellule 12/11/2026:** modelli 3D anche in gameplay, membrane deformabili e 16 loci con fenotipo. [Revisione, ricerca e verifiche](docs/CELL_MODEL_REVIEW_2026-11-12.md).
+
 > **Fondale 12/11/2026:** mappa esplorabile 480x480, faglie geometriche e palette condivisa senza caustiche. [Revisione e verifiche](docs/SEABED_REVIEW_2026-11-12.md).
 
 # ORIGINI — Android 0.72 Classic · Fase 1 + Fase 2

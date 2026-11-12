@@ -2,6 +2,9 @@ extends Node3D
 class_name CellVisual
 ## ORIGINI: renderer biologico parametrico, senza asset fittizi precostituiti.
 ## All'inizio: una membrana, un filamento di ssRNA, pochi complessi autocatalitici.
+const Genome = preload("res://src/cell_genome.gd")
+const RNA_COLOR := Color(.70,.39,.87)
+const CATALYST_COLOR := Color(.92,.61,.25)
 const MEMBRANE_SHADER = preload("res://shaders/cell_membrane.gdshader")
 const SHADOW_SHADER = preload("res://shaders/cell_contact_shadow.gdshader")
 const BLENDER_CORE: String = "res://assets/models/primordial_core.glb"
@@ -12,6 +15,7 @@ const BLENDER_MODULES: Dictionary = {
     "transporter": "res://assets/models/transporter_module.glb",
     "vesicle": "res://assets/models/vesicle_module.glb"
 }
+var feature_nodes: Dictionary = {}
 var traits: Dictionary = {}
 var branch: String = "pre_luca"
 var is_player: bool = false
@@ -27,7 +31,7 @@ var blender_interior: bool = false
 var use_blender_assets: bool = false
 
 func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> void:
-    traits = value.duplicate(true)
+    traits = Genome.normalize(value,cell_branch)
     branch = cell_branch
     is_player = selected
     for child in get_children():
@@ -35,10 +39,15 @@ func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> vo
         child.queue_free()
     filament_roots.clear()
     material_cache.clear()
+    feature_nodes.clear()
     age = 0.0
     blender_interior = false
     use_blender_assets = false
     _build()
+    var motion = preload("res://src/cell_fluid_motion.gd").new()
+    motion.name = "FluidMotion"
+    add_child(motion)
+    motion.setup(self)
 
 func set_growth(value: float) -> void:
     growth = clampf(value,.58,1.24)
@@ -113,12 +122,12 @@ func _tube(host: Node3D, coords: PackedVector3Array, radius: float, tint: Color,
 
 func _color() -> Color:
     if branch == "bacteria":
-        return Color(.49,.65,.55)
+        return Color(.32,.65,.64)
     if branch == "archaea":
-        return Color(.47,.65,.61)
+        return Color(.35,.60,.72)
     if branch == "luca":
-        return Color(.59,.70,.73)
-    return Color(.42,.63,.59)
+        return Color(.33,.66,.74)
+    return Color(.27,.62,.70)
 
 func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     if not ResourceLoader.exists(BLENDER_CORE):
@@ -143,7 +152,7 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     shell_mat.shader = MEMBRANE_SHADER
     shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
     shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
-    shell_mat.set_shader_parameter("opacity",.11 if primitive else .16)
+    shell_mat.set_shader_parameter("opacity",.16 if primitive else .19)
     shell_mat.set_shader_parameter("membrane_motion",.009)
     shell_mat.set_shader_parameter("internal_scattering",.28 if primitive else .36)
     membrane.material_override = shell_mat
@@ -156,13 +165,13 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
         cytosol_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var rna_mesh: MeshInstance3D = core.find_child("SingleStrand_RNA",true,false) as MeshInstance3D
     if rna_mesh != null:
-        rna_mesh.material_override = _mat(Color(.82,.43,.31),1.0,.63)
+        rna_mesh.material_override = _mat(RNA_COLOR,1.0,.63)
     for index in range(1,4):
         var prefix: String = "Autocatalytic_%02d_" % index
         for sub in range(1,4):
             var enzyme_mesh: MeshInstance3D = core.find_child(prefix+("%02d" % sub),true,false) as MeshInstance3D
             if enzyme_mesh != null:
-                enzyme_mesh.material_override = _mat(Color(.77,.65,.38) if sub == 1 else Color(.58,.65,.48),1.0,.76)
+                enzyme_mesh.material_override = _mat(CATALYST_COLOR if sub == 1 else CATALYST_COLOR.darkened(.12),1.0,.76)
     interior = core.find_child("InteriorAssembly",true,false) as Node3D
     if interior == null:
         interior = Node3D.new()
@@ -187,7 +196,7 @@ func _build_imported_dna(host: Node3D) -> void:
             var u: float = float(i)/48.0
             var phase: float = u*TAU*2.0 + float(strand)*PI
             points.append(Vector3((u-.5)*1.20,sin(phase)*.19,cos(phase)*.19))
-        _tube(dna_root,points,.021,Color(.71,.66,.88) if strand == 0 else Color(.44,.74,.80))
+        _tube(dna_root,points,.021,RNA_COLOR.lightened(.09) if strand == 0 else RNA_COLOR.darkened(.08))
     var bonds := Node3D.new()
     bonds.name = "BasePairs"
     dna_root.add_child(bonds)
@@ -198,7 +207,7 @@ func _build_imported_dna(host: Node3D) -> void:
         _tube(bonds,PackedVector3Array([
             Vector3(x,sin(phase)*.19,cos(phase)*.19),
             Vector3(x,-sin(phase)*.19,-cos(phase)*.19)
-        ]),.009,Color(.66,.73,.72))
+        ]),.009,CATALYST_COLOR)
 
 func _blender_module(id: String, at: Vector3, normal: Vector3, size: float = 1.0) -> bool:
     if not use_blender_assets or not BLENDER_MODULES.has(id):
@@ -237,7 +246,7 @@ func _build() -> void:
     globe.radial_segments = 48
     globe.rings = 28
 
-    var thermal: float = float(traits.get("thermotolerance",0.0))
+    var thermal: float = float(_level("thermal_membrane"))*.8
     var imported_blender_core: bool = _try_blender_core(primitive,tint,thermal)
     if not imported_blender_core:
         # Un solo involucro traslucido organico, senza vetro/specchi o sfera opaca.
@@ -264,46 +273,28 @@ func _build() -> void:
         interior.position = Vector3(0,.81,0)
         add_child(interior)
         var dna: bool = bool(traits.get("dna",false))
-        var strand_count: int = 2 if dna else 1
-        for strand in range(strand_count):
+        if dna:
+            _build_imported_dna(interior)
+        if not dna:
             var poly := PackedVector3Array()
             for i in range(61):
                 var t: float = float(i)/60.0
-                var p: Vector3
-                if dna:
-                    # DNA solo dopo il locus di stabilizzazione: due filamenti distinti.
-                    var u: float = (t-.5)*1.13
-                    var phase: float = t*TAU*1.9+float(strand)*PI
-                    p = Vector3(u,sin(phase)*.17,cos(phase)*.17)
-                else:
-                    # Un unico ssRNA ripiegato in 3D: curve non complanari.
-                    p = Vector3(
-                        (t-.5)*.72 + sin(t*TAU*3.1)*.14,
-                        sin(t*TAU*1.85)*.16 + cos(t*TAU*3.4)*.075,
-                        cos(t*TAU*1.43)*.22 + sin(t*TAU*2.5)*.065
-                    )
-                poly.append(p)
-            _tube(interior,poly,.018 if primitive else .020,Color(.92,.60,.47) if not dna else Color(.76,.72,.59))
-        if dna:
-            # Segmenti aggiuntivi sono visibili solo dopo la stabilizzazione del DNA.
-            for i in range(9):
-                var u: float = float(i)/8.0
-                var x: float = (u-.5)*1.12
-                var phase: float = u*TAU*1.3
-                _tube(interior,PackedVector3Array([
-                    Vector3(x,sin(phase)*.18,cos(phase)*.18),
-                    Vector3(x,-sin(phase)*.18,-cos(phase)*.18)
-                ]),.008,Color(.63,.78,.73))
+                poly.append(Vector3((t-.5)*.72+sin(t*TAU*3.1)*.14,
+                    sin(t*TAU*1.85)*.16+cos(t*TAU*3.4)*.075,
+                    cos(t*TAU*1.43)*.22+sin(t*TAU*2.5)*.065))
+            _tube(interior,poly,.018 if primitive else .020,RNA_COLOR)
+            interior.get_child(0).name = "SingleStrand_RNA"
         var complexes: int = 3 if primitive else 5
         for i in range(complexes):
             var phi: float = float(i)*TAU/float(complexes)+.5
             var center := Vector3(cos(phi)*.28, sin(phi*2.0)*.22, sin(phi)*.30)
-            var protein_color := Color(.80,.76,.59) if primitive else Color(.73,.76,.66)
+            var protein_color := CATALYST_COLOR if primitive else CATALYST_COLOR.lightened(.06)
             _ellipsoid(interior,center,Vector3(.075,.047,.06),protein_color)
             _ellipsoid(interior,center+Vector3(.044,.026,-.03),Vector3(.042,.033,.039),protein_color.darkened(.11))
             _ellipsoid(interior,center+Vector3(-.035,-.021,.034),Vector3(.035,.03,.042),protein_color.lightened(.12))
 
     # Trasportatori: pori incastonati nella membrana; solo locus maggiore.
+    var feature_start: int = get_child_count()
     var transporters: int = clampi(int(traits.get("transporters",0)),0,9)
     for i in range(transporters):
         var phi: float = TAU*(float(i)+.43)/float(maxi(1,transporters))
@@ -312,6 +303,8 @@ func _build() -> void:
         if not _blender_module("transporter",pos,n,.85):
             _ellipsoid(self,pos,Vector3(.048,.038,.048),Color(.40,.59,.60),.90)
             _ellipsoid(self,pos+n*.026,Vector3(.024,.018,.024),Color(.20,.35,.37),.86)
+    _record_children("membrane_transport",feature_start)
+    feature_start = get_child_count()
     # Moduli di adesione, riconoscimento e lisi emergono per mutazione.
     var receptors: int = clampi(int(traits.get("receptors",0)),0,8)
     for i in range(receptors):
@@ -321,6 +314,8 @@ func _build() -> void:
         if not _blender_module("receptor",anchor,n,1.0):
             _tube(self,PackedVector3Array([anchor,anchor+n*.11]),.018,Color(.74,.84,.72))
             _ellipsoid(self,anchor+n*.12,Vector3.ONE*.04,Color(.82,.85,.74))
+    _record_children("surface_recognition",feature_start)
+    feature_start = get_child_count()
     var pili: int = clampi(int(traits.get("pili",0)),0,9)
     for i in range(pili):
         var a: float = TAU*float(i)/float(maxi(1,pili))
@@ -332,6 +327,8 @@ func _build() -> void:
                 var distance: float = float(j)*.15
                 path.append(anchor+n*distance+Vector3(0,sin(float(j)*.82+float(i))*.027,0))
             _tube(self,path,.012,Color(.72,.79,.66))
+    _record_children("pili_twitch",feature_start)
+    feature_start = get_child_count()
     var proteases: int = clampi(int(traits.get("protease",0)),0,6)
     for i in range(proteases):
         var a: float = TAU*(float(i)+.5)/float(maxi(1,proteases))
@@ -340,50 +337,64 @@ func _build() -> void:
         if not _blender_module("protease",loc,n,1.0):
             _ellipsoid(self,loc,Vector3(.045,.025,.043),Color(.80,.64,.52))
             _ellipsoid(self,loc+n*.11,Vector3.ONE*.02,Color(.85,.68,.52),.65)
+    _record_children("hydrolase_secretion",feature_start)
+    feature_start = get_child_count()
     var vesicles: int = clampi(int(traits.get("vesicles",0)),0,5)
     for i in range(vesicles):
         var a: float = TAU*(float(i)+.2)/float(maxi(1,vesicles))
         var point := Vector3(cos(a)*body_radii.x*1.23,.81+sin(a*2.0)*.12,sin(a)*body_radii.z*1.23)
         if not _blender_module("vesicle",point,Vector3.UP,1.0):
             _ellipsoid(self,point,Vector3.ONE*.065,tint.lightened(.15),.27)
+    _record_children("vesicle_pathway",feature_start)
+    feature_start = get_child_count()
     if bool(traits.get("adhesion",false)):
         for i in range(4):
             var a: float = TAU*float(i)/4.0
             var n := Vector3(cos(a),.09,sin(a)).normalized()
             var anchor := Vector3(n.x*body_radii.x,.81+n.y*body_radii.y,n.z*body_radii.z)
             _tube(self,PackedVector3Array([anchor,anchor+n*.13,anchor+n*.20]),.017,Color(.69,.81,.74))
+    _record_children("surface_recognition",feature_start)
+    feature_start = get_child_count()
     if bool(traits.get("eps",false)):
-        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.13,Color(.54,.69,.67),.075)
-    # Involucri diversi compaiono solo con loci codificati.
-    var envelope: String = str(traits.get("envelope","none"))
-    if envelope == "monoderm":
-        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.025,Color(.62,.73,.65),.14)
-    elif envelope == "diderm":
-        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.026,Color(.65,.75,.66),.13)
-        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.085,Color(.53,.71,.70),.14)
-    elif envelope == "archaeal":
-        _ellipsoid(self,Vector3(0,.81,0),body_radii*1.026,Color(.58,.74,.68),.11)
-    if thermal > .01:
-        for i in range(mini(5,ceili(thermal))):
-            var a: float = TAU*float(i)/float(maxi(1,mini(5,ceili(thermal))))
-            _ellipsoid(interior,Vector3(cos(a)*.30,-.22,sin(a)*.30),Vector3(.055,.033,.045),Color(.81,.78,.62))
+        var matrix: MeshInstance3D = _ellipsoid(self,Vector3(0,.81,0),body_radii*1.15,Color(.49,.75,.63),.075)
+        matrix.name = "EPS_ExtracellularMatrix"
+        # Sparse extracellular strands make the capsule legible without a second wall.
+        for i in range(5):
+            var arc := PackedVector3Array()
+            for j in range(13):
+                var a: float = float(i)*TAU/5.0+float(j)*.055
+                arc.append(Vector3(cos(a)*body_radii.x*1.15,.81+sin(a*2.0)*.14,sin(a)*body_radii.z*1.15))
+            _tube(self,arc,.009,Color(.54,.78,.64),.40)
+    _record_children("eps_biosynthesis",feature_start)
+    _build_envelope()
+    _build_thermal_domains()
+    _build_chaperones()
+    feature_start = get_child_count()
     var motors: int = int(traits.get("archaella",0)) if branch == "archaea" else int(traits.get("flagella",0)) if branch == "bacteria" else 0
     for i in range(mini(4,motors)):
         var root := Node3D.new()
+        root.name = "Archaellum_RotaryFilament" if branch == "archaea" else "Flagellum_RotaryFilament"
         root.position = Vector3(-body_radii.x,.81,float(i)*.12-.12)
         add_child(root)
         filament_roots.append(root)
         var path := PackedVector3Array()
         for j in range(23):
             var u: float = float(j)/22.0
-            path.append(Vector3(-u*2.0,sin(u*TAU*3.0+float(i))*.095,cos(u*TAU*3.0+float(i))*.085))
-        _tube(root,path,.015,Color(.71,.84,.74) if branch == "archaea" else Color(.85,.78,.62))
+            var turns: float = 3.6 if branch == "archaea" else 2.6
+            var amplitude: float = .065 if branch == "archaea" else .105
+            path.append(Vector3(-u*(1.65 if branch == "archaea" else 2.05),sin(u*TAU*turns+float(i))*amplitude,cos(u*TAU*turns+float(i))*amplitude))
+        _tube(root,path,.011 if branch == "archaea" else .017,Color(.48,.78,.84) if branch == "archaea" else Color(.89,.68,.40))
+        _ellipsoid(root,Vector3.ZERO,Vector3(.055,.065,.065),Color(.55,.79,.84) if branch == "archaea" else Color(.83,.59,.27))
+    _record_children("archaellar_motor" if branch == "archaea" else "flagellar_motor",feature_start)
+
+    _record_genetic_core()
 
     # Ombra di contatto morbida: il fondo resta lontano dalla cellula,
     # ma l'osservatore percepisce l'altezza del corpo sopra il sedimento.
     var shadow_plane := PlaneMesh.new()
     shadow_plane.size = Vector2(2.35,2.35)
     var shadow := MeshInstance3D.new()
+    shadow.name = "ContactShadow"
     shadow.mesh = shadow_plane
     shadow.position = Vector3(0,-.242,0)
     var shadow_mat := ShaderMaterial.new()
@@ -406,14 +417,144 @@ func _build() -> void:
     selection_ring.visible = is_player
     add_child(selection_ring)
 
+func _level(locus: String) -> int:
+    return Genome.expressed_allele(traits,locus,branch)
+
+func _record(locus: String, node: Node3D) -> void:
+    var level: int = _level(locus)
+    if level<=0 or not is_instance_valid(node):
+        return
+    if not feature_nodes.has(locus):
+        feature_nodes[locus] = {"allele":level,"nodes":[]}
+    feature_nodes[locus]["nodes"].append(node)
+    node.set_meta("phenotype_locus",locus)
+    node.set_meta("phenotype_allele",level)
+
+func _record_children(locus: String, first: int) -> void:
+    for i in range(first,get_child_count()):
+        var node: Node3D = get_child(i) as Node3D
+        if node != null:
+            _record(locus,node)
+
+func _record_genetic_core() -> void:
+    if bool(traits.get("dna",false)):
+        var dna: Node3D = find_child("DNA_DoubleStrand",true,false) as Node3D
+        _record("dna_stabilization",dna)
+        # DNA does not eliminate RNA. A shorter transcript remains in cytosol.
+        var transcript := Node3D.new()
+        transcript.name = "Accessory_RNA"
+        interior.add_child(transcript)
+        var path := PackedVector3Array()
+        for i in range(25):
+            var t: float = float(i)/24.0
+            path.append(Vector3((t-.5)*.65,.25+sin(t*TAU)*.045,-.28+sin(t*TAU*1.4)*.04))
+        _tube(transcript,path,.012,RNA_COLOR)
+        _record("rna_replicase",transcript)
+    else:
+        var rna: Node3D = find_child("SingleStrand_RNA",true,false) as Node3D
+        if rna == null and interior.get_child_count()>0:
+            rna = interior.get_child(0) as Node3D
+        _record("rna_replicase",rna)
+    _record("cell_elongation",membrane)
+    # Sparse solute markers: visual convention, not extra organelles.
+    for i in range(7):
+        var a: float = float(i)*2.39996
+        _ellipsoid(interior,Vector3(cos(a)*.50,sin(a*1.7)*.24,sin(a)*.44),
+            Vector3.ONE*(.012+.003*(i%3)),Color(.43,.80,.86),.65)
+
+func _build_thermal_domains() -> void:
+    var level: int = _level("thermal_membrane")
+    if level<=0:
+        return
+    var domains := Node3D.new()
+    domains.name = "Thermal_MembraneDomains"
+    domains.set_meta("scientific_display","false-color lipid-composition cue, not universal membrane rigidity")
+    add_child(domains)
+    for i in range(level*3):
+        var path := PackedVector3Array()
+        var phi: float = float(i)*TAU/float(level*3)
+        for j in range(10):
+            var a: float = phi+float(j)*.025
+            var y: float = .22*sin(phi*2.0)
+            var radial: float = sqrt(1.0-y*y)*1.012
+            path.append(Vector3(cos(a)*body_radii.x*radial,.81+y*body_radii.y,sin(a)*body_radii.z*radial))
+        _tube(domains,path,.017,Color(.91,.70,.30),.62)
+    _record("thermal_membrane",domains)
+
+func _build_chaperones() -> void:
+    var level: int = _level("chaperone_complex")
+    if level<=0:
+        return
+    var complexes := Node3D.new()
+    complexes.name = "Chaperone_CytosolicComplexes"
+    complexes.set_meta("scientific_display","non-membranous protein complexes, exaggerated scale")
+    interior.add_child(complexes)
+    for i in range(level+1):
+        var a: float = float(i)*TAU/float(level+1)+.4
+        var center := Vector3(cos(a)*.43,-.20+sin(a)*.09,sin(a)*.36)
+        var torus := TorusMesh.new()
+        torus.inner_radius = .041
+        torus.outer_radius = .083
+        torus.rings = 12
+        torus.ring_segments = 6
+        var complex := MeshInstance3D.new()
+        complex.name = "Chaperonin_Ring_%d" % i
+        complex.mesh = torus
+        complex.position = center
+        complex.rotation = Vector3(.3,a,.2)
+        complex.material_override = _mat(Color(.23,.70,.79))
+        complex.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        complexes.add_child(complex)
+        _ellipsoid(complexes,center,Vector3.ONE*.026,CATALYST_COLOR)
+    _record("chaperone_complex",complexes)
+
+func _wall_lattice(host: Node3D, radii: Vector3, tint: Color, fine: bool) -> void:
+    # A reticular wall/S-layer is distinct from a second lipid membrane.
+    for latitude in [-.62,-.25,.25,.62]:
+        var path := PackedVector3Array()
+        var radial: float = sqrt(1.0-float(latitude)*float(latitude))
+        for j in range(49):
+            var a: float = TAU*float(j)/48.0
+            path.append(Vector3(cos(a)*radii.x*radial,.81+float(latitude)*radii.y,sin(a)*radii.z*radial))
+        _tube(host,path,.007 if fine else .012,tint,.14 if fine else .21)
+    for i in range(8):
+        var path := PackedVector3Array()
+        var a: float = TAU*float(i)/8.0
+        for j in range(17):
+            var t: float = lerpf(-1.28,1.28,float(j)/16.0)
+            path.append(Vector3(cos(a)*cos(t)*radii.x,.81+sin(t)*radii.y,sin(a)*cos(t)*radii.z))
+        _tube(host,path,.006 if fine else .009,tint,.13)
+
+func _build_envelope() -> void:
+    var envelope: String = str(traits.get("envelope","none"))
+    if envelope == "none":
+        return
+    var wall := Node3D.new()
+    wall.name = "Envelope_"+envelope
+    add_child(wall)
+    if envelope == "monoderm":
+        wall.set_meta("scientific_display","one cytoplasmic membrane plus peptidoglycan wall")
+        _wall_lattice(wall,body_radii*1.035,Color(.77,.72,.48),false)
+        _record("monoderm_envelope",wall)
+    elif envelope == "diderm":
+        wall.set_meta("scientific_display","thin wall and periplasm between cytoplasmic and outer membranes")
+        _wall_lattice(wall,body_radii*1.025,Color(.77,.72,.48),true)
+        var outer: MeshInstance3D = _ellipsoid(wall,Vector3(0,.81,0),body_radii*1.105,Color(.38,.68,.73),.10)
+        outer.name = "OuterMembrane"
+        _record("diderm_envelope",wall)
+    elif envelope == "archaeal":
+        wall.set_meta("scientific_display","illustrative protein S-layer; not universal across Archaea")
+        _wall_lattice(wall,body_radii*1.035,Color(.50,.72,.85),true)
+        _record("archaeal_envelope",wall)
+
 func _process(delta: float) -> void:
     age += delta
-    var pulse: float = 1.0+sin(age*1.36)*.009
-    scale = Vector3(growth*pulse,growth,growth*pulse)
+    # Stable presentation size; volume-preserving motion lives in FluidMotion.
+    scale = Vector3.ONE*growth*1.45
     if is_instance_valid(interior):
         interior.rotation.y = sin(age*.32)*.09
         interior.position.y = sin(age*.83)*.015 if blender_interior else .81+sin(age*.83)*.015
     for i in range(filament_roots.size()):
         var root: Node3D = filament_roots[i]
-        root.rotation.y = sin(age*2.1+float(i))*.17
-        root.rotation.z = cos(age*1.7+float(i))*.08
+        # Both propulsors are rotary helical filaments; not whipping eukaryotic cilia.
+        root.rotation.x = age*(4.1 if branch == "archaea" else 3.3)+float(i)*.8
