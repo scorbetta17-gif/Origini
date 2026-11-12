@@ -75,7 +75,7 @@ func _cell(point: Dictionary) -> void:
     var pos: Vector2 = point.get("pos",Vector2.ZERO)
     var radius: float = float(point.get("radius",53.0))
     var selected: bool = bool(point.get("selected",false))
-    var trait: Dictionary = point.get("traits",{})
+    var phenotype: Dictionary = point.get("traits",{})
     var branch: String = str(point.get("branch","pre_luca"))
     var color: Color = Color(.34,.79,.79)
     if branch == "archaea":
@@ -86,7 +86,7 @@ func _cell(point: Dictionary) -> void:
         color = Color(.69,.66,.88)
     var wobble: float = animation_time*.57+float(point.get("seed",0))*.61
     var base_radius: Vector2 = Vector2(radius*1.05,radius*.89)
-    var elongation: float = clampf(float(trait.get("elongation",0.0)),0.0,.65)
+    var elongation: float = clampf(float(phenotype.get("elongation",0.0)),0.0,.65)
     base_radius.x *= 1.0+elongation*.3
     base_radius.y *= 1.0-elongation*.12
     # Small ground contact shadow and water halo establish depth without
@@ -98,10 +98,10 @@ func _cell(point: Dictionary) -> void:
     for j in range(3):
         draw_arc(pos,radius*(1.33+float(j)*.13),0,TAU,64,
             Color(.38,.90,.86,.080-float(j)*.022),1.2,true)
-    if bool(trait.get("eps",false)):
+    if bool(phenotype.get("eps",false)):
         draw_arc(pos,base_radius.x*1.24,0,TAU,64,Color(.60,.91,.78,.38),2.8,true)
 
-    var pili: int = mini(9,int(trait.get("pili",0)))
+    var pili: int = mini(9,int(phenotype.get("pili",0)))
     for i in range(pili):
         var a: float = TAU*float(i)/float(maxi(pili,1))
         var start: Vector2 = pos+Vector2(cos(a)*base_radius.x,sin(a)*base_radius.y)
@@ -125,7 +125,7 @@ func _cell(point: Dictionary) -> void:
 
     # Exactly ONE ssRNA until DNA stabilization. 2D projection of folded RNA;
     # not a pre-existing nucleus or mitochondrion.
-    var dna: bool = bool(trait.get("dna",false))
+    var dna: bool = bool(phenotype.get("dna",false))
     var points := PackedVector2Array()
     for i in range(51):
         var t: float = float(i)/50.0
@@ -149,17 +149,17 @@ func _cell(point: Dictionary) -> void:
         var p: Vector2 = pos+Vector2(cos(phi)*radius*.59,sin(phi)*radius*.56)
         draw_circle(p,radius*.027,Color(.89,1.0,.81,.65))
 
-    var receptors: int = mini(9,int(trait.get("receptors",0)))
+    var receptors: int = mini(9,int(phenotype.get("receptors",0)))
     for i in range(receptors):
         var a: float = TAU*(float(i)+.27)/float(maxi(receptors,1))
         var p: Vector2 = pos+Vector2(cos(a)*base_radius.x*1.06,sin(a)*base_radius.y*1.07)
         draw_circle(p,radius*.05,Color(.91,.95,.65))
-    var proteases: int = mini(7,int(trait.get("protease",0)))
+    var proteases: int = mini(7,int(phenotype.get("protease",0)))
     for i in range(proteases):
         var a: float = TAU*(float(i)+.63)/float(maxi(proteases,1))
         var p: Vector2 = pos+Vector2(cos(a)*base_radius.x*.97,sin(a)*base_radius.y*.96)
         draw_circle(p,radius*.065,Color(1.0,.69,.48))
-    var vesicles: int = mini(6,int(trait.get("vesicles",0)))
+    var vesicles: int = mini(6,int(phenotype.get("vesicles",0)))
     for i in range(vesicles):
         var a: float = TAU*(float(i)+.5)/float(maxi(vesicles,1))
         var p: Vector2 = pos+Vector2(cos(a)*base_radius.x*1.25,sin(a)*base_radius.y*1.25)
