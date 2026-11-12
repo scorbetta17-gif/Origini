@@ -54,8 +54,8 @@ func _sea_light() -> void:
     # Deep teal translucent water, with very soft sunlight shafts.
     for i in range(8):
         var y: float = top+float(i)*(floor-top)/8.0
-        var a: float = .035+float(i)*.010
-        draw_rect(Rect2(0,y,w,(floor-top)/8.0+1.0),Color(.025,.16,.23,a))
+        var a: float = .058+float(i)*.011
+        draw_rect(Rect2(0,y,w,(floor-top)/8.0+1.0),Color(.018,.23,.30,a))
     var shafts: Array[float] = [.12,.42,.73,.94]
     for i in range(shafts.size()):
         var x: float = w*shafts[i]
@@ -64,7 +64,7 @@ func _sea_light() -> void:
             Vector2(x-9.0,top),Vector2(x+22.0,top),
             Vector2(x+88.0+drift,floor),Vector2(x-35.0+drift,floor)
         ])
-        draw_colored_polygon(beam,Color(.12,.57,.65,.032 if i%2==0 else .047))
+        draw_colored_polygon(beam,Color(.12,.65,.76,.060 if i%2==0 else .082))
     for i in range(19):
         var fx: float = float((i*173+47)%661)/661.0*w
         var fy: float = top+float((i*311+109)%997)/997.0*(floor-top)
@@ -111,11 +111,11 @@ func _cell(point: Dictionary) -> void:
 
     # Organic closed membrane with a smooth soft upper highlight.
     var outer: PackedVector2Array = _body_polygon(pos,base_radius,wobble)
-    draw_colored_polygon(outer,Color(.17,.43,.48,.98).lerp(color,.12))
+    draw_colored_polygon(outer,Color(.18,.49,.54,.98).lerp(color,.12))
     var middle: PackedVector2Array = _body_polygon(pos,base_radius*.91,wobble)
-    draw_colored_polygon(middle,Color(.22,.56,.60,.93).lerp(color,.16))
+    draw_colored_polygon(middle,Color(.23,.65,.68,.94).lerp(color,.13))
     _ellipse(pos+Vector2(-radius*.13,radius*.14),base_radius*.65,
-        Color(.20,.64,.64,.20))
+        Color(.28,.82,.81,.21))
     _outline(pos,base_radius,Color(.57,.98,.95,.98),3.3,wobble)
     _outline(pos,base_radius*1.08,Color(.43,.89,.88,.22),1.7,wobble)
     _ellipse(pos+Vector2(-radius*.35,-radius*.38),Vector2(radius*.23,radius*.15),
