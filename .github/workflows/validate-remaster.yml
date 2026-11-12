@@ -2,9 +2,11 @@ name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
     branches: [work/remaster-068]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: phase2-android-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -39,6 +41,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
       - name: Fase 2 completa - da riconoscimento a trasmissione
         run: timeout 120s godot --headless --path . --script res://tests/phase_two_smoke.gd
+      - name: Campagna completa dal protocellula alla Fase 2
+        run: timeout 120s godot --headless --path . --script res://tests/campaign_full_smoke.gd
       - name: Import effettivo Blender 3D e moduli per gene
         run: timeout 90s godot --headless --path . --script res://tests/blender_asset_smoke.gd
       - name: Driver per capture 3D
@@ -83,8 +87,8 @@ jobs:
         run: |
           sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.preview.vulkan"@' export_presets.cfg
           sed -i 's@package/name="ORIGINI"@package/name="ORIGINI VULKAN"@' export_presets.cfg
-          sed -i 's@version/name="0.67-demo"@version/name="0.69-vulkan-preview"@' export_presets.cfg
-          sed -i 's@version/code=67@version/code=69@' export_presets.cfg
+          sed -i 's@version/name="0.67-demo"@version/name="0.70-phase2-vulkan"@' export_presets.cfg
+          sed -i 's@version/code=67@version/code=70@' export_presets.cfg
           grep -q 'org.origini.mobile.preview.vulkan' export_presets.cfg
       - name: Installa Godot e modelli di esportazione
         uses: chickensoft-games/setup-godot@v2
@@ -136,7 +140,7 @@ jobs:
           sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
           sed -i 's@org.origini.mobile.preview.vulkan@org.origini.mobile.preview.compat@' export_presets.cfg
           sed -i 's@ORIGINI VULKAN@ORIGINI COMPAT@' export_presets.cfg
-          sed -i 's@0.69-vulkan-preview@0.69-compat-preview@' export_presets.cfg
+          sed -i 's@0.70-phase2-vulkan@0.70-phase2-compat@' export_presets.cfg
           godot --headless --path . --editor --quit
       - name: Esporta APK Android Compatibility
         run: godot --headless --path . --export-debug Android build/android/ORIGINI-COMPAT-PREVIEW.apk
