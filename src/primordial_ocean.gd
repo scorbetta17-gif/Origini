@@ -28,6 +28,7 @@ func setup(rng: RandomNumberGenerator) -> void:
         var material := StandardMaterial3D.new()
         material.albedo_color = tint
         material.roughness = .94
+        material.cull_mode = BaseMaterial3D.CULL_DISABLED
         mineral_mats.append(material)
     dark_crack = _mat(Color(.018,.084,.12))
     crack_rim = _mat(Color(.19,.55,.51),.62)
@@ -86,6 +87,7 @@ func _mat(color: Color, emission: float = 0.0, opacity: float = 1.0) -> Standard
     material.albedo_color = color
     material.roughness = .83
     material.metallic = 0.0
+    material.cull_mode = BaseMaterial3D.CULL_DISABLED
     if emission > 0.0:
         material.emission_enabled = true
         material.emission = Color(color.r,color.g,color.b)
@@ -110,33 +112,20 @@ func _sediment() -> void:
     add_child(ground)
 
 func _stone(at: Vector3, radius: float, rng: RandomNumberGenerator) -> void:
-    var geo := SurfaceTool.new()
-    geo.begin(Mesh.PRIMITIVE_TRIANGLES)
-    var sides: int = 8
-    var angle_shift: float = rng.randf()*TAU
-    var heights: Array[float] = [.02,.36,.76,1.0]
-    var widths: Array[float] = [.88,1.0,.77,.25]
-    var rings: Array = []
-    for level in range(4):
-        var ring: Array[Vector3] = []
-        for j in range(sides):
-            var a: float = angle_shift+TAU*float(j)/float(sides)
-            var r: float = radius*widths[level]*rng.randf_range(.87,1.13)
-            ring.append(Vector3(cos(a)*r,radius*heights[level],sin(a)*r))
-        rings.append(ring)
-    for level in range(3):
-        for j in range(sides):
-            var nxt: int = (j+1)%sides
-            # Reverse winding to expose upward/outward normals to the light.
-            _triangle(geo,rings[level][j],rings[level+1][j],rings[level][nxt])
-            _triangle(geo,rings[level][nxt],rings[level+1][j],rings[level+1][nxt])
-    for j in range(sides):
-        _triangle(geo,rings[3][j],Vector3(0,radius*.98,0),rings[3][(j+1)%sides])
-    geo.generate_normals()
+    # Mesh low-poly nativa: facce coerenti e leggibili nella vista dall'alto,
+    # anche sul renderer Android Compatibility.
+    var mesh := SphereMesh.new()
+    mesh.radius = 1.0
+    mesh.height = 2.0
+    mesh.radial_segments = 8
+    mesh.rings = 4
     var rock := MeshInstance3D.new()
-    rock.mesh = geo.commit()
+    rock.mesh = mesh
+    rock.position = at+Vector3(0,radius*.34,0)
+    rock.scale = Vector3(radius*rng.randf_range(.79,1.12),
+        radius*rng.randf_range(.48,.79),radius*rng.randf_range(.83,1.15))
+    rock.rotation.y = rng.randf()*TAU
     rock.material_override = mineral_mats[rng.randi_range(0,mineral_mats.size()-1)]
-    rock.position = at
     rock.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(rock)
 
@@ -146,32 +135,20 @@ func _triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
     st.add_vertex(c)
 
 func _volcano(at: Vector3, radius: float, height: float, rng: RandomNumberGenerator) -> void:
-    # Sezione aperta e tronco con facce rocciose. Sotto la bocca si vede
-    # un nucleo caldo soltanto nei due luoghi pericolosi del gameplay.
-    var segments: int = 15
-    var crust := SurfaceTool.new()
-    crust.begin(Mesh.PRIMITIVE_TRIANGLES)
-    for i in range(segments):
-        var a0: float = TAU*float(i)/float(segments)
-        var a1: float = TAU*float(i+1)/float(segments)
-        var base0 := at+Vector3(cos(a0)*radius,0,sin(a0)*radius)
-        var base1 := at+Vector3(cos(a1)*radius,0,sin(a1)*radius)
-        var mid0 := at+Vector3(cos(a0)*radius*.77,height*.49,sin(a0)*radius*.77)
-        var mid1 := at+Vector3(cos(a1)*radius*.77,height*.49,sin(a1)*radius*.77)
-        var top0 := at+Vector3(cos(a0)*radius*.31,height,sin(a0)*radius*.31)
-        var top1 := at+Vector3(cos(a1)*radius*.31,height,sin(a1)*radius*.31)
-        # Outward-facing normals; previous reversed winding looked like a
-        # featureless dark disk from the overhead camera.
-        _triangle(crust,base0,mid0,base1)
-        _triangle(crust,base1,mid0,mid1)
-        _triangle(crust,mid0,top0,mid1)
-        _triangle(crust,mid1,top0,top1)
-    crust.generate_normals()
+    # Frustoconical volcanic cone with reliable outward-facing normals and
+    # faceted top-down 3D silhouette, unlike hand-wound surface strips.
+    var cone := CylinderMesh.new()
+    cone.top_radius = radius*.315
+    cone.bottom_radius = radius
+    cone.height = height
+    cone.radial_segments = 14
+    cone.rings = 3
     var volcano := MeshInstance3D.new()
     volcano.name = "Camino_vulcanico_minerale"
     volcano.add_to_group("primordial_volcano")
-    volcano.mesh = crust.commit()
-    volcano.material_override = mineral_mats[2]
+    volcano.mesh = cone
+    volcano.position = at+Vector3(0,height*.50,0)
+    volcano.material_override = mineral_mats[3]
     volcano.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(volcano)
     var crater := CylinderMesh.new()
