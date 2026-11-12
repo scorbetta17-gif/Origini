@@ -1,6 +1,29 @@
 extends Node3D
 ## Scena ausiliaria: apre direttamente otto fenotipi renderizzati in Godot.
 const CellScript = preload("res://src/cell_visual.gd")
+const Genome = preload("res://src/cell_genome.gd")
+
+static func variants() -> Array[Dictionary]:
+    return [
+        {"name":"01 · Protocellula a RNA","branch":"pre_luca","loci":{}},
+        {"name":"02 · Protocellula con DNA","branch":"pre_luca","loci":{"dna_stabilization":1}},
+        {"name":"03 · LUCA schematico","branch":"luca","loci":{"dna_stabilization":1,"membrane_transport":1,"surface_recognition":1}},
+        {"name":"04 · Bacteria mobile","branch":"bacteria","loci":{"dna_stabilization":1,"monoderm_envelope":1,"flagellar_motor":1,"cell_elongation":1,"pili_twitch":1}},
+        {"name":"05 · Bacteria diderma","branch":"bacteria","loci":{"dna_stabilization":1,"diderm_envelope":1,"membrane_transport":2,"cell_elongation":2}},
+        {"name":"06 · Archaea secernente","branch":"archaea","loci":{"dna_stabilization":1,"archaeal_envelope":1,"hydrolase_secretion":2,"vesicle_pathway":2}},
+        {"name":"07 · Archaea termotollerante","branch":"archaea","loci":{"dna_stabilization":1,"archaeal_envelope":1,"archaellar_motor":2,"thermal_membrane":2,"chaperone_complex":2,"cell_elongation":1}},
+        {"name":"08 · Matrice EPS e trasporto","branch":"bacteria","loci":{"dna_stabilization":1,"monoderm_envelope":1,"eps_biosynthesis":1,"surface_recognition":2,"membrane_transport":3}}
+    ]
+
+static func traits_for_variant(variant: Dictionary) -> Dictionary:
+    var traits: Dictionary = {"motility":1.0,"attack":1.0,"defense":1.0,"mutation":0.0,
+        "metabolism":1.0,"uptake":1.0,"signature":0.0,"mutations":[],"genome":Genome.origin()}
+    var branch: String = str(variant["branch"])
+    for locus in variant["loci"]:
+        for level in range(int(variant["loci"][locus])):
+            traits = Genome.grant(traits,locus,level+1,"gallery_example",branch)
+    return Genome.normalize(traits,branch)
+
 
 func _ready() -> void:
     var env := WorldEnvironment.new()
@@ -24,7 +47,7 @@ func _ready() -> void:
     add_child(warm)
     var cam := Camera3D.new()
     cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-    cam.size = 18.5
+    cam.size = 12.0
     cam.position = Vector3(0,14,19)
     add_child(cam)
     cam.look_at(Vector3(0,.25,0))
@@ -38,35 +61,27 @@ func _ready() -> void:
     material.albedo_color = Color(.03,.21,.25)
     ground.material_override = material
     add_child(ground)
-    var base := {"motility":1.0,"attack":1.0,"defense":1.0,"mutation":0.0,
-        "metabolism":1.0,"uptake":1.0,"archaella":0,"dna":false,"eps":false,"adhesion":false,"flagella":0,"envelope":"none","signature":0.0,"mutations":[]}
-    var variants := [
-        ["01 · Protocellula RNA","pre_luca",{}],
-        ["02 · LUCA con DNA","luca",{"dna":true}],
-        ["03 · Bacteria monoderma","bacteria",{"dna":true,"defense":1.5,"envelope":"monoderm"}],
-        ["04 · Bacteria didermica*","bacteria",{"dna":true,"defense":1.2,"uptake":1.35,"envelope":"diderm","flagella":3}],
-        ["05 · Archaea motile","archaea",{"dna":true,"archaella":5,"motility":1.55,"envelope":"archaeal"}],
-        ["06 · Predatore litico","archaea",{"dna":true,"attack":1.85,"archaella":2,"envelope":"archaeal"}],
-        ["07 · Involucro EPS","bacteria",{"dna":true,"eps":true,"adhesion":true,"defense":1.75,"envelope":"monoderm"}],
-        ["08 · Trasportatori potenziati","archaea",{"dna":true,"uptake":1.85,"motility":.92,"envelope":"archaeal"}]
-    ]
-    for i in range(variants.size()):
-        var current: Array = variants[i]
-        var traits: Dictionary = base.duplicate(true)
-        for key in current[2]:
-            traits[key] = current[2][key]
+    var examples: Array[Dictionary] = variants()
+    for i in range(examples.size()):
+        var current: Dictionary = examples[i]
+        var traits: Dictionary = traits_for_variant(current)
         var cell: CellVisual = CellScript.new()
         add_child(cell)
-        cell.position = Vector3(float(i%4-1.5)*4.5,0,float(int(i/4))*5.2-2.6)
-        cell.setup(traits,current[1])
-        cell.set_growth(.58 if i == 0 else 1.0)
+        cell.position = Vector3(float(i%4-1.5)*4.5,0,float(int(i/4))*8.0-4.0)
+        cell.setup(traits,str(current["branch"]))
+        cell.set_growth(1.0)
+        if i == 3:
+            cell.rotation.y = -PI*.5
+        elif i == 6:
+            cell.rotation.y = PI*.5
         var caption := Label3D.new()
-        caption.text = current[0]
-        caption.font_size = 28
-        caption.pixel_size = 0.006
-        caption.position = Vector3(0,2.0,0)
+        caption.text = str(current["name"])
+        caption.font_size = 32
+        caption.pixel_size = 0.008
+        caption.position = cell.position+Vector3(0,3.05,0)
+        caption.no_depth_test = true
         caption.modulate = Color(.86,.96,.96)
-        cell.add_child(caption)
+        add_child(caption)
     var layer := CanvasLayer.new()
     add_child(layer)
     var title := Label.new()
@@ -76,6 +91,6 @@ func _ready() -> void:
     title.add_theme_color_override("font_color",Color(.88,.98,.96))
     layer.add_child(title)
     var hint := Label.new()
-    hint.text = "* I due involucro batterici sono prototipi visivi, non ricostruzioni filogenetiche."
+    hint.text = "Genotipi reali del gioco · forme, colori e dimensioni simbolici. LUCA e protocellule: modelli ipotetici, non ricostruzioni."
     hint.position = Vector2(20,55)
     layer.add_child(hint)

@@ -37,7 +37,20 @@ static func allele(traits: Dictionary, locus: String) -> int:
     var genome: Dictionary = traits.get("genome",{})
     var loci: Dictionary = genome.get("loci",{})
     var entry: Dictionary = loci.get(locus,{})
-    return int(entry.get("allele",0))
+    var value: int = maxi(0,int(entry.get("allele",0)))
+    return mini(value,int(GENE_INFO[locus]["max"])) if GENE_INFO.has(locus) else value
+
+static func expressed_allele(traits: Dictionary, locus: String, branch: String = "pre_luca") -> int:
+    # Keep inherited records intact; only compatible structures are expressed.
+    if locus in ["flagellar_motor","monoderm_envelope","diderm_envelope"] and branch != "bacteria":
+        return 0
+    if locus in ["archaellar_motor","archaeal_envelope"] and branch != "archaea":
+        return 0
+    # Older saves can contain both loci. Diderm describes the active envelope;
+    # retaining monoderm history does not mean drawing a third membrane.
+    if locus == "monoderm_envelope" and has(traits,"diderm_envelope"):
+        return 0
+    return allele(traits,locus)
 
 static func has(traits: Dictionary, locus: String) -> bool:
     return allele(traits,locus) > 0
@@ -48,14 +61,17 @@ static func _legacy(traits: Dictionary, branch: String) -> Dictionary:
     # NON confuso con una sequenza genetica ricostruita scientificamente.
     var hints: Dictionary = {
         "dna_stabilization": 1 if bool(traits.get("dna",false)) else 0,
-        "surface_recognition": 1 if bool(traits.get("adhesion",false)) or int(traits.get("receptors",0)) > 0 else 0,
+        "surface_recognition": mini(3,maxi(1 if bool(traits.get("adhesion",false)) else 0,
+            int(ceil(float(traits.get("receptors",0))/2.0)))),
+        "membrane_transport": mini(3,int(ceil(float(traits.get("transporters",0))/3.0))),
+        "cell_elongation": mini(2,int(ceil(float(traits.get("elongation",0.0))/.40))),
         "pili_twitch": mini(3,int(ceil(float(traits.get("pili",0))/2.0))),
         "hydrolase_secretion": mini(3,int(traits.get("protease",0))),
         "vesicle_pathway": mini(3,int(traits.get("vesicles",0))),
         "eps_biosynthesis": 1 if bool(traits.get("eps",false)) else 0,
         "thermal_membrane": mini(3,int(ceil(float(traits.get("thermotolerance",0.0))))),
-        "flagellar_motor": 1 if int(traits.get("flagella",0)) > 0 else 0,
-        "archaellar_motor": 1 if int(traits.get("archaella",0)) > 0 else 0,
+        "flagellar_motor": mini(2,maxi(1,int(traits.get("flagella",0))-1)) if int(traits.get("flagella",0)) > 0 else 0,
+        "archaellar_motor": mini(2,maxi(1,int(traits.get("archaella",0))-1)) if int(traits.get("archaella",0)) > 0 else 0,
         "diderm_envelope": 1 if str(traits.get("envelope","")) == "diderm" else 0,
         "monoderm_envelope": 1 if str(traits.get("envelope","")) == "monoderm" else 0,
         "archaeal_envelope": 1 if branch == "archaea" else 0
@@ -89,10 +105,11 @@ static func grant(traits: Dictionary, locus: String, generation: int, origin_typ
         return result
     if (locus == "monoderm_envelope" or locus == "diderm_envelope") and branch != "bacteria":
         return result
+    if locus == "monoderm_envelope" and has(result,"diderm_envelope"):
+        return result
     var genome: Dictionary = result["genome"]
     var loci: Dictionary = genome["loci"]
-    var old: Dictionary = loci.get(locus,{})
-    var current: int = int(old.get("allele",0))
+    var current: int = allele(result,locus)
     var cap: int = int(GENE_INFO[locus]["max"])
     if current >= cap:
         return result
@@ -131,11 +148,13 @@ static func random_candidates(branch: String, traits: Dictionary) -> Array[Strin
         if allele(traits,locus) < int(GENE_INFO[locus]["max"]):
             items.append(locus)
     if branch == "bacteria":
-        items.append("flagellar_motor")
+        if allele(traits,"flagellar_motor") < int(GENE_INFO["flagellar_motor"]["max"]):
+            items.append("flagellar_motor")
         if allele(traits,"monoderm_envelope") == 0 and allele(traits,"diderm_envelope") == 0:
             items.append("monoderm_envelope")
     elif branch == "archaea":
-        items.append("archaellar_motor")
+        if allele(traits,"archaellar_motor") < int(GENE_INFO["archaellar_motor"]["max"]):
+            items.append("archaellar_motor")
     return items
 
 static func describe(traits: Dictionary) -> Array[String]:

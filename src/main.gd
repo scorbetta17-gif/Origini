@@ -340,8 +340,7 @@ func _create_entity(id: String, parent: String, gen: int, branch: String, traits
     cells_root.add_child(node)
     node.position = at
     node.setup(inherited, branch, controlled)
-    var screen: Vector2 = get_viewport().get_visible_rect().size
-    node.visible = not (screen.y > screen.x and not camera_focus)
+    node.visible = true
     node.set_growth(Physiology.growth_scale(24.0,23.0,65.0))
     var inventory: Dictionary = {"carbon":6.0,"amino":4.0,"lipid":3.0,"nucleic":1.0,"biomass":24.0}
     entities[id] = {"node":node,"parent":parent,"generation":gen,"branch":branch,
@@ -467,6 +466,8 @@ func _process(delta: float) -> void:
         _move_player(direction.normalized(),delta)
     elif atp > 0.0 and (selected_target_id != "" or is_instance_valid(selected_nutrient)):
         _follow_attack(delta)
+    else:
+        _move_player(Vector2.ZERO,delta)
     var travelled: float = player.position.distance_to(position_before_movement)
     var physiology_state: Dictionary = Physiology.energy_step(atp,zero_atp_seconds,delta,
         travelled,entities[player_id]["traits"])
@@ -652,8 +653,16 @@ func _toggle_focus() -> void:
 func _move_player(direction: Vector2, delta: float) -> void:
     var traits: Dictionary = entities[player_id]["traits"]
     var speed: float = Physiology.player_speed(traits)
-    player.position.x += direction.x * speed * delta
-    player.position.z += direction.y * speed * delta
+    # Short overdamped input filter: exact integration, no overshoot or long glide.
+    var velocity: Vector3 = entities[player_id].get("velocity",Vector3.ZERO)
+    var target := Vector3(direction.x,0,direction.y)*speed
+    if atp <= 0:
+        velocity = Vector3.ZERO
+        target = Vector3.ZERO
+    var dt: float = maxf(delta,0.0)
+    var decay: float = exp(-dt/.075)
+    player.position += target*dt+(velocity-target)*.075*(1.0-decay)
+    entities[player_id]["velocity"] = target+(velocity-target)*decay
     player.position.x = clampf(player.position.x, -world_radius,world_radius)
     player.position.z = clampf(player.position.z, -world_radius,world_radius)
     if direction.length() > .2:
@@ -2039,12 +2048,12 @@ func _layout_ui() -> void:
     var portrait: bool = wh.y > wh.x
     classic_hud.set_viewport(wh)
     classic_hud.visible = portrait
-    cell_world_glyphs.visible = portrait and not camera_focus
+    cell_world_glyphs.visible = false # Actual 3D cell phenotypes in every camera mode.
     cell_world_glyphs.size = wh
     for cell_id in entities:
         var e: Dictionary = entities[cell_id]
         if is_instance_valid(e["node"]):
-            e["node"].visible = not (portrait and not camera_focus)
+            e["node"].visible = true
     nutrient_markers.size = wh
     nutrient_markers.visible = portrait
     for n in nutrients:

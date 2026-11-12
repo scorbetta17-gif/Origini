@@ -1,7 +1,7 @@
 name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
-    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference]
+    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes]
   workflow_dispatch:
 
 concurrency:
@@ -47,6 +47,12 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/volcano_visual_smoke.gd
       - name: Fondale esteso, raccordi, esplorazione e salvataggi
         run: timeout 90s godot --headless --path . --script res://tests/seabed_world_smoke.gd
+      - name: Membrane stabili e moto indipendente dagli FPS
+        run: timeout 90s godot --headless --path . --script res://tests/cell_fluid_smoke.gd
+      - name: Fenotipo per tutti i loci e livelli
+        run: timeout 90s godot --headless --path . --script res://tests/cell_phenotype_smoke.gd
+      - name: Galleria di genotipi reali
+        run: timeout 90s godot --headless --path . --script res://tests/gallery_genotype_smoke.gd
       - name: Nutrienti indipendenti dal frame rate
         run: timeout 90s godot --headless --path . --script res://tests/nutrient_timing_smoke.gd
       - name: Bilanciamento fisica energetica e moto fluido NPC
@@ -109,6 +115,20 @@ jobs:
           test -s build/previews/seabed-distant.png
           test -s build/previews/seabed-map.png
           test -s build/previews/seabed-gameplay.png
+      - name: Cellule 3D - RNA, DNA, fenotipo combinato e galleria
+        run: |
+          timeout 120s xvfb-run -a -s "-screen 0 1600x1600x24" godot --resolution 1000x800 --path . --rendering-method gl_compatibility --script res://tests/capture_cell_models.gd
+          timeout 90s xvfb-run -a -s "-screen 0 1600x1100x24" godot --resolution 1600x1000 --path . --rendering-method gl_compatibility --script res://tests/capture_cell_gallery.gd
+          test -s build/previews/cell-rna.png
+          test -s build/previews/cell-dna.png
+          test -s build/previews/cell-evolved.png
+          test -s build/previews/cell-gameplay-3d.png
+          test -s build/previews/cell-phenotypes-gallery.png
+      - name: Cellule tramite Mobile Vulkan
+        run: |
+          ORIGIN_CAPTURE_PREFIX=mobile- timeout 180s xvfb-run -a -s "-screen 0 1600x1600x24" godot --resolution 1000x800 --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_cell_models.gd 2>&1 | tee build/cell-mobile.log
+          grep -q 'CELL_RENDERER=mobile DRIVER=vulkan' build/cell-mobile.log
+          test -s build/previews/mobile-cell-evolved.png
       - name: Salva screenshot 3D per la revisione
         uses: actions/upload-artifact@v4
         with:

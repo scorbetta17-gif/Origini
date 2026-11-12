@@ -51,20 +51,11 @@ func _sea_light() -> void:
     var floor: float = sea_bottom
     if floor <= top:
         return
-    # Deep teal translucent water, with very soft sunlight shafts.
+    # Deep teal translucent water, without sunlight shafts.
     for i in range(8):
         var y: float = top+float(i)*(floor-top)/8.0
         var a: float = .058+float(i)*.011
         draw_rect(Rect2(0,y,w,(floor-top)/8.0+1.0),Color(.018,.23,.30,a))
-    var shafts: Array[float] = [.12,.42,.73,.94]
-    for i in range(shafts.size()):
-        var x: float = w*shafts[i]
-        var drift: float = sin(animation_time*.11+float(i)*1.2)*17.0
-        var beam := PackedVector2Array([
-            Vector2(x-9.0,top),Vector2(x+22.0,top),
-            Vector2(x+88.0+drift,floor),Vector2(x-35.0+drift,floor)
-        ])
-        draw_colored_polygon(beam,Color(.12,.65,.76,.060 if i%2==0 else .082))
     for i in range(19):
         var fx: float = float((i*173+47)%661)/661.0*w
         var fy: float = top+float((i*311+109)%997)/997.0*(floor-top)
