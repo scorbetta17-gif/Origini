@@ -1,0 +1,43 @@
+name: ORIGINI - ripristino sorgenti leggibili
+on:
+  push:
+    branches:
+      - work/remaster-068
+    paths:
+      - '.github/workflows/bootstrap-sources.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Estrai sorgenti Godot originali
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/ripristina_progetto.py
+          sed -i '/config\/icon=/d' project.godot
+          sed -i 's@^rendering/textures/vram_compression/import_etc2_astc=true@textures/vram_compression/import_etc2_astc=true@' project.godot
+          sed -i 's/var joystick: VirtualJoystick/var joystick/' src/main.gd
+          sed -i 's/^class_name VirtualJoystick$/class_name OriginiJoystick/' src/virtual_joystick.gd
+          sed -i 's/VirtualJoystick/OriginiJoystick/g' tests/qa_static.py
+          echo "Materiale estratto:"
+          find . -maxdepth 2 -type f -not -path './.git/*' | sort
+      - name: Versiona sorgenti sul ramo di lavoro
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for p in project.godot export_presets.cfg src scenes tests assets shaders; do
+            if [ -e "$p" ]; then git add -- "$p"; fi
+          done
+          if ! git diff --cached --quiet; then
+            git commit -m "Restore readable Godot source tree from bundled archive"
+            git push origin HEAD:work/remaster-068
+          fi

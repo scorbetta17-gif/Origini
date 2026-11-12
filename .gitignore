@@ -1,0 +1,17 @@
+# Godot caches and generated local output
+.godot/
+build/
+*.log
+# MCP editor-local authentication/configuration; NEVER commit tokens
+.mcp.json
+.mcp/
+.godot_mcp/
+# Android signing keys and local secrets
+*.keystore
+*.jks
+.env
+.env.*
+# Blender temporary backups (script is source of truth)
+*.blend1
+*.blend2
+__pycache__/

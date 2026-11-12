@@ -1,0 +1,23 @@
+config_version=5
+
+[application]
+config/name="ORIGINI | Fase 2"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+config/description="Dalla protocellula al consorzio Bacteria-Archaea: mutazioni ereditarie, selezione, scissione e cooperazione metabolica"
+
+[display]
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[rendering]
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.web="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.012, 0.052, 0.074, 1)
+textures/default_filters/use_nearest_mipmap_filter=false
+
+textures/vram_compression/import_etc2_astc=true
