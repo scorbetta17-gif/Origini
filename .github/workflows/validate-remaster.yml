@@ -1,7 +1,7 @@
 name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
-    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance]
+    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance, work/phase-two-playable]
   workflow_dispatch:
 
 concurrency:
@@ -65,8 +65,14 @@ jobs:
         run: timeout 120s godot --headless --path . --script res://tests/skill_tree_major_smoke.gd
       - name: Fase 2 completa - da riconoscimento a trasmissione
         run: timeout 120s godot --headless --path . --script res://tests/phase_two_smoke.gd
+      - name: Fase 2 - regressioni e partita con raccolta reale
+        run: |
+          timeout 90s godot --headless --path . --script res://tests/phase_two_regression_smoke.gd
+          timeout 180s godot --headless --path . --script res://tests/phase_two_playthrough_smoke.gd
       - name: Campagna completa dal protocellula alla Fase 2
         run: timeout 120s godot --headless --path . --script res://tests/campaign_full_smoke.gd
+      - name: Campagna giocata - raccolta reale senza risorse regalate
+        run: timeout 180s godot --headless --path . --script res://tests/campaign_playthrough_smoke.gd
       - name: Import effettivo Blender 3D e moduli per gene
         run: timeout 90s godot --headless --path . --script res://tests/blender_asset_smoke.gd
       - name: Interfaccia classica Android verticale, figlie e albero
@@ -133,6 +139,8 @@ jobs:
           test -s build/previews/mobile-cell-evolved.png
       - name: Mutazioni e substrati - screenshot reali
         run: timeout 90s xvfb-run -a -s "-screen 0 900x1600x24" godot --path . --rendering-method gl_compatibility --script res://tests/capture_mutation_balance.gd
+      - name: Fase 2 - pannello missione e consorzio reale
+        run: timeout 90s xvfb-run -a -s "-screen 0 900x1600x24" godot --path . --rendering-method gl_compatibility --script res://tests/capture_phase_two.gd
       - name: Salva screenshot 3D per la revisione
         uses: actions/upload-artifact@v4
         with:

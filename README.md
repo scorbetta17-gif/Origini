@@ -2,10 +2,10 @@
 
 > **Fondale 12/11/2026:** mappa esplorabile 480x480, faglie geometriche e palette condivisa senza caustiche. [Revisione e verifiche](docs/SEABED_REVIEW_2026-11-12.md).
 
-# ORIGINI — Android 0.72 Classic · Fase 1 + Fase 2
+# ORIGINI — Campagna cellulare · Fase 1 + Fase 2
 
 > Sviluppo successivo alla 0.76: [revisione vulcani e audit del 12 novembre 2026](docs/VOLCANO_REVIEW_2026-11-12.md).
-> Il titolo e alcune indicazioni di build qui sotto sono storici; consultare l'audit per lo stato verificato.
+> **Revisione Fase 2:** [stato, bug corretti e prove di giocabilita](docs/PHASE_TWO_PLAYABLE_REVIEW.md). La versione degli APK storici non identifica questo ramo sorgente.
 
 **Stato:** versione giocabile fino al traguardo della Fase 2, con interfaccia Android verticale ricostruita dalle schermate web originali 0.56–0.62, sviluppata in **Godot 4.7.2**, con modelli cellulari originali generati da **Blender** ed esportati in **glTF/GLB**.
 
@@ -38,20 +38,24 @@ Questo NON rappresenta la formazione di mitocondri, nucleo o una cellula eucario
 - Scegli la variante con DNA stabile e successivamente la discendente Archaea.
 - Sulle generazioni Archaea seleziona progressivamente **recettori** e **trasportatori** come mutazioni maggiori.
 - Segui l'indicatore **BACTERIA** sullo schermo. Avvicinati e premi **COOPERA**.
-- Mantieni il contatto mentre avviene lo scambio, raccogli di nuovo i nutrienti consumati e dividi la linea associata per completare Fase 2.
+- **COOPERA** cerca una Bacteria compatibile e permette di raggiungerla. Il joystick annulla l'avvicinamento automatico.
+- A legame attivo, **CONSORZIO → GESTISCI** mostra tempi, energia e distanza del partner; permette di sospendere/riprendere lo scambio o separarsi.
+- Mantieni il contatto per 25 s e lo scambio effettivo per 12 s. Sospendi lo scambio per conservare carbonio, raccogli le risorse, poi dividi e scegli una figlia.
+- Se controlli Bacteria, il pannello Fase 2 permette di seguire una Archaea distinta (esistente o immigrata): non cambia il ramo biologico della tua cellula.
+- All'apertura della Fase 2 viene creato un checkpoint separato. Dal menu puoi rigiocare il capitolo; il salvataggio ordinario resta distinto.
 - **CELLULA** apre la vista ravvicinata; **MENU** contiene **Come giocare**, **Fase 2**, **GENOMA**, **Obiettivi**, **ALBERO**, **LINEE**, **SALVA** e **CARICA**.
 
-## Interfaccia Classic (0.72)
+## Interfaccia Classic
 - Android portrait 720 × 1280, con layout che si adatta a dimensioni diverse.
 - ATP e HP su due barre separate; quattro schede nutrienti; obiettivo e progressione; quattro tab RISORSE/EVOLUZIONE/META/LINEA.
 - Joystick grande, comandi laterali, pulsante DIVIDI, lista di requisiti alla scissione.
 - Nutrienti proiettati come simboli chimici colorati sulle loro vere coordinate 3D.
 - Due card per scegliere quale figlia controllare, con disegni del fenotipo coerenti con il genoma e differenze numeriche.
-- Albero evolutivo con 6 categorie, 288 nodi, zoom, descrizione e costi; mutazioni maggiori solo in scissione.
+- Albero evolutivo con 6 categorie, 288 nodi, zoom, descrizione e costi; puntiformi libere e maggiori ogni cinque puntiformi della categoria, oltre alle tappe di campagna in scissione.
 - Menu e risorse in schede native Godot; nessun browser, WebView o emulatore necessario nell'APK.
 - Screenshot automatici veri: `classic-main`, `classic-daughters`, `classic-evolution`, `classic-lineage`.
 
-I salvataggi usano il formato logico v70; la lettura delle partite v67 precedenti è supportata con migrazione controllata dei campi genetici e di consorzio, senza attribuire retroattivamente mutazioni mai osservate.
+I salvataggi usano il formato logico v71; la lettura delle partite v67 e v70 precedenti è supportata con migrazione controllata dei campi genetici e di consorzio, senza attribuire retroattivamente mutazioni mai osservate.
 
 ## Build e grafica
 - Android ARM64, **Godot Mobile/Vulkan** e APK alternativo **GL Compatibility**. Il progetto usa `mobile` come renderer predefinito e `gl_compatibility` sul Web.
@@ -69,7 +73,7 @@ Il workflow `.github/workflows/validate-remaster.yml` esegue:
 - test della progressione Fase 2 dall'adesione fino alla figlia;
 - **test completo della campagna dalla primordiale fino alla Fase 2**;
 - catture autentiche da Godot GL e Vulkan;
-- esportazione e ispezione degli APK Android, senza rilascio pubblico automatico.
+- sul ramo storico `work/remaster-068`, esportazione e ispezione APK; sui rami di revisione, test e screenshot senza creare automaticamente APK o release.
 
 La pipeline di Blender è in `.github/workflows/bake-cell-assets.yml`.
 

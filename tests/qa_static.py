@@ -25,7 +25,7 @@ test('protocellula senza nucleo',not any(x in cell.lower() for x in ['mitochondr
 test('touch joystick dedicato','func _input(event: InputEvent)' in joy and 'signal direction_changed' in joy)
 test('tocco vs mouse sintetico','touch_seen' in joy)
 test('scissione autonoma biologicamente regolata', 'float(e["biomass"]) >= 57.0' in main and 'float(e["energy"]) >= 23.0' in main and 'npc_population_cap' in main)
-test('scissione non richiede HP','hp' not in main.split('func _can_divide()')[1].split('func _divide_pressed()')[0])
+test('scissione richiede cellula viva, non HP pieni','if hp<=0.0:' in main.split('func _can_divide()')[1].split('func _divide_pressed()')[0])
 test('HP individuali NPC','target["hp"] = float(target["hp"])-damage' in main)
 test('morte distinta da scissione','"divisa" if cause == "scissione" else "estinta"' in main)
 test('genealogia con cause e genitori','"cause":cause' not in main and 'entry["cause"] = cause' in main and '"parent":parent' in main)
