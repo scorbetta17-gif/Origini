@@ -62,6 +62,35 @@ func _capture() -> void:
     if not _save_frame("bioma-idrotermale"):
         quit(1)
         return
+
+    # Screenshots of real native Godot Controls in the 720x1280 portrait viewport.
+    game.call("_new_game")
+    await create_timer(.95).timeout
+    game.call("_refresh_hud")
+    if not _save_frame("classic-main"):
+        quit(1)
+        return
+    var required: Dictionary = {"carbon":24.0,"amino":15.0,"lipid":12.0,"nucleic":8.0,"biomass":65.0}
+    for k in required:
+        game.resources[k] = required[k]
+    game.atp = 96.0
+    game.call("_divide_pressed")
+    await create_timer(.4).timeout
+    if not _save_frame("classic-daughters"):
+        quit(1)
+        return
+    game.call("_choose_daughter",0)
+    game.call("_on_tree")
+    await create_timer(.40).timeout
+    if not _save_frame("classic-evolution"):
+        quit(1)
+        return
+    game.call("_close_overlay")
+    game.call("_on_genealogy")
+    await create_timer(.40).timeout
+    if not _save_frame("classic-lineage"):
+        quit(1)
+        return
     quit(0)
 
 func _save_frame(label: String) -> bool:
