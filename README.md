@@ -1,3 +1,5 @@
+> **Fondale 12/11/2026:** mappa esplorabile 480x480, faglie geometriche e palette condivisa senza caustiche. [Revisione e verifiche](docs/SEABED_REVIEW_2026-11-12.md).
+
 # ORIGINI — Android 0.72 Classic · Fase 1 + Fase 2
 
 > Sviluppo successivo alla 0.76: [revisione vulcani e audit del 12 novembre 2026](docs/VOLCANO_REVIEW_2026-11-12.md).

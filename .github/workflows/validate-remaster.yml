@@ -1,7 +1,7 @@
 name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
-    branches: [work/remaster-068, work/volcano-reference]
+    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference]
   workflow_dispatch:
 
 concurrency:
@@ -45,6 +45,8 @@ jobs:
         run: timeout 120s godot --headless --resolution 720x1280 --path . --script res://tests/ocean_isometric_smoke.gd
       - name: Crateri aperti, budget geometrico e RNG grafico isolato
         run: timeout 90s godot --headless --path . --script res://tests/volcano_visual_smoke.gd
+      - name: Fondale esteso, raccordi, esplorazione e salvataggi
+        run: timeout 90s godot --headless --path . --script res://tests/seabed_world_smoke.gd
       - name: Nutrienti indipendenti dal frame rate
         run: timeout 90s godot --headless --path . --script res://tests/nutrient_timing_smoke.gd
       - name: Bilanciamento fisica energetica e moto fluido NPC
@@ -99,6 +101,14 @@ jobs:
           test -s build/previews/volcano-detail.png
           test -s build/previews/volcano-reverse.png
           test -s build/previews/volcano-gameplay.png
+      - name: Fondale reale - faglie, regione distante, mappa e gameplay
+        run: |
+          timeout 120s xvfb-run -a -s "-screen 0 1440x1600x24" godot --resolution 1280x720 --path . --rendering-method gl_compatibility --script res://tests/capture_seabed.gd
+          test -s build/previews/seabed-start.png
+          test -s build/previews/seabed-fault.png
+          test -s build/previews/seabed-distant.png
+          test -s build/previews/seabed-map.png
+          test -s build/previews/seabed-gameplay.png
       - name: Salva screenshot 3D per la revisione
         uses: actions/upload-artifact@v4
         with:

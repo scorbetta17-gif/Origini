@@ -3,16 +3,15 @@ extends Node3D
 ## fessure MINERALI con bolle innocue. Niente vegetazione o organismi superiori.
 ## Sono mesh Godot e particelle 3D reali: la camera puo spostarsi liberamente.
 const VolcanoVisual = preload("res://src/volcano_visual.gd")
-const SEABED = preload("res://shaders/seafloor.gdshader")
+const Terrain = preload("res://src/seabed_terrain.gd")
+var terrain: Node3D
 const VENTS: Array[Vector3] = [Vector3(-11.0,-.22,3.0),Vector3(16.0,-.22,-14.0)]
 const FISSURES: Array[Vector3] = [
     Vector3(-4.9,-.21,-3.7),Vector3(4.6,-.21,5.0),
     Vector3(-7.4,-.21,10.2),Vector3(9.0,-.21,-3.4)
 ]
-var mineral_mats: Array[StandardMaterial3D] = []
 var bubble_mat: StandardMaterial3D
 var dark_crack: StandardMaterial3D
-var crack_rim: StandardMaterial3D
 var dust_root: MultiMeshInstance3D
 var bubbles: MultiMeshInstance3D
 var bubble_sources: Array[Dictionary] = []
@@ -25,37 +24,11 @@ func setup(_gameplay_rng: RandomNumberGenerator) -> void:
     # or change terrain appearance on loading a saved lineage.
     var rng := RandomNumberGenerator.new()
     rng.seed = 76076
-    for tint in [
-        Color(.19,.29,.34),Color(.22,.32,.38),Color(.17,.25,.31),
-        Color(.26,.36,.40),Color(.19,.29,.33)
-    ]:
-        var material := StandardMaterial3D.new()
-        material.albedo_color = tint
-        material.roughness = .94
-        material.cull_mode = BaseMaterial3D.CULL_DISABLED
-        mineral_mats.append(material)
     dark_crack = _mat(Color(.018,.084,.12))
-    crack_rim = _mat(Color(.19,.55,.51),.62)
     bubble_mat = _mat(Color(.56,.88,.98,.59),.38,.59)
     bubble_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     bubble_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
     _sediment()
-    # Lasciare libera la zona centrale, dove comincia la cellula: lettura chiara
-    # dei nutrienti anche con HUD mobile e zoom isometrico.
-    for i in range(104):
-        var x: float = rng.randf_range(-32.0,32.0)
-        var z: float = rng.randf_range(-32.0,32.0)
-        if Vector2(x,z).length() < 4.0:
-            continue
-        var radius: float = rng.randf_range(.16,.76)
-        if i%19 == 0:
-            radius *= 1.85
-        _stone(Vector3(x,-.22,z),radius,rng)
-    for where in [
-        Vector3(-4.3,-.22,-1.4),Vector3(5.7,-.22,3.1),
-        Vector3(-6.0,-.22,5.5),Vector3(4.8,-.22,-4.5)
-    ]:
-        _stone(where,rng.randf_range(.29,.63),rng)
     # Pochi vulcani in tutto il mondo, dove il gradiente del gameplay e' caldo.
     _volcano(VENTS[0],2.9,2.05,rng)
     _volcano(VENTS[1],2.1,1.42,rng)
@@ -80,7 +53,7 @@ func setup(_gameplay_rng: RandomNumberGenerator) -> void:
     _register_bubbles(VENTS[0]+Vector3(0,1.92,0),18,5.8,.61,1)
     _register_bubbles(VENTS[1]+Vector3(0,1.32,0),13,4.3,.48,1)
     for fissure in FISSURES:
-        _register_bubbles(fissure+Vector3(0,.18,0),11,3.5,.39,0)
+        _register_bubbles(Vector3(fissure.x,terrain.surface_height(Vector2(fissure.x,fissure.z))+.12,fissure.z),11,3.5,.39,0)
     _build_bubbles()
     _dust(rng)
 
@@ -100,37 +73,10 @@ func _mat(color: Color, emission: float = 0.0, opacity: float = 1.0) -> Standard
     return material
 
 func _sediment() -> void:
-    var ground := MeshInstance3D.new()
-    ground.name = "Fondo_sabbioso_roccioso"
-    var plane := PlaneMesh.new()
-    plane.size = Vector2(120,120)
-    plane.subdivide_width = 72
-    plane.subdivide_depth = 72
-    ground.mesh = plane
-    var shader_mat := ShaderMaterial.new()
-    shader_mat.shader = SEABED
-    ground.material_override = shader_mat
-    ground.position.y = -.265
-    ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(ground)
-
-func _stone(at: Vector3, radius: float, rng: RandomNumberGenerator) -> void:
-    # Mesh low-poly nativa: facce coerenti e leggibili nella vista dall'alto,
-    # anche sul renderer Android Compatibility.
-    var mesh := SphereMesh.new()
-    mesh.radius = 1.0
-    mesh.height = 2.0
-    mesh.radial_segments = 8
-    mesh.rings = 4
-    var rock := MeshInstance3D.new()
-    rock.mesh = mesh
-    rock.position = at+Vector3(0,radius*.34,0)
-    rock.scale = Vector3(radius*rng.randf_range(.79,1.12),
-        radius*rng.randf_range(.48,.79),radius*rng.randf_range(.83,1.15))
-    rock.rotation.y = rng.randf()*TAU
-    rock.material_override = mineral_mats[rng.randi_range(0,mineral_mats.size()-1)]
-    rock.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(rock)
+    terrain = Terrain.new()
+    terrain.name = "Fondo_sabbioso_roccioso"
+    add_child(terrain)
+    terrain.setup()
 
 func _triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
     st.add_vertex(a)
@@ -155,16 +101,21 @@ func _volcano(at: Vector3, radius: float, height: float, _rng: RandomNumberGener
     light.position = at+Vector3(0,height*.79,0)
     add_child(light)
 
-func _fissure(path: Array[Vector3], rng: RandomNumberGenerator) -> void:
-    # La spaccatura rimane neutra in gioco: fessura molto scura con due
-    # bordi azzurro-verdi, gas visibile che non riscalda la cellula.
-    _strip(path,.37,dark_crack)
-    _edge_strip(path,.21,crack_rim,1.0)
-    _edge_strip(path,.21,crack_rim,-1.0)
-    for i in range(3):
-        var start: Vector3 = path[i]
-        _stone(start+Vector3(rng.randf_range(-.6,.6),0,rng.randf_range(-.6,.6)),
-            rng.randf_range(.19,.40),rng)
+func _fissure(path: Array[Vector3], _rng: RandomNumberGenerator) -> void:
+    # The canyon is already carved into terrain; this seam marks its bottom.
+    # Subdivide to follow relief, avoiding floating green ribbons.
+    var bed: Array[Vector3] = []
+    for i in range(path.size()-1):
+        var steps: int = maxi(2,ceili(path[i].distance_to(path[i+1])/.18))
+        for j in range(steps):
+            var p: Vector3 = path[i].lerp(path[i+1],float(j)/steps)
+            p.y = terrain.surface_height(Vector2(p.x,p.z))+.035
+            bed.append(p)
+    var end: Vector3 = path[-1]
+    end.y = terrain.surface_height(Vector2(end.x,end.z))+.035
+    bed.append(end)
+    _strip(bed,.055,dark_crack)
+
 
 func _strip(path: Array[Vector3], width: float, material: Material) -> void:
     var surface := SurfaceTool.new()
@@ -183,16 +134,6 @@ func _strip(path: Array[Vector3], width: float, material: Material) -> void:
     mesh.material_override = material
     mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(mesh)
-
-func _edge_strip(path: Array[Vector3], offset: float, material: Material, side_sign: float) -> void:
-    var shifted: Array[Vector3] = []
-    for i in range(path.size()):
-        var prev: Vector3 = path[maxi(0,i-1)]
-        var nxt: Vector3 = path[mini(path.size()-1,i+1)]
-        var tangent: Vector3 = nxt-prev
-        var side: Vector3 = Vector3(-tangent.z,0,tangent.x).normalized()
-        shifted.append(path[i]+side*offset*side_sign+Vector3(0,.009,0))
-    _strip(shifted,.028,material)
 
 func _register_bubbles(at: Vector3, count: int, height: float,
         speed: float, hazard_kind: int) -> void:
