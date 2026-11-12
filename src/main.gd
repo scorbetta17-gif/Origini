@@ -488,6 +488,7 @@ func _process(delta: float) -> void:
         if is_instance_valid(n["node"]):
             n["node"].position.y = float(n["origin_y"]) + sin(t*1.8+float(n["bob"]))*0.04
     _collect_nearby()
+    _respawn_nutrients(delta)
     _update_npc_motion(delta)
     _update_nutrient_markers()
     _update_cell_world_glyphs()
@@ -706,12 +707,18 @@ func _collect_nearby() -> void:
         if kind != "detritus" and float(resources[kind]) >= Physiology.reserve_cap(float(NEED[kind]))-.001 and float(resources["biomass"])>=Physiology.reserve_cap(float(NEED["biomass"]))-.001 and atp >= 95.0:
             continue
         _consume_nutrient(i,true)
-    # Redistribuzione limitata; i detriti cellulari non emergono spontaneamente.
-    if nutrients.size() < Physiology.nutrient_goal():
-        nutrient_respawn += eco_tick + .016
-        if nutrient_respawn >= .22:
-            _create_nutrient(TYPES[rng.randi_range(0,3)], Vector3(rng.randf_range(-23,23),.29,rng.randf_range(-23,23)))
-            nutrient_respawn = 0.0
+func _respawn_nutrients(delta: float) -> void:
+    # Accumulate elapsed simulation time exactly once, independent of FPS.
+    # eco_tick is cumulative and must never be added again on every frame.
+    if nutrients.size() >= Physiology.nutrient_goal():
+        nutrient_respawn = 0.0
+        return
+    nutrient_respawn += maxf(0.0,delta)
+    while nutrient_respawn + .000001 >= .22 and nutrients.size() < Physiology.nutrient_goal():
+        _create_nutrient(TYPES[rng.randi_range(0,3)], Vector3(rng.randf_range(-23,23),.29,rng.randf_range(-23,23)))
+        nutrient_respawn = maxf(0.0,nutrient_respawn-.22)
+    if nutrients.size() >= Physiology.nutrient_goal():
+        nutrient_respawn = 0.0
 
 func _update_nutrient_markers() -> void:
     if not is_instance_valid(nutrient_markers) or not nutrient_markers.visible:

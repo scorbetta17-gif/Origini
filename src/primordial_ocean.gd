@@ -2,6 +2,7 @@ extends Node3D
 ## Fondale primordiale isometrico - roccia, sedimento, sorgenti termiche,
 ## fessure MINERALI con bolle innocue. Niente vegetazione o organismi superiori.
 ## Sono mesh Godot e particelle 3D reali: la camera puo spostarsi liberamente.
+const VolcanoVisual = preload("res://src/volcano_visual.gd")
 const SEABED = preload("res://shaders/seafloor.gdshader")
 const VENTS: Array[Vector3] = [Vector3(-11.0,-.22,3.0),Vector3(16.0,-.22,-14.0)]
 const FISSURES: Array[Vector3] = [
@@ -12,7 +13,6 @@ var mineral_mats: Array[StandardMaterial3D] = []
 var bubble_mat: StandardMaterial3D
 var dark_crack: StandardMaterial3D
 var crack_rim: StandardMaterial3D
-var molten: StandardMaterial3D
 var dust_root: MultiMeshInstance3D
 var bubbles: MultiMeshInstance3D
 var bubble_sources: Array[Dictionary] = []
@@ -20,7 +20,11 @@ var bubble_sources: Array[Dictionary] = []
 var bubble_positions: Array[Vector3] = []
 var bubble_time: float = 0.0
 
-func setup(rng: RandomNumberGenerator) -> void:
+func setup(_gameplay_rng: RandomNumberGenerator) -> void:
+    # Reproducible environment: art changes must not consume the gameplay RNG
+    # or change terrain appearance on loading a saved lineage.
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 76076
     for tint in [
         Color(.19,.29,.34),Color(.22,.32,.38),Color(.17,.25,.31),
         Color(.26,.36,.40),Color(.19,.29,.33)
@@ -32,7 +36,6 @@ func setup(rng: RandomNumberGenerator) -> void:
         mineral_mats.append(material)
     dark_crack = _mat(Color(.018,.084,.12))
     crack_rim = _mat(Color(.19,.55,.51),.62)
-    molten = _mat(Color(.98,.30,.065),1.45)
     bubble_mat = _mat(Color(.56,.88,.98,.59),.38,.59)
     bubble_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     bubble_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -134,56 +137,22 @@ func _triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
     st.add_vertex(b)
     st.add_vertex(c)
 
-func _volcano(at: Vector3, radius: float, height: float, rng: RandomNumberGenerator) -> void:
-    # Frustoconical volcanic cone with reliable outward-facing normals and
-    # faceted top-down 3D silhouette, unlike hand-wound surface strips.
-    var cone := CylinderMesh.new()
-    cone.top_radius = radius*.315
-    cone.bottom_radius = radius
-    cone.height = height
-    cone.radial_segments = 14
-    cone.rings = 3
-    var volcano := MeshInstance3D.new()
+func _volcano(at: Vector3, radius: float, height: float, _rng: RandomNumberGenerator) -> void:
+    var volcano := VolcanoVisual.new()
     volcano.name = "Camino_vulcanico_minerale"
     volcano.add_to_group("primordial_volcano")
-    volcano.mesh = cone
-    volcano.position = at+Vector3(0,height*.50,0)
-    volcano.material_override = mineral_mats[3]
-    volcano.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    volcano.position = at
     add_child(volcano)
-    var crater := CylinderMesh.new()
-    crater.top_radius = radius*.285
-    crater.bottom_radius = radius*.285
-    crater.height = .036
-    crater.radial_segments = 24
-    var glow := MeshInstance3D.new()
-    glow.name = "Crater_calorico"
-    glow.mesh = crater
-    glow.material_override = molten
-    glow.position = at+Vector3(0,height-.075,0)
-    glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(glow)
-    for i in range(9):
-        var a: float = TAU*float(i)/9.0
-        _stone(at+Vector3(cos(a)*radius*.86,0,sin(a)*radius*.86),
-            rng.randf_range(.29,.58),rng)
-    # Poche linee di materiali incandescenti sul cono: leggibili in alto,
-    # non una superficie di lava continua o una foresta di vulcani.
-    for i in range(3):
-        var a: float = TAU*(float(i)+.19)/3.0
-        _strip([
-            at+Vector3(cos(a)*radius*.35,height-.08,sin(a)*radius*.35),
-            at+Vector3(cos(a+.08)*radius*.61,height*.55,sin(a+.08)*radius*.61),
-            at+Vector3(cos(a-.06)*radius*.92,.13,sin(a-.06)*radius*.92)
-        ],.088,molten)
+    volcano.setup(radius,height,76077 if radius > 2.5 else 76078)
+    # Keep lights and hazard groups at ocean-root level for existing callers.
     var light := OmniLight3D.new()
     light.name = "Termico_luce_arancio"
     light.add_to_group("thermal_source")
-    light.light_color = Color(1.0,.40,.13)
-    light.light_energy = .92
-    light.omni_range = radius*2.25
+    light.light_color = Color(1.0,.35,.08)
+    light.light_energy = 1.15
+    light.omni_range = radius*1.75
     light.shadow_enabled = false
-    light.position = at+Vector3(0,height*.85,0)
+    light.position = at+Vector3(0,height*.79,0)
     add_child(light)
 
 func _fissure(path: Array[Vector3], rng: RandomNumberGenerator) -> void:

@@ -1,5 +1,8 @@
 # ORIGINI — Android 0.72 Classic · Fase 1 + Fase 2
 
+> Sviluppo successivo alla 0.76: [revisione vulcani e audit del 12 novembre 2026](docs/VOLCANO_REVIEW_2026-11-12.md).
+> Il titolo e alcune indicazioni di build qui sotto sono storici; consultare l'audit per lo stato verificato.
+
 **Stato:** versione giocabile fino al traguardo della Fase 2, con interfaccia Android verticale ricostruita dalle schermate web originali 0.56–0.62, sviluppata in **Godot 4.7.2**, con modelli cellulari originali generati da **Blender** ed esportati in **glTF/GLB**.
 
 Il progetto parte da una **cellula primordiale** composta da membrana, singolo RNA e tre complessi autocatalitici. Il giocatore nutre la cellula, accumula biomassa e ATP, si divide in **due figlie vive**, sceglie quale controllare e segue la genealogia delle altre popolazioni. Le mutazioni minori modificano le statistiche; quelle maggiori cambiano loci ereditabili e introducono strutture 3D coerenti.

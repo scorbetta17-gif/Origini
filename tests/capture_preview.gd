@@ -25,7 +25,7 @@ func _capture() -> void:
     root.add_child(game)
     await create_timer(1.0).timeout
     game.call("_close_overlay")
-    if not _save_frame("primordiale"):
+    if not await _save_frame("primordiale"):
         quit(1)
         return
     var hero: Node3D = game.get("player")
@@ -35,7 +35,7 @@ func _capture() -> void:
     camera.position = hero.position+Vector3(1.3,2.1,3.4)
     camera.look_at(hero.position+Vector3(0,.65,0))
     await create_timer(.95).timeout
-    if not _save_frame("primordiale-macro"):
+    if not await _save_frame("primordiale-macro"):
         quit(1)
         return
     var traits: Dictionary = game.call("_base_traits")
@@ -51,10 +51,10 @@ func _capture() -> void:
     hero.setup(traits,"bacteria",true)
     game.call("_refresh_hud")
     await create_timer(.38).timeout
-    if not _save_frame("cellula-evoluta"):
+    if not await _save_frame("cellula-evoluta"):
         quit(1)
         return
-    if not _save_frame("fenotipo-macro"):
+    if not await _save_frame("fenotipo-macro"):
         quit(1)
         return
     hero.position = Vector3(-9.8,0,3.2)
@@ -62,7 +62,7 @@ func _capture() -> void:
     await create_timer(.70).timeout
     camera.position = hero.position+Vector3(0,24.0,13.0)
     camera.look_at(hero.position+Vector3(0,.55,0))
-    if not _save_frame("bioma-idrotermale"):
+    if not await _save_frame("bioma-idrotermale"):
         quit(1)
         return
 
@@ -71,11 +71,11 @@ func _capture() -> void:
     game.call("_close_overlay")
     await create_timer(.95).timeout
     game.call("_refresh_hud")
-    if not _save_frame("classic-main"):
+    if not await _save_frame("classic-main"):
         quit(1)
         return
     # Three TRUE in-engine screenshots of this isometric biome (not AI mockups).
-    if not _save_frame("isometric-open-seabed"):
+    if not await _save_frame("isometric-open-seabed"):
         quit(1)
         return
     hero = game.get("player")
@@ -83,14 +83,14 @@ func _capture() -> void:
     camera.position = hero.position+Vector3(0,24.0,13.0)
     camera.look_at(hero.position+Vector3(0,.55,0))
     await create_timer(.68).timeout
-    if not _save_frame("isometric-gas-fissures"):
+    if not await _save_frame("isometric-gas-fissures"):
         quit(1)
         return
     hero.position = Vector3(-10.0,0,3.0)
     camera.position = hero.position+Vector3(0,24.0,13.0)
     camera.look_at(hero.position+Vector3(0,.55,0))
     await create_timer(.52).timeout
-    if not _save_frame("isometric-volcanic-biome"):
+    if not await _save_frame("isometric-volcanic-biome"):
         quit(1)
         return
     # Do not alter the daughter-choice screenshot or stats with heat damage.
@@ -103,19 +103,19 @@ func _capture() -> void:
     game.atp = 96.0
     game.call("_divide_pressed")
     await create_timer(.4).timeout
-    if not _save_frame("classic-daughters"):
+    if not await _save_frame("classic-daughters"):
         quit(1)
         return
     game.call("_choose_daughter",0)
     game.call("_on_tree")
     await create_timer(.40).timeout
-    if not _save_frame("classic-evolution"):
+    if not await _save_frame("classic-evolution"):
         quit(1)
         return
     game.call("_close_overlay")
     game.call("_on_genealogy")
     await create_timer(.40).timeout
-    if not _save_frame("classic-lineage"):
+    if not await _save_frame("classic-lineage"):
         quit(1)
         return
     quit(0)
@@ -125,6 +125,7 @@ func _save_frame(label: String) -> bool:
     DirAccess.make_dir_recursive_absolute(dir)
     var prefix: String = OS.get_environment("ORIGIN_CAPTURE_PREFIX")
     var path: String = dir+"/"+prefix+label+"-godot.png"
+    await RenderingServer.frame_post_draw
     var snapshot: Image = root.get_texture().get_image()
     var result: Error = snapshot.save_png(path)
     print("SCREENSHOT_GODOT=",path," result=",result)

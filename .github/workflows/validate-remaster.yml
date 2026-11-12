@@ -1,7 +1,7 @@
 name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
-    branches: [work/remaster-068]
+    branches: [work/remaster-068, work/volcano-reference]
   workflow_dispatch:
 
 concurrency:
@@ -43,6 +43,10 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
       - name: "Oceano isometrico - vulcani, bolle e nutrienti molecolari"
         run: timeout 120s godot --headless --resolution 720x1280 --path . --script res://tests/ocean_isometric_smoke.gd
+      - name: Crateri aperti, budget geometrico e RNG grafico isolato
+        run: timeout 90s godot --headless --path . --script res://tests/volcano_visual_smoke.gd
+      - name: Nutrienti indipendenti dal frame rate
+        run: timeout 90s godot --headless --path . --script res://tests/nutrient_timing_smoke.gd
       - name: Bilanciamento fisica energetica e moto fluido NPC
         run: timeout 120s godot --headless --path . --script res://tests/physiology_balance_smoke.gd
       - name: Fase 1 - missioni e censimento popolazioni
@@ -89,6 +93,12 @@ jobs:
           test -s build/previews/mobile-classic-main-godot.png
           test -s build/previews/mobile-classic-daughters-godot.png
           test -s build/previews/mobile-classic-evolution-godot.png
+      - name: Vulcani - due angoli e gameplay reale
+        run: |
+          timeout 90s xvfb-run -a -s "-screen 0 1440x1600x24" godot --resolution 1280x720 --path . --rendering-method gl_compatibility --script res://tests/capture_volcano.gd
+          test -s build/previews/volcano-detail.png
+          test -s build/previews/volcano-reverse.png
+          test -s build/previews/volcano-gameplay.png
       - name: Salva screenshot 3D per la revisione
         uses: actions/upload-artifact@v4
         with:
@@ -97,6 +107,8 @@ jobs:
           if-no-files-found: error
 
   android-preview:
+    # Art-review branches run QA and capture only; an APK was not requested.
+    if: github.ref == 'refs/heads/work/remaster-068'
     # User explicitly requested one installable Android APK for this test build.
     # No release or merge: artifact only after all QA succeeds.
     needs: qa

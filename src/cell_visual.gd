@@ -167,9 +167,38 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     if interior == null:
         interior = Node3D.new()
         core.add_child(interior)
+    if bool(traits.get("dna",false)):
+        # The imported core is the RNA starter asset; it must not silently
+        # override the expressed genotype after DNA stabilization.
+        if rna_mesh != null:
+            rna_mesh.hide()
+        _build_imported_dna(interior)
     blender_interior = true
     use_blender_assets = true
     return true
+
+func _build_imported_dna(host: Node3D) -> void:
+    var dna_root := Node3D.new()
+    dna_root.name = "DNA_DoubleStrand"
+    host.add_child(dna_root)
+    for strand in range(2):
+        var points := PackedVector3Array()
+        for i in range(49):
+            var u: float = float(i)/48.0
+            var phase: float = u*TAU*2.0 + float(strand)*PI
+            points.append(Vector3((u-.5)*1.20,sin(phase)*.19,cos(phase)*.19))
+        _tube(dna_root,points,.021,Color(.71,.66,.88) if strand == 0 else Color(.44,.74,.80))
+    var bonds := Node3D.new()
+    bonds.name = "BasePairs"
+    dna_root.add_child(bonds)
+    for i in range(13):
+        var u: float = float(i)/12.0
+        var phase: float = u*TAU*2.0
+        var x: float = (u-.5)*1.20
+        _tube(bonds,PackedVector3Array([
+            Vector3(x,sin(phase)*.19,cos(phase)*.19),
+            Vector3(x,-sin(phase)*.19,-cos(phase)*.19)
+        ]),.009,Color(.66,.73,.72))
 
 func _blender_module(id: String, at: Vector3, normal: Vector3, size: float = 1.0) -> bool:
     if not use_blender_assets or not BLENDER_MODULES.has(id):
