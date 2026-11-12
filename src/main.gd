@@ -12,6 +12,7 @@ const JoystickScript = preload("res://src/virtual_joystick.gd")
 const ClassicHudScript = preload("res://src/classic_hud.gd")
 const PhenotypePortraitScript = preload("res://src/phenotype_portrait.gd")
 const NutrientMarkersScript = preload("res://src/nutrient_markers.gd")
+const CellWorldGlyphScript = preload("res://src/cell_world_glyphs.gd")
 const SAVE_PATH = "user://origini_067.json"
 # Biomi termici localizzati: il resto dell'oceano resta temperato e spoglio.
 const THERMAL_SOURCES = [Vector2(-11.0, 3.0), Vector2(16.0, -14.0)]
@@ -99,6 +100,7 @@ var notice_expires: float = -1.0
 var hud: Control
 var classic_hud: OriginiClassicHud
 var nutrient_markers: OriginiNutrientMarkers
+var cell_world_glyphs: OriginiCellWorldGlyphs
 var toast_back: Panel
 var overlay: ColorRect
 var overlay_panel: Panel
@@ -324,6 +326,8 @@ func _create_entity(id: String, parent: String, gen: int, branch: String, traits
     cells_root.add_child(node)
     node.position = at
     node.setup(inherited, branch, controlled)
+    var screen: Vector2 = get_viewport().get_visible_rect().size
+    node.visible = not (screen.y > screen.x and not camera_focus)
     node.set_growth(.72 if branch == "pre_luca" and gen == 0 else .78)
     var inventory: Dictionary = {"carbon":6.0,"amino":4.0,"lipid":3.0,"nucleic":1.0,"biomass":24.0}
     entities[id] = {"node":node,"parent":parent,"generation":gen,"branch":branch,
@@ -457,6 +461,7 @@ func _process(delta: float) -> void:
             n["node"].position.y = float(n["origin_y"]) + sin(t*1.8+float(n["bob"]))*0.04
     _collect_nearby()
     _update_nutrient_markers()
+    _update_cell_world_glyphs()
     eco_tick += delta
     if eco_tick >= .22:
         _update_ecosystem(eco_tick)
@@ -564,6 +569,7 @@ func _toggle_focus() -> void:
     # Tre quarti: il volume 3D diventa leggibile anche nelle mutazioni laterali.
     camera_offset = Vector3(1.3,2.1,3.4) if camera_focus else Vector3(0,7.5,8.7)
     camera.fov = 38.0 if camera_focus else 34.0
+    _layout_ui()
     buttons["focus"].text = "MONDO" if camera_focus else "CELLULA"
 
 func _move_player(direction: Vector2, delta: float) -> void:
@@ -640,6 +646,40 @@ func _update_nutrient_markers() -> void:
             continue
         points.append({"pos":screen,"kind":str(n["kind"]),"scale":1.0})
     nutrient_markers.configure(points,top_safe,bottom_safe,rect)
+
+func _update_cell_world_glyphs() -> void:
+    if not is_instance_valid(cell_world_glyphs) or not cell_world_glyphs.visible:
+        return
+    var wh: Vector2 = get_viewport().get_visible_rect().size
+    var ui: float = clampf(wh.x/720.0,.62,1.65)
+    var top: float = classic_hud.panel_height()+14.0*ui
+    var bottom: float = wh.y-189.0*ui
+    var silhouettes: Array[Dictionary] = []
+    for id in entities:
+        if str(id) == player_id:
+            continue
+        var entity: Dictionary = entities[id]
+        var n: CellVisual = entity["node"]
+        if not is_instance_valid(n):
+            continue
+        var center: Vector3 = n.position+Vector3(0,.81,0)
+        if camera.is_position_behind(center):
+            continue
+        var point: Vector2 = camera.unproject_position(center)
+        if point.y < top-80.0*ui or point.y > bottom+80.0*ui:
+            continue
+        silhouettes.append({"pos":point, "radius":38.0*ui,
+            "traits":entity["traits"],"branch":str(entity["branch"]),
+            "seed":str(id).hash()%88,"selected":false})
+    if is_instance_valid(player) and entities.has(player_id):
+        var center: Vector3 = player.position+Vector3(0,.81,0)
+        if not camera.is_position_behind(center):
+            silhouettes.append({"pos":camera.unproject_position(center),
+                "radius":65.0*ui,
+                "traits":entities[player_id]["traits"],
+                "branch":str(entities[player_id]["branch"]),
+                "selected":true,"seed":0})
+    cell_world_glyphs.configure(silhouettes,top,bottom,wh,t)
 
 func _nearest_nutrient(at: Vector3, max_distance: float) -> int:
     var result: int = -1
@@ -1608,6 +1648,10 @@ func _build_ui() -> void:
     nutrient_markers.name = "WorldNutrientGlyphs"
     hud.add_child(nutrient_markers)
     hud.move_child(nutrient_markers,0)
+    cell_world_glyphs = CellWorldGlyphScript.new()
+    cell_world_glyphs.name = "BiologicalCellSilhouettes"
+    hud.add_child(cell_world_glyphs)
+    hud.move_child(cell_world_glyphs,1)
     title_label = _label("ORIGINI",21)
     hud.add_child(title_label)
     status_label = _label("ATP · HP · biomassa",15)
@@ -1695,6 +1739,12 @@ func _layout_ui() -> void:
     var portrait: bool = wh.y > wh.x
     classic_hud.set_viewport(wh)
     classic_hud.visible = portrait
+    cell_world_glyphs.visible = portrait and not camera_focus
+    cell_world_glyphs.size = wh
+    for cell_id in entities:
+        var e: Dictionary = entities[cell_id]
+        if is_instance_valid(e["node"]):
+            e["node"].visible = not (portrait and not camera_focus)
     nutrient_markers.size = wh
     nutrient_markers.visible = portrait
     for n in nutrients:
