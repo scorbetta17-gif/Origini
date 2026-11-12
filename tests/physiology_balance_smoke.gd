@@ -56,10 +56,23 @@ func _run() -> void:
     var covered: float = node.position.distance_to(initial)
     assert(covered > 0.01 and covered < .15,"NPC position should be smoothed every frame")
     assert(float(npc["energy"]) < 46.0,"NPC movement consumes energy")
+    # The simulation, without any player action, must divide an NPC that
+    # has gathered biomass/energy and reached a minimum reproductive age.
+    game.call("_create_entity","AUTONOMOUS","",2,"pre_luca",game.call("_base_traits"),
+        Vector3(-4.0,0,2.0),false,false)
+    var reproducing: Dictionary = game.entities["AUTONOMOUS"]
+    reproducing["biomass"] = 58.0
+    reproducing["energy"] = 60.0
+    reproducing["age"] = 19.0
+    var previous_population: int = game.entities.size()
+    game.call("_update_ecosystem",.22)
+    assert(game.entities.size() >= previous_population+1,
+        "Autonomous parent must create two living children")
+    assert(int(game.phase1_progress["autonomous_divisions"]) >= 1)
     game.atp = 0.0
     game.zero_atp_seconds = 14.8
     var motion_before: Vector3 = game.player.position
     game.call("_move_player",Vector2.ZERO,.016)
     assert(game.player.position == motion_before)
-    print("PASS: +10% nutrients, -10% unmotorized motion, +20% size cap, +12% reserves, locomotion ATP, 15s starvation, continuous NPC motion and ecotypes")
+    print("PASS: +10% nutrients, -10% unmotorized motion, +20% size cap, +12% reserves, locomotion ATP, 15s starvation, continuous NPC motion, spontaneous NPC replication and ecotypes")
     quit(0)
