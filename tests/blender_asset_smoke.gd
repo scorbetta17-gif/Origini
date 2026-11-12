@@ -26,6 +26,8 @@ func _verify() -> void:
     assert(cell.use_blender_assets)
     assert(cell.find_child("BlenderCellCore",true,false) != null)
     assert(not bool(game.entities[game.player_id]["traits"].get("dna",true)))
+    assert(cell.find_child("DNA_DoubleStrand",true,false) == null)
+    assert(cell.find_child("SingleStrand_RNA",true,false).visible)
 
     var tr: Dictionary = game.call("_base_traits")
     for locus in ["dna_stabilization","surface_recognition","pili_twitch",
@@ -33,8 +35,17 @@ func _verify() -> void:
         tr = G.grant(tr,locus,3,"test_import","bacteria")
     cell.setup(tr,"bacteria",true)
     assert(cell.use_blender_assets)
+    assert(not cell.find_child("SingleStrand_RNA",true,false).visible,
+        "Imported RNA must be hidden after DNA stabilization")
+    var dna: Node = cell.find_child("DNA_DoubleStrand",true,false)
+    assert(dna != null and dna.get_child_count() == 3,
+        "Two real DNA strand meshes and a base-pair group must be present")
     for module_name in ["pili","receptor","protease","transporter","vesicle"]:
         assert(cell.find_child("GeneModule_"+module_name,true,false) != null,
             "Missing GLB gene module "+module_name)
+    cell.setup(game.call("_base_traits"),"pre_luca",true)
+    assert(cell.find_child("DNA_DoubleStrand",true,false) == null)
+    assert(cell.find_child("SingleStrand_RNA",true,false).visible,
+        "Switching back to a primordial lineage restores RNA without DNA")
     print("PASS: Blender GLB core + major-gene modules instantiated by actual Godot scene importer")
     quit(0)

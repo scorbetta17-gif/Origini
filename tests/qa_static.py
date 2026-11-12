@@ -44,10 +44,10 @@ test('shaders visivi attivi',(root/'shaders/cell_membrane.gdshader').exists() an
 test('ambiente oceanico dedicato',(root/'src/primordial_ocean.gd').exists() and 'biome.call("setup",rng)' in main)
 test('renderer compatibile',(root/'project.godot').read_text().count('gl_compatibility')>=1)
 test('smoke test incluso',(root/'tests/smoke.gd').exists())
-print(f'PASS {len(tests)} controlli statici. ATTENZIONE: non e una prova di esecuzione Godot.')
 
 test('fase 1 popolazioni e campionamento',(root/'src/phase_one_progress.gd').exists() and 'PhaseOneScript.advance(' in main)
 test('energia e motilita biologica',(root/'src/cell_physiology.gd').exists() and '_update_npc_motion(delta)' in main and 'Physiology.energy_step(' in main)
 test('limiti crescita', 'Physiology.growth_scale(' in main)
 test('albero con geni grandi e icone','major_locus(node_id:' in scripts['mutation_tree.gd'] and '_draw_major_icon(' in scripts['mutation_tree.gd'])
 test('fasi visuali separate', '_open_phase_intro(1)' in main and '_open_phase_intro(2)' in main)
+print(f'PASS {len(tests)} controlli statici. ATTENZIONE: non e una prova di esecuzione Godot.')
