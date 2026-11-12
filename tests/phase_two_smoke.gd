@@ -56,6 +56,8 @@ func _run() -> void:
     var game: Node = load("res://scenes/Main.tscn").instantiate()
     root.add_child(game)
     await process_frame
+    # Phase 2 is a gated chapter. Phase 1 has a separate end-to-end smoke test.
+    game.phase1_progress["complete"] = true
     game.call("_create_entity","TEST-A","",4,"archaea",_make_archaea(game),Vector3.ZERO,false,true)
     game.call("_activate_lineage","TEST-A")
     assert(game.player_id == "TEST-A")
