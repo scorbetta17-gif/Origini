@@ -22,8 +22,8 @@ var bubble_time: float = 0.0
 
 func setup(rng: RandomNumberGenerator) -> void:
     for tint in [
-        Color(.115,.195,.24),Color(.16,.24,.29),Color(.095,.16,.21),
-        Color(.20,.27,.31),Color(.13,.22,.26)
+        Color(.19,.29,.34),Color(.22,.32,.38),Color(.17,.25,.31),
+        Color(.26,.36,.40),Color(.19,.29,.33)
     ]:
         var material := StandardMaterial3D.new()
         material.albedo_color = tint
@@ -31,7 +31,7 @@ func setup(rng: RandomNumberGenerator) -> void:
         mineral_mats.append(material)
     dark_crack = _mat(Color(.018,.084,.12))
     crack_rim = _mat(Color(.19,.55,.51),.62)
-    molten = _mat(Color(1.0,.36,.075),2.4)
+    molten = _mat(Color(.98,.30,.065),1.45)
     bubble_mat = _mat(Color(.56,.88,.98,.59),.38,.59)
     bubble_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     bubble_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -127,10 +127,11 @@ func _stone(at: Vector3, radius: float, rng: RandomNumberGenerator) -> void:
     for level in range(3):
         for j in range(sides):
             var nxt: int = (j+1)%sides
-            _triangle(geo,rings[level][j],rings[level][nxt],rings[level+1][j])
-            _triangle(geo,rings[level][nxt],rings[level+1][nxt],rings[level+1][j])
+            # Reverse winding to expose upward/outward normals to the light.
+            _triangle(geo,rings[level][j],rings[level+1][j],rings[level][nxt])
+            _triangle(geo,rings[level][nxt],rings[level+1][j],rings[level+1][nxt])
     for j in range(sides):
-        _triangle(geo,rings[3][j],rings[3][(j+1)%sides],Vector3(0,radius*.98,0))
+        _triangle(geo,rings[3][j],Vector3(0,radius*.98,0),rings[3][(j+1)%sides])
     geo.generate_normals()
     var rock := MeshInstance3D.new()
     rock.mesh = geo.commit()
@@ -159,10 +160,12 @@ func _volcano(at: Vector3, radius: float, height: float, rng: RandomNumberGenera
         var mid1 := at+Vector3(cos(a1)*radius*.77,height*.49,sin(a1)*radius*.77)
         var top0 := at+Vector3(cos(a0)*radius*.31,height,sin(a0)*radius*.31)
         var top1 := at+Vector3(cos(a1)*radius*.31,height,sin(a1)*radius*.31)
-        _triangle(crust,base0,base1,mid0)
-        _triangle(crust,base1,mid1,mid0)
-        _triangle(crust,mid0,mid1,top0)
-        _triangle(crust,mid1,top1,top0)
+        # Outward-facing normals; previous reversed winding looked like a
+        # featureless dark disk from the overhead camera.
+        _triangle(crust,base0,mid0,base1)
+        _triangle(crust,base1,mid0,mid1)
+        _triangle(crust,mid0,top0,mid1)
+        _triangle(crust,mid1,top0,top1)
     crust.generate_normals()
     var volcano := MeshInstance3D.new()
     volcano.name = "Camino_vulcanico_minerale"
@@ -195,7 +198,7 @@ func _volcano(at: Vector3, radius: float, height: float, rng: RandomNumberGenera
             at+Vector3(cos(a)*radius*.35,height-.08,sin(a)*radius*.35),
             at+Vector3(cos(a+.08)*radius*.61,height*.55,sin(a+.08)*radius*.61),
             at+Vector3(cos(a-.06)*radius*.92,.13,sin(a-.06)*radius*.92)
-        ],.055,molten)
+        ],.088,molten)
     var light := OmniLight3D.new()
     light.name = "Termico_luce_arancio"
     light.add_to_group("thermal_source")
