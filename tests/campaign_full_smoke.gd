@@ -6,9 +6,11 @@ const GENES = preload("res://src/cell_genome.gd")
 func _initialize() -> void:
     call_deferred("_run")
 
+const FISSION_NEEDS: Dictionary = {"carbon":24.0,"amino":15.0,"lipid":12.0,"nucleic":8.0,"biomass":65.0}
+
 func _fund_fission(game: Node) -> void:
-    for key in game.NEED:
-        game.resources[key] = float(game.NEED[key])
+    for key in FISSION_NEEDS:
+        game.resources[key] = float(FISSION_NEEDS[key])
     game.atp = 99.0
 
 func _daughter(game: Node, choice: int) -> void:
