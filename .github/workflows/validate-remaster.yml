@@ -41,6 +41,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
       - name: Genotipo, ereditarieta' e fenotipo
         run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
+      - name: Oceano isometrico: vulcani, bolle e nutrienti molecolari
+        run: timeout 120s godot --headless --resolution 720x1280 --path . --script res://tests/ocean_isometric_smoke.gd
       - name: Bilanciamento fisica energetica e moto fluido NPC
         run: timeout 120s godot --headless --path . --script res://tests/physiology_balance_smoke.gd
       - name: Fase 1 - missioni e censimento popolazioni
