@@ -14,7 +14,7 @@ static func empty() -> Dictionary:
         "player_divisions":0, "autonomous_divisions":0,
         "high_generation_seen":false, "living_threshold_seen":false,
         "observation_seconds":0.0, "completed_at":-1.0,
-        "final_report":{}, "phase_two_intro_seen":false
+        "final_report":{}, "observation_start":{}, "phase_two_intro_seen":false
     }
 
 static func normalize(value: Dictionary) -> Dictionary:
@@ -61,10 +61,13 @@ static func advance(value: Dictionary, elapsed: float, generation: int,
         int(p["autonomous_divisions"]) >= MIN_AUTONOMOUS_DIVISIONS) and (
         int(current_population.get("totale",0)) >= MIN_LIVING_CELLS)
     if eligible:
+        if float(p["observation_seconds"]) <= .001:
+            p["observation_start"] = current_population.duplicate(true)
         p["observation_seconds"] = minf(FINAL_OBSERVATION_SECONDS,
             float(p["observation_seconds"])+maxf(0.0,elapsed))
     else:
         p["observation_seconds"] = 0.0
+        p["observation_start"] = {}
     if eligible and float(p["observation_seconds"]) >= FINAL_OBSERVATION_SECONDS:
         p["complete"] = true
         p["completed_at"] = world_seconds
@@ -112,4 +115,13 @@ static func report_lines(value: Dictionary) -> Array[String]:
             int(data.get("raccoglitore",0)),int(data.get("esploratore",0)),
             int(data.get("predatore",0)),int(data.get("difensore",0))]
     ]
+    var start: Dictionary = p.get("observation_start",{})
+    if not start.is_empty():
+        lines.append("CONFRONTO SU 75 S · QUOTE INIZIALI → FINALI")
+        for cohort in ["prime","intermedie","recenti"]:
+            var initial: float = float(start.get(cohort+"_pct",0.0))
+            var final: float = float(data.get(cohort+"_pct",0.0))
+            lines.append("%s: %.1f%% → %.1f%% (%+.1f punti)" % [
+                cohort.capitalize(),initial,final,final-initial])
+        lines.append("Le variazioni misurano quote demografiche; non dimostrano da sole un vantaggio genetico.")
     return lines
