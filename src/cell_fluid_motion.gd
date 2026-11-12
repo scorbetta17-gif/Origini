@@ -75,7 +75,8 @@ func advance_motion(velocity: Vector3, delta: float) -> void:
         var azimuth: float = atan2(unit.z,unit.x)
         var wave: float = sin(unit.x*3.1+phase*.72)*sin(unit.z*2.4-phase*.53)
         var lobes: float = sin(azimuth*3.0+phase*.31)*.035+cos(azimuth*2.0-phase*.23)*.025
-        var displacement: float = (wave*.025+lobes*clampf(Vector2(unit.x,unit.z).length(),0,1))*flexibility
+        var organic: float = sin(azimuth*3.0+.65)*.11+cos(azimuth*5.0-.7)*.045
+        var displacement: float = (wave*.025+(lobes+organic)*clampf(Vector2(unit.x,unit.z).length(),0,1))*flexibility
         anchor["node"].position = rest+unit.normalized()*cell.body_radii*displacement
     surface_phase = fmod(surface_phase+dt*(.10+minf(filtered_velocity.length(),3.0)*.19)*3.0,TAU)
     if shell_material != null:

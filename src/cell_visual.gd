@@ -3,9 +3,10 @@ class_name CellVisual
 ## ORIGINI: renderer biologico parametrico, senza asset fittizi precostituiti.
 ## All'inizio: una membrana, un filamento di ssRNA, pochi complessi autocatalitici.
 const Genome = preload("res://src/cell_genome.gd")
-const RNA_COLOR := Color(.70,.39,.87)
-const CATALYST_COLOR := Color(.92,.61,.25)
+const RNA_COLOR := Color(.86,.43,.96)
+const CATALYST_COLOR := Color(1.0,.68,.23)
 const MEMBRANE_SHADER = preload("res://shaders/cell_membrane.gdshader")
+const CONTENTS_SHADER = preload("res://shaders/cell_contents.gdshader")
 const SHADOW_SHADER = preload("res://shaders/cell_contact_shadow.gdshader")
 const BLENDER_CORE: String = "res://assets/models/primordial_core.glb"
 const BLENDER_MODULES: Dictionary = {
@@ -57,15 +58,23 @@ func set_selected(value: bool) -> void:
     if is_instance_valid(selection_ring):
         selection_ring.visible = value
 
-func _mat(tint: Color, alpha: float = 1.0, rough: float = .71) -> StandardMaterial3D:
+func _mat(tint: Color, alpha: float = 1.0, rough: float = .71) -> Material:
     var key: String = tint.to_html()+"_"+str(snappedf(alpha,.01))+"_"+str(rough)
     if material_cache.has(key):
         return material_cache[key]
+    if alpha>=.99:
+        var pigment := ShaderMaterial.new()
+        pigment.shader = CONTENTS_SHADER
+        pigment.set_shader_parameter("pigment",tint)
+        material_cache[key] = pigment
+        return pigment
     var m := StandardMaterial3D.new()
     tint.a = alpha
     m.albedo_color = tint
     m.roughness = rough
     m.metallic = 0.0
+    m.emission_enabled = true
+    m.emission = Color(tint.r,tint.g,tint.b)*.32
     m.cull_mode = BaseMaterial3D.CULL_DISABLED
     if alpha < .99:
         m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -93,27 +102,24 @@ func _tube(host: Node3D, coords: PackedVector3Array, radius: float, tint: Color,
         return
     var surface := SurfaceTool.new()
     surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var frames: Array = []
+    for i in range(coords.size()):
+        var tangent: Vector3 = (coords[mini(i+1,coords.size()-1)]-coords[maxi(i-1,0)]).normalized()
+        var guide: Vector3 = Vector3.UP if absf(tangent.dot(Vector3.UP))<.9 else Vector3.RIGHT
+        var axis: Vector3 = tangent.cross(guide).normalized()
+        var second: Vector3 = tangent.cross(axis).normalized()
+        var normals := PackedVector3Array()
+        for j in range(10):
+            var angle: float = TAU*float(j)/10.0
+            normals.append(axis*cos(angle)+second*sin(angle))
+        frames.append(normals)
     for i in range(coords.size()-1):
-        var p: Vector3 = coords[i]
-        var q: Vector3 = coords[i+1]
-        var along: Vector3 = (q-p).normalized()
-        if along.length_squared() < .0001:
-            continue
-        var guide: Vector3 = Vector3.UP if absf(along.dot(Vector3.UP)) < .9 else Vector3.RIGHT
-        var a: Vector3 = along.cross(guide).normalized()*radius
-        var b: Vector3 = along.cross(a).normalized()*radius
-        for j in range(7):
-            var phi: float = TAU*float(j)/7.0
-            var phi2: float = TAU*float(j+1)/7.0
-            var v: Vector3 = a*cos(phi)+b*sin(phi)
-            var w: Vector3 = a*cos(phi2)+b*sin(phi2)
-            surface.add_vertex(p+v)
-            surface.add_vertex(q+v)
-            surface.add_vertex(p+w)
-            surface.add_vertex(q+v)
-            surface.add_vertex(q+w)
-            surface.add_vertex(p+w)
-    surface.generate_normals()
+        for j in range(10):
+            var k: int = (j+1)%10
+            for sample in [[i,j],[i+1,j],[i,k],[i+1,j],[i+1,k],[i,k]]:
+                var normal: Vector3 = frames[sample[0]][sample[1]]
+                surface.set_normal(normal)
+                surface.add_vertex(coords[sample[0]]+normal*radius)
     var node := MeshInstance3D.new()
     node.mesh = surface.commit()
     node.material_override = _mat(tint,opacity,.48)
@@ -122,12 +128,12 @@ func _tube(host: Node3D, coords: PackedVector3Array, radius: float, tint: Color,
 
 func _color() -> Color:
     if branch == "bacteria":
-        return Color(.32,.65,.64)
+        return Color(.38,.77,.64)
     if branch == "archaea":
-        return Color(.35,.60,.72)
+        return Color(.43,.66,.91)
     if branch == "luca":
-        return Color(.33,.66,.74)
-    return Color(.27,.62,.70)
+        return Color(.48,.65,.86)
+    return Color(.34,.75,.85)
 
 func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     if not ResourceLoader.exists(BLENDER_CORE):
@@ -151,7 +157,7 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     var shell_mat := ShaderMaterial.new()
     shell_mat.shader = MEMBRANE_SHADER
     shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
-    shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
+    shell_mat.set_shader_parameter("rim_tint",Color(.58,.98,.96))
     shell_mat.set_shader_parameter("opacity",.16 if primitive else .19)
     shell_mat.set_shader_parameter("membrane_motion",.009)
     shell_mat.set_shader_parameter("internal_scattering",.28 if primitive else .36)
@@ -161,6 +167,7 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     # Overriding imported opaque materials ensures the RNA remains legible.
     var cytosol_mesh: MeshInstance3D = core.find_child("Cytosol",true,false) as MeshInstance3D
     if cytosol_mesh != null:
+        cytosol_mesh.hide()
         cytosol_mesh.material_override = _mat(tint.darkened(.26),.045,.95)
         cytosol_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var rna_mesh: MeshInstance3D = core.find_child("SingleStrand_RNA",true,false) as MeshInstance3D
@@ -176,15 +183,39 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     if interior == null:
         interior = Node3D.new()
         core.add_child(interior)
+    if rna_mesh != null:
+        rna_mesh.name = "Legacy_RNA"
+        rna_mesh.hide()
+    _build_rna(interior)
+    # Redistribute the three imported catalytic complexes around the polymer.
+    var centers: Array[Vector3] = [Vector3(-.46,.18,-.41),Vector3(.46,.12,-.22),Vector3(.21,.12,.53)]
+    for index in range(1,4):
+        for sub in range(1,4):
+            var enzyme: MeshInstance3D = core.find_child("Autocatalytic_%02d_%02d" % [index,sub],true,false) as MeshInstance3D
+            if enzyme!=null:
+                enzyme.position=centers[index-1]+Vector3((sub-2)*.08,(sub%2)*.025,(sub-2)*.035)
+                enzyme.scale*=1.65
     if bool(traits.get("dna",false)):
-        # The imported core is the RNA starter asset; it must not silently
-        # override the expressed genotype after DNA stabilization.
-        if rna_mesh != null:
-            rna_mesh.hide()
+        interior.get_node("SingleStrand_RNA").hide()
         _build_imported_dna(interior)
     blender_interior = true
     use_blender_assets = true
     return true
+
+func _build_rna(host: Node3D) -> void:
+    var strand := Node3D.new()
+    strand.name = "SingleStrand_RNA"
+    host.add_child(strand)
+    var points := PackedVector3Array()
+    for i in range(81):
+        var u: float = float(i)/80.0
+        points.append(Vector3((u-.5)*1.35+sin(u*TAU*2.2)*.07,.20+sin(u*TAU)*.045,sin(u*TAU*1.35)*.29))
+    _tube(strand,points,.042,RNA_COLOR)
+    for i in range(4,78,6):
+        var point: Vector3 = points[i]
+        var tangent: Vector3 = (points[i+1]-points[i-1]).normalized()
+        var direction := Vector3(-tangent.z,0,tangent.x)
+        _tube(strand,PackedVector3Array([point,point+direction*.12]),.019,CATALYST_COLOR)
 
 func _build_imported_dna(host: Node3D) -> void:
     var dna_root := Node3D.new()
@@ -195,19 +226,19 @@ func _build_imported_dna(host: Node3D) -> void:
         for i in range(49):
             var u: float = float(i)/48.0
             var phase: float = u*TAU*2.0 + float(strand)*PI
-            points.append(Vector3((u-.5)*1.20,sin(phase)*.19,cos(phase)*.19))
-        _tube(dna_root,points,.021,RNA_COLOR.lightened(.09) if strand == 0 else RNA_COLOR.darkened(.08))
+            points.append(Vector3((u-.5)*1.35,.16+sin(phase)*.17,cos(phase)*.24))
+        _tube(dna_root,points,.037,RNA_COLOR.lightened(.09) if strand == 0 else RNA_COLOR.darkened(.08))
     var bonds := Node3D.new()
     bonds.name = "BasePairs"
     dna_root.add_child(bonds)
     for i in range(13):
         var u: float = float(i)/12.0
         var phase: float = u*TAU*2.0
-        var x: float = (u-.5)*1.20
+        var x: float = (u-.5)*1.35
         _tube(bonds,PackedVector3Array([
-            Vector3(x,sin(phase)*.19,cos(phase)*.19),
-            Vector3(x,-sin(phase)*.19,-cos(phase)*.19)
-        ]),.009,CATALYST_COLOR)
+            Vector3(x,.16+sin(phase)*.17,cos(phase)*.24),
+            Vector3(x,.16-sin(phase)*.17,-cos(phase)*.24)
+        ]),.016,CATALYST_COLOR)
 
 func _blender_module(id: String, at: Vector3, normal: Vector3, size: float = 1.0) -> bool:
     if not use_blender_assets or not BLENDER_MODULES.has(id):
@@ -226,6 +257,12 @@ func _blender_module(id: String, at: Vector3, normal: Vector3, size: float = 1.0
     piece.quaternion = Quaternion(Vector3.UP,normal.normalized())
     piece.scale = Vector3.ONE * size
     add_child(piece)
+    for mesh_node in piece.find_children("*","MeshInstance3D",true,false):
+        var color: Color = Color(.53,.92,.87)
+        if id=="protease": color=CATALYST_COLOR
+        elif id=="pili": color=Color(.66,.80,.97)
+        elif id=="receptor": color=Color(.94,.76,.42)
+        mesh_node.material_override=_mat(color,.46 if id=="vesicle" else 1.0,.42)
     return true
 
 func _build() -> void:
@@ -233,7 +270,7 @@ func _build() -> void:
     # Solo un locus morfogenetico MAGGIORE modifica la forma.
     var shape: float = clampf(float(traits.get("elongation",0.0))*.48,0.0,.40)
     var elongated: bool = shape > .24
-    body_radii = Vector3(.77+shape,.69,.77-shape*.24)
+    body_radii = Vector3(.87+shape,.56,.79-shape*.24)
     if primitive:
         body_radii *= .90
     if elongated:
@@ -258,7 +295,7 @@ func _build() -> void:
         shell_mat.shader = MEMBRANE_SHADER
         # Membrane genes already resolved in outer thermal variable.
         shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
-        shell_mat.set_shader_parameter("rim_tint",tint.lightened(.18))
+        shell_mat.set_shader_parameter("rim_tint",Color(.58,.98,.96))
         shell_mat.set_shader_parameter("opacity",.21 if primitive else .26)
         shell_mat.set_shader_parameter("membrane_motion",.008)
         shell_mat.set_shader_parameter("internal_scattering",.46 if primitive else .54)
@@ -383,7 +420,7 @@ func _build() -> void:
             var turns: float = 3.6 if branch == "archaea" else 2.6
             var amplitude: float = .065 if branch == "archaea" else .105
             path.append(Vector3(-u*(1.65 if branch == "archaea" else 2.05),sin(u*TAU*turns+float(i))*amplitude,cos(u*TAU*turns+float(i))*amplitude))
-        _tube(root,path,.011 if branch == "archaea" else .017,Color(.48,.78,.84) if branch == "archaea" else Color(.89,.68,.40))
+        _tube(root,path,.023 if branch == "archaea" else .029,Color(.48,.78,.84) if branch == "archaea" else Color(.89,.68,.40))
         _ellipsoid(root,Vector3.ZERO,Vector3(.055,.065,.065),Color(.55,.79,.84) if branch == "archaea" else Color(.83,.59,.27))
     _record_children("archaellar_motor" if branch == "archaea" else "flagellar_motor",feature_start)
 
@@ -405,14 +442,14 @@ func _build() -> void:
     add_child(shadow)
 
     var ring := TorusMesh.new()
-    ring.inner_radius = .80
-    ring.outer_radius = .812
+    ring.inner_radius = .16
+    ring.outer_radius = .19
     ring.rings = 56
     ring.ring_segments = 8
     selection_ring = MeshInstance3D.new()
     selection_ring.mesh = ring
     selection_ring.position.y = -.08
-    selection_ring.material_override = _mat(Color(.41,.62,.61),.09)
+    selection_ring.material_override = _mat(Color(.70,.95,.86),.45)
     selection_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     selection_ring.visible = is_player
     add_child(selection_ring)
@@ -509,21 +546,16 @@ func _build_chaperones() -> void:
     _record("chaperone_complex",complexes)
 
 func _wall_lattice(host: Node3D, radii: Vector3, tint: Color, fine: bool) -> void:
-    # A reticular wall/S-layer is distinct from a second lipid membrane.
-    for latitude in [-.62,-.25,.25,.62]:
-        var path := PackedVector3Array()
-        var radial: float = sqrt(1.0-float(latitude)*float(latitude))
-        for j in range(49):
-            var a: float = TAU*float(j)/48.0
-            path.append(Vector3(cos(a)*radii.x*radial,.81+float(latitude)*radii.y,sin(a)*radii.z*radial))
-        _tube(host,path,.007 if fine else .012,tint,.14 if fine else .21)
-    for i in range(8):
-        var path := PackedVector3Array()
-        var a: float = TAU*float(i)/8.0
-        for j in range(17):
-            var t: float = lerpf(-1.28,1.28,float(j)/16.0)
-            path.append(Vector3(cos(a)*cos(t)*radii.x,.81+sin(t)*radii.y,sin(a)*cos(t)*radii.z))
-        _tube(host,path,.006 if fine else .009,tint,.13)
+    # Local surface patches replace latitude/longitude cage lines.
+    for i in range(14):
+        var phi: float = float(i)*2.39996
+        var y: float = -.60+float(i%5)*.27
+        var radial: float = sqrt(1.0-y*y)
+        var patch := PackedVector3Array()
+        for j in range(9):
+            var angle: float = phi+(float(j)-4.0)*.025
+            patch.append(Vector3(cos(angle)*radii.x*radial,.81+y*radii.y,sin(angle)*radii.z*radial))
+        _tube(host,patch,.012 if fine else .024,tint,.40 if fine else .65)
 
 func _build_envelope() -> void:
     var envelope: String = str(traits.get("envelope","none"))

@@ -1,7 +1,7 @@
 name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
-    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance, work/phase-two-playable]
+    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance, work/phase-two-playable, work/cell-redesign]
   workflow_dispatch:
 
 concurrency:

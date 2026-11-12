@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode blend_mix, depth_prepass_alpha, cull_disabled, diffuse_burley;
+render_mode blend_mix, depth_draw_never, cull_back, unshaded;
 uniform vec4 membrane_tint : source_color = vec4(0.43, 0.73, 0.69, 1.0);
 uniform vec4 rim_tint : source_color = vec4(0.62, 0.86, 0.81, 1.0);
 uniform float opacity : hint_range(0.0,1.0) = .28;
@@ -20,24 +20,18 @@ void vertex() {
     float azimuth=atan(VERTEX.z,VERTEX.x);
     float lobes=sin(azimuth*3.0+membrane_time*.31)*.035+cos(azimuth*2.0-membrane_time*.23)*.025;
     float equator=clamp(length(VERTEX.xz),0.0,1.0);
-    VERTEX += NORMAL * (wave * membrane_motion+lobes*equator*flexibility);
+    float organic = sin(azimuth*3.0+0.65)*0.11+cos(azimuth*5.0-0.7)*0.045;
+    VERTEX += NORMAL * (wave * membrane_motion+(lobes+organic)*equator*flexibility);
 }
 void fragment() {
-    float facing = abs(dot(normalize(NORMAL),normalize(VIEW)));
-    float edge = pow(1.0-facing,2.4);
-    float micro = hash3(floor(sphere_p*33.0));
-    float top_light = smoothstep(-.65,.85,normalize(NORMAL).y);
-    vec3 subsurface = membrane_tint.rgb*(.79+.16*top_light);
-    vec3 base = mix(subsurface,rim_tint.rgb,edge*.63);
-    // Tangential material flow gives the membrane a liquid surface identity.
-    float surface_flow = sin(atan(sphere_p.z,sphere_p.x)*8.0+sphere_p.y*5.0-surface_phase);
-    base += rim_tint.rgb*surface_flow*.025*edge*flexibility;
-    base += (micro-.5)*.014;
-    ALBEDO = base;
-    ROUGHNESS = .42;
-    SPECULAR = .36;
-    RIM = .38;
-    RIM_TINT = .57;
-    ALPHA = clamp(opacity*(.72+internal_scattering*.27) + edge*.62, .08, .72);
-    EMISSION = rim_tint.rgb * edge*.26;
+    vec3 n = normalize(NORMAL);
+    float facing = clamp(dot(n,normalize(VIEW)),0.0,1.0);
+    float rim = pow(1.0-facing,1.7);
+    float shoulder = pow(1.0-facing,0.65);
+    float highlight = pow(max(dot(n,normalize(vec3(-0.45,0.65,0.65))),0.0),18.0);
+    float broad = pow(max(dot(n,normalize(vec3(-0.4,0.6,0.7))),0.0),3.0);
+    vec3 cytoplasm = mix(membrane_tint.rgb*0.48,membrane_tint.rgb*0.85,broad);
+    vec3 edge_color = mix(membrane_tint.rgb,rim_tint.rgb,rim);
+    ALBEDO = mix(cytoplasm,edge_color,shoulder*0.75)+vec3(0.65,0.9,1.0)*highlight*0.38;
+    ALPHA = clamp(0.15+opacity*0.30+rim*0.56+highlight*0.12,0.0,0.94);
 }
