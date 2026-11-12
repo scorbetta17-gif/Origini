@@ -938,19 +938,32 @@ func _divide_npc(id: String) -> void:
     for i in range(2):
         var new_id: String = ("E-%03d" if external else "C-%03d") % next_id
         next_id += 1
-        var mutated: Dictionary = _mutated_traits(traits,gen,branch)
+        # Independent lineages can diversify without the player controlling
+        # them. Bacteria and Archaea arise as sisters from a shared stage,
+        # never one after the other.
+        var daughter_branch: String = branch
+        if branch == "pre_luca" and gen >= 2 and rng.randf() < .38:
+            daughter_branch = "luca"
+        elif branch == "luca" and gen >= 3 and rng.randf() < .46:
+            daughter_branch = "bacteria" if i == 0 else "archaea"
+        var mutated: Dictionary = _mutated_traits(traits,gen,daughter_branch)
+        if daughter_branch == "luca" and branch == "pre_luca":
+            mutated = GenomeScript.grant(mutated,"dna_stabilization",gen,"ramificazione_autonoma","luca")
+        elif daughter_branch != branch and branch == "luca":
+            var envelope_gene: String = "monoderm_envelope" if daughter_branch == "bacteria" else "archaeal_envelope"
+            mutated = GenomeScript.grant(mutated,envelope_gene,gen,"ramificazione_autonoma",daughter_branch)
         # Occasional heritable ecological specialization. Runner: fast escape,
         # predator: hydrolase and high attack but significantly slower.
         if gen >= 3 and rng.randf() < .52:
             if i == 0:
-                mutated = GenomeScript.grant(mutated,"pili_twitch",gen,"specializzazione","%s" % branch)
+                mutated = GenomeScript.grant(mutated,"pili_twitch",gen,"specializzazione",daughter_branch)
                 mutated["motility"] = maxf(1.20,float(mutated.get("motility",1.0)))
             else:
-                mutated = GenomeScript.grant(mutated,"hydrolase_secretion",gen,"specializzazione","%s" % branch)
+                mutated = GenomeScript.grant(mutated,"hydrolase_secretion",gen,"specializzazione",daughter_branch)
                 mutated["attack"] = maxf(1.16,float(mutated.get("attack",1.0)))
                 mutated["motility"] = minf(.83,float(mutated.get("motility",1.0)))
-            mutated = GenomeScript.express(mutated,branch)
-        _create_entity(new_id,id,gen,branch,mutated,pos+Vector3(-.70 if i == 0 else .70,0,.45 if i == 0 else -.45),false,external)
+            mutated = GenomeScript.express(mutated,daughter_branch)
+        _create_entity(new_id,id,gen,daughter_branch,mutated,pos+Vector3(-.70 if i == 0 else .70,0,.45 if i == 0 else -.45),false,external)
         var child: Dictionary = entities[new_id]
         child["biomass"] = 24.0
         child["energy"] = float(parent["energy"])*.45
