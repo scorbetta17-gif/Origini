@@ -1680,8 +1680,13 @@ func _load_game() -> void:
     else:
         phase1_progress = PhaseOneScript.empty()
         phase1_progress["intro_seen"] = true
-        # Protect completed Phase 2 campaigns saved by ORIGINI 0.70.
-        if bool(phase2_progress.get("complete",false)):
+        # Legacy 0.70 saves already engaged in Phase 2 must not lose
+        # their accumulated biological association during migration.
+        var existing_phase_two: bool = false
+        for milestone in ["discovered","adhesion","exchanged","stable","transmitted","complete"]:
+            if bool(phase2_progress.get(milestone,false)):
+                existing_phase_two = true
+        if existing_phase_two:
             phase1_progress["complete"] = true
             phase1_progress["phase_two_intro_seen"] = true
         phase1_progress["player_divisions"] = maxi(0,int(loaded.get("next_id",1))/2)
