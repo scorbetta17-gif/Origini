@@ -361,6 +361,7 @@ func _cache_current() -> void:
     var e: Dictionary = entities[player_id]
     e["hp"] = hp
     e["atp"] = atp
+    e["energy"] = atp
     e["resources"] = resources.duplicate(true)
     e["points"] = mutation_points
     e["purchased"] = purchased.duplicate(true)
@@ -664,8 +665,18 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
             zero_atp_seconds = 0.0
     elif entities.has(cell_id):
         var e: Dictionary = entities[cell_id]
-        e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(e["biomass"])+2.3*float(e["traits"].get("uptake",1.0)))
+        var uptake_npc: float = float(e["traits"].get("uptake",1.0))
+        e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(e["biomass"])+2.3*uptake_npc)
+        var stock: Dictionary = e["resources"]
+        if kind == "detritus":
+            stock["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(stock["carbon"])+2.0*uptake_npc)
+            stock["amino"] = minf(Physiology.reserve_cap(float(NEED["amino"])),float(stock["amino"])+1.5*uptake_npc)
+        else:
+            stock[kind] = minf(Physiology.reserve_cap(float(NEED[kind])),float(stock.get(kind,0.0))+2.15*uptake_npc)
+        stock["biomass"] = e["biomass"]
+        e["resources"] = stock
         e["energy"] = minf(85.0,float(e["energy"])+4.0)
+        e["atp"] = e["energy"]
         if float(e["energy"]) > 0.0:
             e["zero_energy_seconds"] = 0.0
     if is_instance_valid(n["node"]):
@@ -782,6 +793,7 @@ func _update_npc_motion(delta: float) -> void:
         var actual_distance: float = before.distance_to(c.position)
         e["velocity"] = next
         e["energy"] = Physiology.npc_energy_step(float(e["energy"]),delta,actual_distance)
+        e["atp"] = e["energy"]
         if actual_distance > .0001:
             c.rotation.y = lerp_angle(c.rotation.y,atan2(-next.z,next.x),delta*4.0)
         if float(e["energy"]) <= .001:
@@ -894,7 +906,9 @@ func _update_ecosystem(dt: float) -> void:
                         _remove_entity(nearest_id,"predazione")
                         e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),
                             float(e["biomass"])+9.0)
+                        e["resources"]["biomass"] = e["biomass"]
                         e["energy"] = minf(85.0,float(e["energy"])+12.0)
+                        e["atp"] = e["energy"]
     # The Phase 2 bacterial partner arises from an independent lineage.
     if bool(phase1_progress.get("complete",false)) and generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 12.0:
         _create_external_bacterium()
@@ -967,6 +981,12 @@ func _divide_npc(id: String) -> void:
         var child: Dictionary = entities[new_id]
         child["biomass"] = 24.0
         child["energy"] = float(parent["energy"])*.45
+        child["atp"] = child["energy"]
+        var sibling_stock: Dictionary = parent["resources"].duplicate(true)
+        for ingredient in TYPES:
+            sibling_stock[ingredient] = float(parent["resources"].get(ingredient,0.0))*.44
+        sibling_stock["biomass"] = 24.0
+        child["resources"] = sibling_stock
         child["strategy"] = Physiology.strategy(mutated)
         child["hp"] = maxf(35.0,float(parent["hp"])*.8)
         child["purchased"] = older_purchased.duplicate(true)
@@ -1601,7 +1621,8 @@ func _save_game() -> void:
             "energy":e["energy"],"biomass":e["biomass"],"resources":e["resources"],
             "points":e["points"],"purchased":e["purchased"],"age":e["age"],
             "phase2_progress":e.get("phase2_progress",PhaseScript.empty()),
-            "zero_atp_seconds":e.get("zero_atp_seconds",0.0)})
+            "zero_atp_seconds":e.get("zero_atp_seconds",0.0),
+            "zero_energy_seconds":e.get("zero_energy_seconds",0.0)})
     var particle_data: Array = []
     for n in nutrients:
         if is_instance_valid(n["node"]):
@@ -1659,7 +1680,7 @@ func _load_game() -> void:
         var id: String = str(record["id"])
         _create_entity(id,str(record.get("parent","")),int(record.get("generation",0)),str(record.get("branch","pre_luca")),record.get("traits",_base_traits()),Vector3(float(xyz[0]),float(xyz[1]),float(xyz[2])),false,bool(record.get("external",false)))
         var target: Dictionary = entities[id]
-        for key in ["hp","atp","energy","biomass","resources","points","purchased","age","phase2_progress","zero_atp_seconds"]:
+        for key in ["hp","atp","energy","biomass","resources","points","purchased","age","phase2_progress","zero_atp_seconds","zero_energy_seconds"]:
             if record.has(key):
                 target[key] = record[key]
         target["phase2_progress"] = PhaseScript.normalize(target.get("phase2_progress",{}))
