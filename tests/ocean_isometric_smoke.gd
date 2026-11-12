@@ -40,9 +40,15 @@ func _run() -> void:
     assert(bubbles != null)
     assert(bubbles.multimesh.instance_count >= 65)
     var before: Vector3 = bubbles.multimesh.get_instance_transform(0).origin
+    var t_before: float = float(seabed.get("bubble_time"))
     seabed.call("_process",.7)
     var after: Vector3 = bubbles.multimesh.get_instance_transform(0).origin
-    assert(after.y > before.y, "Gas bubbles need actual upward animation")
+    var t_after: float = float(seabed.get("bubble_time"))
+    print("BUBBLE_DYNAMICS before=",before," after=",after," t=",t_before," -> ",t_after)
+    if t_after <= t_before or after.y <= before.y+.00001:
+        push_error("Hydrothermal 3D particle animation is not ascending")
+        quit(1)
+        return
 
     game.call("_close_overlay")
     game.call("_update_nutrient_markers")
