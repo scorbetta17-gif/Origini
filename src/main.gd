@@ -11,6 +11,7 @@ const LineageScript = preload("res://src/lineage_view.gd")
 const JoystickScript = preload("res://src/virtual_joystick.gd")
 const ClassicHudScript = preload("res://src/classic_hud.gd")
 const PhenotypePortraitScript = preload("res://src/phenotype_portrait.gd")
+const NutrientMarkersScript = preload("res://src/nutrient_markers.gd")
 const SAVE_PATH = "user://origini_067.json"
 # Biomi termici localizzati: il resto dell'oceano resta temperato e spoglio.
 const THERMAL_SOURCES = [Vector2(-11.0, 3.0), Vector2(16.0, -14.0)]
@@ -97,6 +98,7 @@ var autosave_timer: float = 0.0
 var notice_expires: float = -1.0
 var hud: Control
 var classic_hud: OriginiClassicHud
+var nutrient_markers: OriginiNutrientMarkers
 var toast_back: Panel
 var overlay: ColorRect
 var overlay_panel: Panel
@@ -171,9 +173,16 @@ func _new_game() -> void:
         joystick.reset_input()
     var starter: Dictionary = _base_traits()
     _create_entity("C-000", "", 0, "pre_luca", starter, Vector3.ZERO, true)
-    # Materiali abiotici: nessun frammento di DNA o detrito cellulare prima delle cellule.
-    for i in range(44):
-        _create_nutrient(TYPES[i % 4], Vector3(rng.randf_range(-22.0,22.0),.19,rng.randf_range(-22.0,22.0)))
+    # Anche il primo minuto offre nutrienti visibili vicino alla cellula,
+    # con materiali abiotici distribuiti nel resto dell'oceano.
+    for i in range(68):
+        var center_spawn: bool = i < 24
+        var spread: float = 7.0 if center_spawn else 22.0
+        var x: float = rng.randf_range(-spread,spread)
+        var z: float = rng.randf_range(-spread,spread)
+        if center_spawn and Vector2(x,z).length() < 1.8:
+            x += 2.0 if x >= 0 else -2.0
+        _create_nutrient(TYPES[i % 4], Vector3(x,.19,z))
     _close_overlay()
     _refresh_hud()
 
@@ -434,6 +443,7 @@ func _process(delta: float) -> void:
         if is_instance_valid(n["node"]):
             n["node"].position.y = float(n["origin_y"]) + sin(t*1.8+float(n["bob"]))*0.04
     _collect_nearby()
+    _update_nutrient_markers()
     eco_tick += delta
     if eco_tick >= .22:
         _update_ecosystem(eco_tick)
@@ -597,6 +607,26 @@ func _collect_nearby() -> void:
         if nutrient_respawn >= .22:
             _create_nutrient(TYPES[rng.randi_range(0,3)], Vector3(rng.randf_range(-23,23),.29,rng.randf_range(-23,23)))
             nutrient_respawn = 0.0
+
+func _update_nutrient_markers() -> void:
+    if not is_instance_valid(nutrient_markers) or not nutrient_markers.visible:
+        return
+    var rect: Vector2 = get_viewport().get_visible_rect().size
+    var points: Array[Dictionary] = []
+    var top_safe: float = classic_hud.panel_height()+8.0
+    var bottom_safe: float = rect.y-160.0
+    for n in nutrients:
+        var node: MeshInstance3D = n["node"]
+        if not is_instance_valid(node) or not node.visible:
+            continue
+        var where: Vector3 = node.position+Vector3(0,.12,0)
+        if camera.is_position_behind(where):
+            continue
+        var screen: Vector2 = camera.unproject_position(where)
+        if screen.y < top_safe or screen.y > bottom_safe:
+            continue
+        points.append({"pos":screen,"kind":str(n["kind"]),"scale":1.0})
+    nutrient_markers.configure(points,top_safe,bottom_safe,rect)
 
 func _nearest_nutrient(at: Vector3, max_distance: float) -> int:
     var result: int = -1
@@ -1561,6 +1591,10 @@ func _build_ui() -> void:
     classic_hud = ClassicHudScript.new()
     classic_hud.name = "MobileClassicHUD"
     hud.add_child(classic_hud)
+    nutrient_markers = NutrientMarkersScript.new()
+    nutrient_markers.name = "WorldNutrientGlyphs"
+    hud.add_child(nutrient_markers)
+    hud.move_child(nutrient_markers,0)
     title_label = _label("ORIGINI",21)
     hud.add_child(title_label)
     status_label = _label("ATP · HP · biomassa",15)
@@ -1648,6 +1682,8 @@ func _layout_ui() -> void:
     var portrait: bool = wh.y > wh.x
     classic_hud.set_viewport(wh)
     classic_hud.visible = portrait
+    nutrient_markers.size = wh
+    nutrient_markers.visible = portrait
     for label in [title_label,status_label,objective_label]:
         label.visible = not portrait
     for bar in [hp_bar,atp_bar,scission_bar]:
