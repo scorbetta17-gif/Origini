@@ -21,6 +21,8 @@ var touch_dragged: bool = false
 var touch_seen: bool = false
 var inspected: int = 0
 var source_traits: Dictionary = {}
+const Balance = preload("res://src/mutation_balance.gd")
+var cell_generation: int = 0
 const GenomeScript = preload("res://src/cell_genome.gd")
 # Eight explicit, heritable gene milestones per category, rather than a
 # misleading big passive node with no genotype.
@@ -33,7 +35,9 @@ const MAJOR_LOCUS_BY_BRANCH := [
     ["membrane_transport","vesicle_pathway","surface_recognition","pili_twitch","vesicle_pathway","membrane_transport","surface_recognition","pili_twitch"]
 ]
 
-func configure(data: Dictionary, available_points: int, genome_traits: Dictionary = {}) -> void:
+func configure(data: Dictionary, available_points: int, genome_traits: Dictionary = {}, generation: int = 0) -> void:
+    clip_contents = true
+    cell_generation = generation
     owned = data.duplicate(true)
     points = available_points
     source_traits = genome_traits.duplicate(true)
@@ -52,12 +56,7 @@ func _screen(world_pos: Vector2) -> Vector2:
     return size * 0.5 + pan + world_pos * zoom_level
 
 func _type(node_id: int) -> int:
-    var ring: int = (node_id % 48) / 8
-    if ring == 5:
-        return 2
-    if ring == 2 or ring == 4:
-        return 1
-    return 0
+    return 2 if node_id%48>=40 else 0
 
 func major_locus(node_id: int) -> String:
     if _type(node_id) != 2:
@@ -66,80 +65,98 @@ func major_locus(node_id: int) -> String:
     var lane: int = node_id % 8
     return MAJOR_LOCUS_BY_BRANCH[branch][lane]
 
-func _draw_major_icon(center: Vector2, radius: float, branch: int, tint: Color) -> void:
-    # Six recognisably different scientific pictograms, drawn as vectors
-    # and visible even without optional mobile icon fonts.
-    var r: float = maxf(6.0,radius*.78)
-    var ink: Color = tint.lightened(.38)
-    match branch:
-        0: # Motility: directional arrow and cilium
-            draw_arc(center-Vector2(r*.12,0),r*.55,-PI*.70,PI*.35,16,ink,2.2,true)
-            draw_line(center+Vector2(r*.42,-r*.18),center+Vector2(r*.86,0),ink,2.2,true)
-            draw_line(center+Vector2(r*.86,0),center+Vector2(r*.39,r*.28),ink,2.2,true)
-        1: # Attack: pointed protease/scissor enzyme
-            draw_line(center+Vector2(-r*.65,-r*.62),center+Vector2(r*.66,r*.62),ink,2.4,true)
-            draw_line(center+Vector2(-r*.65,r*.62),center+Vector2(r*.66,-r*.62),ink,2.4,true)
-            draw_circle(center,2.1,ink)
-        2: # Defense: shield
-            var shield := PackedVector2Array([
-                center+Vector2(0,-r*.82),center+Vector2(r*.68,-r*.42),
-                center+Vector2(r*.55,r*.38),center+Vector2(0,r*.89),
-                center+Vector2(-r*.55,r*.38),center+Vector2(-r*.68,-r*.42),
-                center+Vector2(0,-r*.82)])
-            draw_polyline(shield,ink,2.3,true)
-        3: # Heredity/mutation: crossing DNA-style strands
-            for i in range(14):
-                var v: float = float(i)/13.0
-                var y: float = (v-.5)*r*1.6
-                var x: float = sin(v*TAU*1.2)*r*.43
-                draw_circle(center+Vector2(x,y),1.5,ink)
-                draw_circle(center+Vector2(-x,y),1.5,ink)
-                if i%3 == 0:
-                    draw_line(center+Vector2(x,y),center+Vector2(-x,y),ink.darkened(.18),1.1,true)
-        4: # Metabolism: energy bolt
-            var bolt := PackedVector2Array([
-                center+Vector2(r*.08,-r*.91),center+Vector2(-r*.46,r*.11),
-                center+Vector2(0,r*.11),center+Vector2(-r*.08,r*.89),
-                center+Vector2(r*.49,-r*.15),center+Vector2(r*.09,-r*.15)])
-            draw_colored_polygon(bolt,ink)
-        5: # Uptake: transport channel with incoming molecules
-            draw_arc(center,r*.55,0,TAU,24,ink,2.1,true)
-            draw_circle(center,2.3,ink)
-            draw_line(center+Vector2(-r*.97,0),center+Vector2(-r*.29,0),ink,1.8,true)
-            draw_line(center+Vector2(-r*.29,0),center+Vector2(-r*.47,-r*.19),ink,1.5,true)
-            draw_line(center+Vector2(-r*.29,0),center+Vector2(-r*.47,r*.19),ink,1.5,true)
+func _draw_major_icon(center: Vector2, radius: float, locus: String, tint: Color) -> void:
+    # Shared vector style: pale ink, rounded arcs, phenotype-specific pictograms.
+    var r: float = maxf(6.0,radius*.72)
+    var ink: Color = tint.lightened(.48)
+    var width: float = maxf(1.5,r*.15)
+    match locus:
+        "pili_twitch":
+            draw_arc(center,r*.35,0,TAU,20,ink,width,true)
+            for i in range(5):
+                var n := Vector2.from_angle(TAU*i/5.0)
+                draw_line(center+n*r*.4,center+n*r,ink,width,true)
+        "cell_elongation":
+            draw_arc(center-Vector2(r*.38,0),r*.44,PI*.5,PI*1.5,16,ink,width,true)
+            draw_arc(center+Vector2(r*.38,0),r*.44,-PI*.5,PI*.5,16,ink,width,true)
+            for sign_value in [-1,1]:
+                draw_line(center+Vector2(-r*.38,r*.44*sign_value),center+Vector2(r*.38,r*.44*sign_value),ink,width,true)
+        "surface_recognition":
+            draw_line(center+Vector2(0,r*.8),center,ink,width,true)
+            draw_line(center,center+Vector2(-r*.65,-r*.65),ink,width,true)
+            draw_line(center,center+Vector2(r*.65,-r*.65),ink,width,true)
+            draw_circle(center+Vector2(0,-r*.8),r*.16,ink)
+        "membrane_transport":
+            for x in [-.55,.55]:
+                draw_line(center+Vector2(r*x,-r*.7),center+Vector2(r*x,r*.7),ink,width,true)
+            draw_line(center+Vector2(-r*.25,0),center+Vector2(r*.25,0),ink,width,true)
+            draw_circle(center+Vector2(0,-r*.7),r*.19,ink)
+            draw_circle(center+Vector2(0,r*.7),r*.13,ink)
+        "hydrolase_secretion":
+            var contour := PackedVector2Array()
+            for i in range(7):
+                contour.append(center+Vector2.from_angle(TAU*i/6.0)*r*.75)
+            draw_polyline(contour,ink,width,true)
+            draw_line(center+Vector2(-r*.35,r*.15),center,ink,width,true)
+            draw_line(center,center+Vector2(r*.35,-r*.15),ink,width,true)
+        "vesicle_pathway":
+            draw_arc(center-Vector2(r*.23,r*.08),r*.58,0,TAU,24,ink,width,true)
+            draw_arc(center+Vector2(r*.62,-r*.50),r*.26,0,TAU,16,ink,width,true)
+        "eps_biosynthesis":
+            draw_arc(center,r*.40,0,TAU,20,ink,width,true)
+            for i in range(10):
+                draw_circle(center+Vector2.from_angle(TAU*i/10.0)*r*.82,r*.105,ink)
+        "thermal_membrane":
+            for y in [-.5,0,.5]:
+                var line := PackedVector2Array()
+                for i in range(17):
+                    var u: float = float(i)/16.0
+                    line.append(center+Vector2((u-.5)*r*1.6,r*y+sin(u*TAU)*r*.14))
+                draw_polyline(line,ink,width,true)
+        "chaperone_complex":
+            for i in range(6):
+                draw_circle(center+Vector2.from_angle(TAU*i/6.0)*r*.56,r*.23,ink)
+            draw_circle(center,r*.23,tint.darkened(.4))
 
 func _cost(node_id: int) -> int:
-    return _type(node_id) + 1
+    return 2 if _type(node_id)==2 else 1
+
+func point_count(branch: int) -> int:
+    var count: int = 0
+    for i in range(40):
+        if owned.has(str(branch*48+i)):
+            count += 1
+    return count
+
+func major_count(branch: int) -> int:
+    var count: int = 0
+    for i in range(40,48):
+        if owned.has(str(branch*48+i)):
+            count += 1
+    return count
 
 func _available(node_id: int) -> bool:
-    if owned.has(str(node_id)):
+    if node_id<0 or node_id>=288 or owned.has(str(node_id)):
         return false
-    var local: int = node_id % 48
-    var connected: bool = local < 8 or owned.has(str(node_id - 8))
-    if not connected:
+    if _type(node_id)!=2:
+        return true
+    var locus: String = major_locus(node_id)
+    if GenomeScript.allele(source_traits,locus)>=int(GenomeScript.GENE_INFO[locus]["max"]):
         return false
-    if _type(node_id) == 2 and not source_traits.is_empty():
-        var locus: String = major_locus(node_id)
-        if GenomeScript.allele(source_traits,locus) >= int(GenomeScript.GENE_INFO[locus]["max"]):
-            return false
-    return true
+    # Deliberate introductory exception: two points from the first division.
+    if node_id==88 and cell_generation>=1 and not GenomeScript.has(source_traits,"hydrolase_secretion"):
+        return true
+    var branch: int = node_id/48
+    return point_count(branch)>=Balance.POINTS_PER_MAJOR*(major_count(branch)+1)
+
+func focus_node(id: int) -> void:
+    inspected = clampi(id,0,287)
+    pan = -_pos(inspected)*zoom_level
+    queue_redraw()
 
 func _draw() -> void:
     draw_rect(Rect2(Vector2.ZERO,size),Color(.011,.061,.085,.99))
     var center: Vector2 = _screen(Vector2.ZERO)
-    for branch in range(6):
-        var tint: Color = COLORS[branch]
-        var far := _screen(Vector2(cos(-PI*.5+float(branch)*TAU/6.0),
-            sin(-PI*.5+float(branch)*TAU/6.0))*530)
-        draw_line(center,far,Color(tint.r,tint.g,tint.b,.13),6.0*zoom_level,true)
-        for local in range(48):
-            var id: int = branch*48+local
-            var at: Vector2 = _screen(_pos(id))
-            var parent: Vector2 = _screen(Vector2.ZERO if local < 8 else _pos(id-8))
-            var active: bool = owned.has(str(id))
-            draw_line(parent,at,Color(tint.r,tint.g,tint.b,.70) if active else Color(.23,.39,.44,.35),
-                (2.6 if active else 1.1)*zoom_level,true)
     for branch in range(6):
         for local in range(48):
             var id: int = branch*48+local
@@ -157,11 +174,11 @@ func _draw() -> void:
             if _type(id) == 2:
                 draw_arc(at,radius+2.2*zoom_level,0,TAU,28,
                     color.lightened(.42) if active else Color(.45,.64,.65,.90),1.6*zoom_level,true)
-                _draw_major_icon(at,radius,branch,color if ready or active else Color(.31,.48,.50))
+                _draw_major_icon(at,radius,major_locus(id),color if ready or active else Color(.31,.48,.50))
     draw_circle(center,26*zoom_level,Color(.42,.87,.78))
     draw_circle(center,18*zoom_level,Color(.13,.38,.42))
     draw_string(ThemeDB.fallback_font,center+Vector2(-19,4)*zoom_level,
-        "LUCA",HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(11,int(12*zoom_level)),Color(.92,1,1))
+        "RNA",HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(11,int(12*zoom_level)),Color(.92,1,1))
 
     # Classic mobile visual hierarchy: six stat cards and branch selector.
     draw_rect(Rect2(0,0,size.x,165),Color(.015,.088,.115,.985))
@@ -169,7 +186,7 @@ func _draw() -> void:
     draw_string(ThemeDB.fallback_font,Vector2(16,27),
         "ALBERO EVOLUTIVO",HORIZONTAL_ALIGNMENT_LEFT,-1,22,Color(.94,.99,.99))
     draw_string(ThemeDB.fallback_font,Vector2(16,51),
-        "288 nodi · %d acquisiti · %d punti disponibili" % [owned.size(),points],
+        "240 puntiformi + 48 scelte maggiori · %d acquisite · %d punti" % [owned.size(),points],
         HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.65,.84,.87))
     var stats: Array[String] = ["MOV","ATK","DIF","MUT","ATP","ASS"]
     var box_width: float = (size.x-26.0-5*5.0)/6.0
@@ -206,25 +223,27 @@ func _draw() -> void:
         var affordable: bool = _available(inspected) and points >= _cost(inspected)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-141),
             "%s · %s" % [BRANCHES[branch],title],HORIZONTAL_ALIGNMENT_LEFT,-1,17,COLORS[branch],size.x-34)
+        var preview: Dictionary = Balance.tree_effect(source_traits,STATS[branch],kind==2)
+        var gain: float = float(preview[STATS[branch]])-float(source_traits.get(STATS[branch],0.0 if branch==3 else 1.0))
         var genetic_name: String = ""
         if kind == 2:
             var locus: String = major_locus(inspected)
             genetic_name = str(GenomeScript.GENE_INFO[locus]["name"])
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-113),
-            ("GENE: "+genetic_name+" · Costo %d" % _cost(inspected)) if kind == 2 else (
+            ("GENE: "+genetic_name+" · +%.1f%% · %d P" % [gain*100.0,_cost(inspected)]) if kind == 2 else (
                 "Effetto: +%.1f%% %s  ·  Costo %d punti" % [
-                    (0.022 if kind == 0 else 0.09)*100.0,
+                    gain*100.0,
                     BRANCHES[branch],_cost(inspected)]),
             HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.88,.96,.96),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-87),
-            ("Locus ereditabile: può introdurre strutture visibili." if kind == 2
-                else "Solo bonus numerici: nessuna nuova struttura biologica."),
+            ("Fenotipo + bonus; -1,2 punti % "+str(Balance.TRADEOFF[STATS[branch]]) if kind == 2
+                else "Bonus decrescente; -0,4 punti % "+str(Balance.TRADEOFF[STATS[branch]])),
             HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.65,.86,.87),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-60),
-            "TOCCA ANCORA PER ACQUISTARE" if affordable else "Servono nodi precedenti o altri punti",
+            "TOCCA ANCORA PER ACQUISTARE" if affordable else "Servono puntiformi, punti o il locus e gia al massimo",
             HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.57,.92,.77) if affordable else Color(.95,.77,.59),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-32),
-            "Grandi mutazioni: geni nello sviluppo o nei nodi dedicati.",
+            ("Enzimi iniziali: GEN 1 · 2 punti" if inspected==88 else "Puntiformi categoria: %d / %d per la prossima maggiore" % [point_count(branch),5*(major_count(branch)+1)]),
             HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(.69,.79,.88),size.x-34)
     else:
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-120),
@@ -301,7 +320,7 @@ func _gui_input(event: InputEvent) -> void:
 func _select(id: int) -> void:
     if inspected == id and _available(id) and points >= _cost(id):
         var branch: int = id / 48
-        var value: float = 0.022 if _type(id) == 0 else (0.09 if _type(id) == 1 else 0.18)
+        var value: float = Balance.MAJOR_GAIN if _type(id)==2 else Balance.MINOR_GAIN
         points -= _cost(id)
         owned[str(id)] = true
         mutation_unlocked.emit(id, STATS[branch], value, _cost(id))

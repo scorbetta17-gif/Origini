@@ -2,6 +2,11 @@ extends Node3D
 ## ORIGINI 0.67 — prima ricostruzione grafica e giocabile con Godot 4.x.
 ## Scene 3D reali, camera isometrica, fenotipi procedurali, UI mobile.
 
+const Balance = preload("res://src/mutation_balance.gd")
+const SubstrateScript = preload("res://src/substrate_patch.gd")
+var substrates: Array[Node3D] = []
+var selected_substrate: Node3D
+var substrate_respawn: float = 0.0
 const CellScript = preload("res://src/cell_visual.gd")
 const GenomeScript = preload("res://src/cell_genome.gd")
 const PhaseScript = preload("res://src/phase_two_progress.gd")
@@ -206,7 +211,8 @@ func _new_game() -> void:
         else:
             x = rng.randf_range(-20.0,20.0)
             z = rng.randf_range(-20.0,20.0)
-        _create_nutrient(TYPES[i % 4], Vector3(x,.19,z))
+        _create_nutrient(Balance.NUTRIENT_CYCLE[i % Balance.NUTRIENT_CYCLE.size()], Vector3(x,.19,z))
+    _reset_substrates()
     _refresh_hud()
     _open_phase_intro(1)
 
@@ -335,7 +341,7 @@ func _create_nutrient(kind: String, at: Vector3) -> void:
 func _create_entity(id: String, parent: String, gen: int, branch: String, traits: Dictionary, at: Vector3, controlled: bool = false, external: bool = false) -> void:
     if entities.has(id):
         return
-    var inherited: Dictionary = GenomeScript.normalize(traits,branch)
+    var inherited: Dictionary = Balance.normalize(GenomeScript.normalize(traits,branch))
     var node: CellVisual = CellScript.new()
     cells_root.add_child(node)
     node.position = at
@@ -400,6 +406,7 @@ func _activate_lineage(id: String) -> void:
         phase2_progress = PhaseScript.release(phase2_progress)
     selected_target_id = ""
     selected_nutrient = null
+    selected_substrate = null
     attack_mode = ""
     if is_instance_valid(joystick):
         joystick.set_controls_enabled(true)
@@ -462,9 +469,10 @@ func _process(delta: float) -> void:
     if direction.length() > 0.12 and atp > 0.0:
         selected_target_id = ""
         selected_nutrient = null
+        selected_substrate = null
         attack_mode = ""
         _move_player(direction.normalized(),delta)
-    elif atp > 0.0 and (selected_target_id != "" or is_instance_valid(selected_nutrient)):
+    elif atp > 0.0 and (selected_target_id != "" or is_instance_valid(selected_nutrient) or is_instance_valid(selected_substrate)):
         _follow_attack(delta)
     else:
         _move_player(Vector2.ZERO,delta)
@@ -681,7 +689,7 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
         else:
             resources[kind] = minf(Physiology.reserve_cap(float(NEED[kind])),float(resources[kind])+2.15*uptake)
         resources["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(resources["biomass"])+1.45*uptake)
-        atp = minf(100.0,atp+1.35*float(entities[player_id]["traits"].get("metabolism",1.0)))
+        atp = minf(100.0,atp+(6.0 if kind=="carbon" else (3.0 if kind=="detritus" else .75))*sqrt(float(entities[player_id]["traits"].get("metabolism",1.0))))
         if atp > 0.0:
             zero_atp_seconds = 0.0
     elif entities.has(cell_id):
@@ -696,13 +704,92 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
             stock[kind] = minf(Physiology.reserve_cap(float(NEED[kind])),float(stock.get(kind,0.0))+2.15*uptake_npc)
         stock["biomass"] = e["biomass"]
         e["resources"] = stock
-        e["energy"] = minf(85.0,float(e["energy"])+4.0)
+        e["energy"] = minf(85.0,float(e["energy"])+(6.0 if kind=="carbon" else 3.0))
         e["atp"] = e["energy"]
         if float(e["energy"]) > 0.0:
             e["zero_energy_seconds"] = 0.0
     if is_instance_valid(n["node"]):
         n["node"].queue_free()
     nutrients.remove_at(index)
+
+func _award_bundle(bundle: Dictionary, controlled: bool, cell_id: String = "") -> void:
+    if not controlled and not entities.has(cell_id):
+        return
+    var stock: Dictionary = resources if controlled else entities[cell_id]["resources"]
+    var traits: Dictionary = entities[player_id if controlled else cell_id]["traits"]
+    var uptake: float = clampf(float(traits.get("uptake",1.0)),.65,1.8)
+    for key in NEED:
+        stock[key] = minf(Physiology.reserve_cap(float(NEED[key])),float(stock.get(key,0))+float(bundle.get(key,0))*uptake)
+    if controlled:
+        resources = stock
+        atp = minf(100.0,atp+float(bundle.get("atp",0)))
+        if atp>0:
+            zero_atp_seconds = 0.0
+    else:
+        var entity: Dictionary = entities[cell_id]
+        entity["resources"] = stock
+        entity["biomass"] = stock["biomass"]
+        entity["energy"] = minf(85.0,float(entity["energy"])+float(bundle.get("atp",0)))
+        entity["atp"] = entity["energy"]
+
+func _spawn_substrate(at: Vector3, portions: int = 3) -> void:
+    var patch: Node3D = SubstrateScript.new()
+    patch.name = "Substrato_organico"
+    world_root.add_child(patch)
+    var terrain: Node = world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso")
+    patch.position = Vector3(at.x,terrain.surface_height(Vector2(at.x,at.z))+.04,at.z)
+    patch.setup(int(absf(at.x*731+at.z*997))+441,portions)
+    substrates.append(patch)
+
+func _reset_substrates(saved: Array = [], from_save: bool = false) -> void:
+    selected_substrate = null
+    for patch in substrates:
+        if is_instance_valid(patch):
+            patch.queue_free()
+    substrates.clear()
+    substrate_respawn = 0.0
+    if from_save:
+        for record in saved.slice(0,6):
+            if record is Dictionary and record.get("pos",[]) is Array and record["pos"].size()==3:
+                _spawn_substrate(Vector3(float(record["pos"][0]),0,float(record["pos"][2])),clampi(int(record.get("portions",3)),1,3))
+    else:
+        for p in [Vector3(3.8,0,1.5),Vector3(-4,0,2),Vector3(4,0,-5),Vector3(-7,0,-6),Vector3(8,0,8),Vector3(0,0,12)]:
+            _spawn_substrate(p)
+
+func _maintain_substrates(delta: float) -> void:
+    if not is_instance_valid(player):
+        return
+    substrate_respawn += maxf(delta,0.0)
+    if substrates.size()<6 and substrate_respawn>=20.0:
+        _spawn_substrate(_nearby_nutrient_position())
+        substrate_respawn = 0.0
+    for patch in substrates:
+        if is_instance_valid(patch) and patch.position.distance_squared_to(player.position)>2500:
+            var at: Vector3 = _nearby_nutrient_position()
+            var terrain: Node = world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso")
+            patch.position = Vector3(at.x,terrain.surface_height(Vector2(at.x,at.z))+.04,at.z)
+
+func _digest_substrate(patch: Node3D) -> bool:
+    if not is_instance_valid(patch) or not substrates.has(patch) or skill_cooldown>0:
+        return false
+    if not GenomeScript.has(entities[player_id]["traits"],"hydrolase_secretion") or atp<Balance.ENZYME_COST:
+        return false
+    var offset: Vector3 = patch.position-player.position
+    offset.y = 0
+    if offset.length()>1.55:
+        return false
+    atp -= Balance.ENZYME_COST
+    _award_bundle(Balance.SUBSTRATE_REWARD,true)
+    skill_cooldown = 2.0
+    patch.set_portions(patch.portions-1)
+    _notice("Substrato digerito · C +6 · AA +3 · lipidi +2 · nucleotidi +1")
+    if patch.portions<=0:
+        substrates.erase(patch)
+        patch.queue_free()
+        selected_substrate = null
+        attack_mode = ""
+        substrate_respawn = 0.0
+    return true
 
 func _collect_nearby() -> void:
     for i in range(nutrients.size()-1,-1,-1):
@@ -717,6 +804,7 @@ func _collect_nearby() -> void:
             continue
         _consume_nutrient(i,true)
 func _respawn_nutrients(delta: float) -> void:
+    _maintain_substrates(delta)
     _recycle_distant_nutrients()
     # Accumulate elapsed simulation time exactly once, independent of FPS.
     # eco_tick is cumulative and must never be added again on every frame.
@@ -725,7 +813,7 @@ func _respawn_nutrients(delta: float) -> void:
         return
     nutrient_respawn += maxf(0.0,delta)
     while nutrient_respawn + .000001 >= .22 and nutrients.size() < Physiology.nutrient_goal():
-        _create_nutrient(TYPES[rng.randi_range(0,3)], _nearby_nutrient_position())
+        _create_nutrient(Balance.NUTRIENT_CYCLE[rng.randi_range(0,Balance.NUTRIENT_CYCLE.size()-1)], _nearby_nutrient_position())
         nutrient_respawn = maxf(0.0,nutrient_respawn-.22)
     if nutrients.size() >= Physiology.nutrient_goal():
         nutrient_respawn = 0.0
@@ -952,17 +1040,16 @@ func _update_ecosystem(dt: float) -> void:
                     best = dist
             if nearest_id != "":
                 if nearest_id == player_id:
+                    var was_alive: bool = hp>0.0
                     hp = maxf(0.0,hp-dt*5.0/maxf(.5,float(entities[player_id]["traits"].get("defense",1.0))))
+                    if was_alive and hp<=0.0:
+                        _award_bundle(Balance.KILL_REWARD,false,str(id))
                 else:
                     var prey: Dictionary = entities[nearest_id]
                     prey["hp"] = float(prey["hp"])-dt*5.0/maxf(.5,float(prey["traits"].get("defense",1.0)))
                     if float(prey["hp"]) <= 0:
                         _remove_entity(nearest_id,"predazione")
-                        e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),
-                            float(e["biomass"])+9.0)
-                        e["resources"]["biomass"] = e["biomass"]
-                        e["energy"] = minf(85.0,float(e["energy"])+12.0)
-                        e["atp"] = e["energy"]
+                        _award_bundle(Balance.KILL_REWARD,false,str(id))
     # The Phase 2 bacterial partner arises from an independent lineage.
     if bool(phase1_progress.get("complete",false)) and generation >= 3 and entities[player_id]["branch"] == "archaea" and not _has_external_bacteria() and t-last_external_arrival >= 12.0:
         _create_external_bacterium()
@@ -1063,19 +1150,19 @@ func _mutated_traits(source: Dictionary, child_generation: int, branch: String) 
         var mutation: Array = TRAIT_POOL[rng.randi_range(0,TRAIT_POOL.size()-1)]
         var key: String = str(mutation[1])
         var side: String = str(mutation[3])
-        var base_key: float = 0.0 if key == "mutation" else 1.0
-        var base_side: float = 0.0 if side == "mutation" else 1.0
-        traits[key] = clampf(float(traits.get(key,base_key))+float(mutation[2]), -.30 if key == "mutation" else .35,.35 if key == "mutation" else 4.0)
-        traits[side] = clampf(float(traits.get(side,base_side))+float(mutation[4]), -.30 if side == "mutation" else .35,.35 if side == "mutation" else 4.0)
+        traits = Balance.shift(traits,key,float(mutation[2])*.35)
+        traits = Balance.shift(traits,side,float(mutation[4])*.35)
+        traits["point_mutation_progress"] = int(traits.get("point_mutation_progress",0))+1
         var history: Array = traits.get("mutations",[]).duplicate()
         history.append(str(mutation[0]))
         traits["mutations"] = history
     # Mutazioni maggiori: nuovi loci ereditabili, che sono anche la sorgente dei moduli fisici.
-    if child_generation >= 2 and rng.randf() < .28:
+    if child_generation >= 2 and int(traits.get("point_mutation_progress",0))>=5:
         var options: Array[String] = GenomeScript.random_candidates(branch,traits)
         if not options.is_empty():
             var locus: String = options[rng.randi_range(0,options.size()-1)]
             traits = GenomeScript.grant(traits,locus,child_generation,"major_mutation",branch)
+            traits["point_mutation_progress"] = int(traits["point_mutation_progress"])-5
     return GenomeScript.express(traits,branch)
 
 func _can_divide() -> bool:
@@ -1332,11 +1419,27 @@ func _on_skill(mode: String) -> void:
         return
     var genome_traits: Dictionary = entities[player_id]["traits"]
     if not GenomeScript.has(genome_traits,"hydrolase_secretion"):
-        _notice("Manca il locus maggiore per enzimi proteolitici")
+        if generation>=1:
+            _on_tree()
+            tree_view.focus_node(88)
+        else:
+            _notice("Enzimi acquistabili dopo la prima divisione: 2 punti")
         return
     if mode == "lysis" and not GenomeScript.has(genome_traits,"surface_recognition"):
         _notice("La lisi selettiva richiede anche recettori di riconoscimento")
         return
+    selected_substrate = null
+    if mode=="enzyme":
+        for patch in substrates:
+            if is_instance_valid(patch) and patch.position.distance_to(player.position)<10.0:
+                if selected_substrate==null or patch.position.distance_to(player.position)<selected_substrate.position.distance_to(player.position):
+                    selected_substrate = patch
+        if selected_substrate!=null:
+            selected_target_id = ""
+            selected_nutrient = null
+            attack_mode = mode
+            _notice("Digestione del substrato: 6 ATP per porzione")
+            return
     var attack_strength: float = float(genome_traits.get("attack",1.0))
     var best: String = ""
     var dist: float = 8.0
@@ -1351,12 +1454,6 @@ func _on_skill(mode: String) -> void:
     selected_target_id = best
     selected_nutrient = null
     attack_mode = mode
-    if best == "" and mode == "enzyme":
-        var best_index: int = _nearest_nutrient(player.position,9.0)
-        if best_index >= 0:
-            selected_nutrient = nutrients[best_index]["node"]
-            _notice("Idrolisi automatica: materiale organico vicino")
-            return
     if best == "":
         attack_mode = ""
         _notice("Nessun bersaglio nella portata di ricerca")
@@ -1364,6 +1461,14 @@ func _on_skill(mode: String) -> void:
     _notice("Bersaglio: %s · %s" % [best,mode.to_upper()])
 
 func _follow_attack(delta: float) -> void:
+    if is_instance_valid(selected_substrate):
+        var offset: Vector3 = selected_substrate.position-player.position
+        offset.y = 0
+        if offset.length()>1.55:
+            _move_player(Vector2(offset.x,offset.z).normalized(),delta)
+        else:
+            _digest_substrate(selected_substrate)
+        return
     if selected_target_id == "" and is_instance_valid(selected_nutrient):
         var direction: Vector3 = selected_nutrient.position-player.position
         if direction.length() > 1.05:
@@ -1395,7 +1500,7 @@ func _follow_attack(delta: float) -> void:
         return
     if skill_cooldown > 0:
         return
-    var cost: float = 15.0 if attack_mode == "lysis" else 9.0
+    var cost: float = Balance.LYSIS_COST if attack_mode == "lysis" else Balance.ENZYME_COST
     if atp < cost:
         selected_target_id = ""
         attack_mode = ""
@@ -1403,16 +1508,14 @@ func _follow_attack(delta: float) -> void:
         return
     atp -= cost
     skill_cooldown = 2.3 if attack_mode == "lysis" else 2.7
-    var power: float = 32.0 if attack_mode == "lysis" else 16.0
+    var power: float = 36.0 if attack_mode == "lysis" else 20.0
     var defense: float = maxf(.4,float(target["traits"].get("defense",1.0)))
     var damage: float = power*float(entities[player_id]["traits"].get("attack",1.0))/defense
     target["hp"] = float(target["hp"])-damage
     if float(target["hp"]) <= 0:
         var prey_id: String = selected_target_id
         _remove_entity(prey_id,"predazione")
-        resources["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(resources["carbon"])+4.5)
-        resources["amino"] = minf(Physiology.reserve_cap(float(NEED["amino"])),float(resources["amino"])+3.2)
-        resources["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(resources["biomass"])+6.0)
+        _award_bundle(Balance.KILL_REWARD,true)
         selected_target_id = ""
         attack_mode = ""
         _notice("Predazione completata · detriti rilasciati")
@@ -1483,7 +1586,7 @@ func _on_tree() -> void:
     _open_overlay("ALBERO EVOLUTIVO", "288 nodi: piccoli bonus numerici e geni maggiori con icone dedicate")
     overlay_scroll.visible = false
     tree_view = TreeScript.new()
-    tree_view.configure(purchased, mutation_points, entities[player_id]["traits"])
+    tree_view.configure(purchased, mutation_points, entities[player_id]["traits"],generation)
     tree_view.mutation_unlocked.connect(_on_tree_mutation)
     overlay.add_child(tree_view)
     _layout_ui()
@@ -1503,8 +1606,14 @@ func _on_tree() -> void:
         else:
             control.pressed.connect(func(): tree_view.center_view())
 
-func _on_tree_mutation(id: int,stat: String,value: float,cost: int) -> void:
+func _on_tree_mutation(id: int,stat: String,_value: float,cost: int) -> void:
     if purchased.has(str(id)) or mutation_points < cost or not entities.has(player_id):
+        return
+    var validator := TreeScript.new()
+    validator.configure(purchased,mutation_points,entities[player_id]["traits"],generation)
+    var valid: bool = validator._available(id) and cost==validator._cost(id) and stat==validator.STATS[id/48]
+    validator.free()
+    if not valid:
         return
     var traits: Dictionary = entities[player_id]["traits"]
     var branch: String = str(entities[player_id]["branch"])
@@ -1517,7 +1626,7 @@ func _on_tree_mutation(id: int,stat: String,value: float,cost: int) -> void:
     mutation_points -= cost
     # All nodes retain the quantified bonus. Major icons ALSO have a real
     # heritable gene with a visible phenotypic module when applicable.
-    traits[stat] = clampf(float(traits.get(stat,0.0 if stat=="mutation" else 1.0))+value,-.30,4.0)
+    traits = Balance.tree_effect(traits,stat,id%48>=40)
     traits = GenomeScript.express(traits,branch)
     entities[player_id]["traits"] = traits
     for record in genealogy:
@@ -1533,7 +1642,7 @@ func _on_tree_mutation(id: int,stat: String,value: float,cost: int) -> void:
         player.set_growth(Physiology.growth_scale(float(resources["biomass"]),23.0,
             float(NEED["biomass"])))
     _cache_current()
-    tree_view.configure(purchased,mutation_points,traits)
+    tree_view.configure(purchased,mutation_points,traits,generation)
     _refresh_hud()
 
 func _on_genome() -> void:
@@ -1682,7 +1791,11 @@ func _save_game() -> void:
         if is_instance_valid(n["node"]):
             var position: Vector3 = n["node"].position
             particle_data.append({"kind":n["kind"],"pos":[position.x,position.y,position.z]})
-    var data: Dictionary = {"version":71,"elapsed":t,"player_id":player_id,"next_id":next_id,
+    var substrate_data: Array = []
+    for patch in substrates:
+        if is_instance_valid(patch):
+            substrate_data.append({"pos":[patch.position.x,patch.position.y,patch.position.z],"portions":patch.portions})
+    var data: Dictionary = {"substrates":substrate_data,"substrate_respawn":substrate_respawn,"version":71,"elapsed":t,"player_id":player_id,"next_id":next_id,
         "entities":cells,"genealogy":genealogy,"nutrients":particle_data,
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
@@ -1746,6 +1859,8 @@ func _load_game() -> void:
         if pos.size() == 3:
             _create_nutrient(str(p["kind"]),Vector3(float(pos[0]),float(pos[1]),float(pos[2])))
     _activate_lineage(controlled)
+    _reset_substrates(loaded.get("substrates",[]),loaded.has("substrates"))
+    substrate_respawn = clampf(float(loaded.get("substrate_respawn",0)),0,20)
     t = maxf(0.0,float(loaded.get("elapsed",0.0)))
     next_id = maxi(1,int(loaded.get("next_id",1)))
     partner_id = str(loaded.get("partner",""))
@@ -1905,8 +2020,8 @@ func _refresh_hud() -> void:
             "requirements_2":"L %d/12    N %d/8" % [int(resources["lipid"]),int(resources["nucleic"])],
             "requirements_3":"BIO %d/65   ATP %d/30" % [int(resources["biomass"]),int(atp)]
         })
-        buttons["enzymes"].text = "✦ ENZIMI\n12 ATP · PRONTI" if GenomeScript.has(traits,"hydrolase_secretion") else "✦ ENZIMI\nGENE RICHIESTO"
-        buttons["lysis"].text = "✷ LISI\n18 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"
+        buttons["enzymes"].text = "✦ ENZIMI\n6 ATP · PRONTI" if GenomeScript.has(traits,"hydrolase_secretion") else ("✦ ENZIMI\nACQUISTA · 2 P" if generation>=1 else "✦ ENZIMI\nDALLA GEN 1")
+        buttons["lysis"].text = "✷ LISI\n10 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"
         buttons["cooperate"].text = "∞ COOPERA\nFASE 2" if bool(phase1_progress.get("complete",false)) and str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nBLOCCATA"
         buttons["regen"].text = "✚ RIGENERA\n30 HP"
         buttons["menu"].text = "☰ MENU\nOPZIONI"

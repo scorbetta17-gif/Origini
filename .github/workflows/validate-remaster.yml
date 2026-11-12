@@ -1,7 +1,7 @@
 name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
-    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes]
+    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance]
   workflow_dispatch:
 
 concurrency:
@@ -57,6 +57,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/nutrient_timing_smoke.gd
       - name: Bilanciamento fisica energetica e moto fluido NPC
         run: timeout 120s godot --headless --path . --script res://tests/physiology_balance_smoke.gd
+      - name: Mutazioni, ATP, substrati e predazione
+        run: timeout 90s godot --headless --path . --script res://tests/mutation_balance_smoke.gd
       - name: Fase 1 - missioni e censimento popolazioni
         run: timeout 120s godot --headless --path . --script res://tests/phase_one_smoke.gd
       - name: Albero maggiore, icone, geni e fenotipo
@@ -129,6 +131,8 @@ jobs:
           ORIGIN_CAPTURE_PREFIX=mobile- timeout 180s xvfb-run -a -s "-screen 0 1600x1600x24" godot --resolution 1000x800 --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_cell_models.gd 2>&1 | tee build/cell-mobile.log
           grep -q 'CELL_RENDERER=mobile DRIVER=vulkan' build/cell-mobile.log
           test -s build/previews/mobile-cell-evolved.png
+      - name: Mutazioni e substrati - screenshot reali
+        run: timeout 90s xvfb-run -a -s "-screen 0 900x1600x24" godot --path . --rendering-method gl_compatibility --script res://tests/capture_mutation_balance.gd
       - name: Salva screenshot 3D per la revisione
         uses: actions/upload-artifact@v4
         with:

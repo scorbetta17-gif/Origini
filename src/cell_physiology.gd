@@ -1,18 +1,19 @@
 extends RefCounted
 class_name CellPhysiology
-## Balance values derived from the installed ORIGINI 0.74 build.
+## Bounded specializations and a viable early-game energy budget.
 ## Motion speed was 3.40*motility*(1|.87|.78) for player,
 ## and 1.00*motility for NPC. Both get a 10% cut.
+const Balance = preload("res://src/mutation_balance.gd")
 const SPEED_FACTOR: float = .90
 const PLAYER_BASE_SPEED: float = 3.40 * SPEED_FACTOR
 const NPC_BASE_SPEED: float = 1.00 * SPEED_FACTOR
 const MAX_GROWTH_FACTOR: float = 1.20
 const MAX_RESOURCE_FACTOR: float = 1.12
 const ZERO_ATP_DEATH_SECONDS: float = 15.0
-const BASE_ATP_UPKEEP: float = .28
-const MOVEMENT_ATP_PER_WORLD_UNIT: float = .55
-const NPC_ATP_MOVEMENT_COST: float = .37
-const NPC_ATP_UPKEEP: float = .11
+const BASE_ATP_UPKEEP: float = .10
+const MOVEMENT_ATP_PER_WORLD_UNIT: float = .18
+const NPC_ATP_MOVEMENT_COST: float = .16
+const NPC_ATP_UPKEEP: float = .08
 const NPC_ACCELERATION: float = 4.3
 
 static func reserve_cap(need: float) -> float:
@@ -23,7 +24,7 @@ static func growth_scale(biomass: float, birth_biomass: float, fission_biomass: 
     return initial_scale * (1.0 + (MAX_GROWTH_FACTOR-1.0)*progress)
 
 static func player_speed(traits: Dictionary) -> float:
-    var motility: float = clampf(float(traits.get("motility",1.0)),.35,4.0)
+    var motility: float = clampf(float(traits.get("motility",1.0)),.65,1.60)
     var motorized: bool = int(traits.get("archaella",0)) > 0 or int(traits.get("flagella",0)) > 0
     var pili: bool = int(traits.get("pili",0)) > 0
     return PLAYER_BASE_SPEED * motility * (1.0 if motorized else (.87 if pili else .78))
@@ -33,18 +34,19 @@ static func npc_speed(traits: Dictionary) -> float:
     var pili: bool = int(traits.get("pili",0)) > 0
     # 0.74 NPC baseline was 1.00 world-units/s. Unmotorized cells now
     # move at exactly 0.90; engines/pili provide only earned extra mobility.
-    return NPC_BASE_SPEED * clampf(float(traits.get("motility",1.0)),.35,2.6) * (
+    return NPC_BASE_SPEED * clampf(float(traits.get("motility",1.0)),.65,1.60) * (
         1.15 if motorized else (1.03 if pili else 1.0))
 
 static func motion_cost(distance: float, traits: Dictionary) -> float:
     # Evolution can make active movement less costly, never energy-free.
     var efficiency: float = clampf(float(traits.get("metabolism",1.0)),.55,2.5)
-    return maxf(0.0,distance) * MOVEMENT_ATP_PER_WORLD_UNIT / sqrt(efficiency)
+    var speed_load: float = clampf((float(traits.get("motility",1.0))-1.0)/.60,0.0,1.0)
+    return maxf(0.0,distance) * MOVEMENT_ATP_PER_WORLD_UNIT * (1.0+.30*speed_load*speed_load) / sqrt(efficiency)
 
 static func energy_step(atp: float, zero_seconds: float, elapsed: float,
                         distance: float, traits: Dictionary) -> Dictionary:
     var remaining: float = maxf(0.0,atp)
-    remaining = maxf(0.0,remaining-BASE_ATP_UPKEEP*maxf(0.0,elapsed)-motion_cost(distance,traits))
+    remaining = maxf(0.0,remaining-(BASE_ATP_UPKEEP+.008*float(traits.get("protease",0))+.004*float(traits.get("transporters",0)))*maxf(0.0,elapsed)-motion_cost(distance,traits))
     var shortage: float = 0.0 if remaining > .001 else zero_seconds+maxf(0.0,elapsed)
     return {"atp":remaining,"zero_seconds":shortage,"dead":shortage >= ZERO_ATP_DEATH_SECONDS}
 
