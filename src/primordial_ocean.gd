@@ -1,54 +1,104 @@
 extends Node3D
-## Fondale minerale essenziale: nessuna vita macroscopica, nessuna geometria neon.
-## I pesi di questo sistema sono separati dal gameplay e adattabili per Android.
+## Fondale primordiale isometrico - roccia, sedimento, sorgenti termiche,
+## fessure MINERALI con bolle innocue. Niente vegetazione o organismi superiori.
+## Sono mesh Godot e particelle 3D reali: la camera puo spostarsi liberamente.
 const SEABED = preload("res://shaders/seafloor.gdshader")
+const VENTS: Array[Vector3] = [Vector3(-11.0,-.22,3.0),Vector3(16.0,-.22,-14.0)]
+const FISSURES: Array[Vector3] = [
+    Vector3(-4.9,-.21,-3.7),Vector3(4.6,-.21,5.0),
+    Vector3(-7.4,-.21,10.2),Vector3(9.0,-.21,-3.4)
+]
 var mineral_mats: Array[StandardMaterial3D] = []
+var bubble_mat: StandardMaterial3D
+var dark_crack: StandardMaterial3D
+var crack_rim: StandardMaterial3D
+var molten: StandardMaterial3D
 var dust_root: MultiMeshInstance3D
+var bubbles: MultiMeshInstance3D
+var bubble_sources: Array[Dictionary] = []
+var bubble_time: float = 0.0
 
 func setup(rng: RandomNumberGenerator) -> void:
     for tint in [
-        Color(.20,.245,.25), Color(.25,.278,.275), Color(.145,.20,.215),
-        Color(.225,.25,.23), Color(.175,.205,.19)
+        Color(.115,.195,.24),Color(.16,.24,.29),Color(.095,.16,.21),
+        Color(.20,.27,.31),Color(.13,.22,.26)
     ]:
-        var mat := StandardMaterial3D.new()
-        mat.albedo_color = tint
-        mat.roughness = .96
-        mat.metallic = 0.0
-        mineral_mats.append(mat)
+        var material := StandardMaterial3D.new()
+        material.albedo_color = tint
+        material.roughness = .94
+        mineral_mats.append(material)
+    dark_crack = _mat(Color(.018,.084,.12))
+    crack_rim = _mat(Color(.19,.55,.51),.62)
+    molten = _mat(Color(1.0,.36,.075),2.4)
+    bubble_mat = _mat(Color(.56,.88,.98,.59),.38,.59)
+    bubble_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    bubble_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
     _sediment()
-    # Meno oggetti, silhouette naturali. Rimane spazio per osservare la cellula.
-    for i in range(105):
+    # Lasciare libera la zona centrale, dove comincia la cellula: lettura chiara
+    # dei nutrienti anche con HUD mobile e zoom isometrico.
+    for i in range(104):
         var x: float = rng.randf_range(-32.0,32.0)
         var z: float = rng.randf_range(-32.0,32.0)
-        if Vector2(x,z).length() < 4.5:
+        if Vector2(x,z).length() < 4.0:
             continue
-        var r: float = rng.randf_range(.13,.72)
-        if i % 17 == 0:
-            r *= 2.15
-        _stone(Vector3(x,-.22,z),r,rng)
-    # Piccoli affioramenti lontani dal soggetto: profondita' visiva senza sovraffollare.
+        var radius: float = rng.randf_range(.16,.76)
+        if i%19 == 0:
+            radius *= 1.85
+        _stone(Vector3(x,-.22,z),radius,rng)
     for where in [
-        Vector3(-3.9,-.22,-1.6),Vector3(4.1,-.22,2.1),
-        Vector3(-2.9,-.22,3.7),Vector3(3.8,-.22,-3.1),
-        Vector3(-4.7,-.22,3.5)
+        Vector3(-4.3,-.22,-1.4),Vector3(5.7,-.22,3.1),
+        Vector3(-6.0,-.22,5.5),Vector3(4.8,-.22,-4.5)
     ]:
-        _stone(where,rng.randf_range(.31,.63),rng)
-    for i in range(22):
-        var x: float = rng.randf_range(-26.0,26.0)
-        var z: float = rng.randf_range(-26.0,26.0)
-        if Vector2(x,z).length() < 3.0:
-            continue
-        _stone(Vector3(x,-.22,z),rng.randf_range(.035,.11),rng)
-    _vent(Vector3(-11.0,-.23,3.0),1.52,rng)
-    _vent(Vector3(16.0,-.23,-14.0),1.08,rng)
+        _stone(where,rng.randf_range(.29,.63),rng)
+    # Pochi vulcani in tutto il mondo, dove il gradiente del gameplay e' caldo.
+    _volcano(VENTS[0],2.9,2.05,rng)
+    _volcano(VENTS[1],2.1,1.42,rng)
+    # Fessure sul fondale: emettono gas e piccole bolle ma NON danno danno.
+    _fissure([
+        Vector3(-4.9,-.20,-3.7),Vector3(-3.6,-.20,-3.0),
+        Vector3(-2.8,-.20,-3.3),Vector3(-1.65,-.20,-2.4)
+    ],rng)
+    _fissure([
+        Vector3(4.6,-.20,5.0),Vector3(3.7,-.20,5.8),
+        Vector3(2.6,-.20,5.4),Vector3(1.8,-.20,6.2)
+    ],rng)
+    _fissure([
+        Vector3(-7.4,-.20,10.2),Vector3(-6.6,-.20,10.7),
+        Vector3(-5.9,-.20,9.9),Vector3(-5.1,-.20,10.4)
+    ],rng)
+    _fissure([
+        Vector3(9.0,-.20,-3.4),Vector3(9.8,-.20,-2.7),
+        Vector3(10.4,-.20,-3.2),Vector3(11.4,-.20,-2.0)
+    ],rng)
+    # Bolle dinamiche che salgono davvero (asse Y del mondo 3D).
+    _register_bubbles(VENTS[0]+Vector3(0,1.92,0),18,5.8,.61,1)
+    _register_bubbles(VENTS[1]+Vector3(0,1.32,0),13,4.3,.48,1)
+    for fissure in FISSURES:
+        _register_bubbles(fissure+Vector3(0,.18,0),11,3.5,.39,0)
+    _build_bubbles()
     _dust(rng)
+
+func _mat(color: Color, emission: float = 0.0, opacity: float = 1.0) -> StandardMaterial3D:
+    var material := StandardMaterial3D.new()
+    color.a = opacity
+    material.albedo_color = color
+    material.roughness = .83
+    material.metallic = 0.0
+    if emission > 0.0:
+        material.emission_enabled = true
+        material.emission = Color(color.r,color.g,color.b)
+        material.emission_energy_multiplier = emission
+    if opacity < .99:
+        material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    return material
 
 func _sediment() -> void:
     var ground := MeshInstance3D.new()
+    ground.name = "Fondo_sabbioso_roccioso"
     var plane := PlaneMesh.new()
     plane.size = Vector2(120,120)
-    plane.subdivide_width = 96
-    plane.subdivide_depth = 96
+    plane.subdivide_width = 72
+    plane.subdivide_depth = 72
     ground.mesh = plane
     var shader_mat := ShaderMaterial.new()
     shader_mat.shader = SEABED
@@ -58,110 +108,203 @@ func _sediment() -> void:
     add_child(ground)
 
 func _stone(at: Vector3, radius: float, rng: RandomNumberGenerator) -> void:
-    var mesh := SurfaceTool.new()
-    mesh.begin(Mesh.PRIMITIVE_TRIANGLES)
-    var sides: int = 9
-    var phase: float = rng.randf()*TAU
-    var heights: Array[float] = [0.04,.36,.71,1.0]
-    var profiles: Array[float] = [.85,1.00,.78,.32]
+    var geo := SurfaceTool.new()
+    geo.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var sides: int = 8
+    var angle_shift: float = rng.randf()*TAU
+    var heights: Array[float] = [.02,.36,.76,1.0]
+    var widths: Array[float] = [.88,1.0,.77,.25]
     var rings: Array = []
-    for level in range(heights.size()):
+    for level in range(4):
         var ring: Array[Vector3] = []
         for j in range(sides):
-            var angle: float = phase+TAU*float(j)/float(sides)
-            var variation: float = rng.randf_range(.81,1.16)
-            var r: float = radius*profiles[level]*variation
-            var y: float = radius*heights[level]*rng.randf_range(.88,1.08)
-            ring.append(Vector3(cos(angle)*r,y,sin(angle)*r))
+            var a: float = angle_shift+TAU*float(j)/float(sides)
+            var r: float = radius*widths[level]*rng.randf_range(.87,1.13)
+            ring.append(Vector3(cos(a)*r,radius*heights[level],sin(a)*r))
         rings.append(ring)
-    for level in range(heights.size()-1):
+    for level in range(3):
         for j in range(sides):
-            var next: int = (j+1)%sides
-            _triangle(mesh,rings[level][j],rings[level][next],rings[level+1][j])
-            _triangle(mesh,rings[level][next],rings[level+1][next],rings[level+1][j])
+            var nxt: int = (j+1)%sides
+            _triangle(geo,rings[level][j],rings[level][nxt],rings[level+1][j])
+            _triangle(geo,rings[level][nxt],rings[level+1][nxt],rings[level+1][j])
     for j in range(sides):
-        _triangle(mesh,rings[3][j],rings[3][(j+1)%sides],Vector3(0,radius*.95,0))
-    mesh.generate_normals()
-    var result := MeshInstance3D.new()
-    result.mesh = mesh.commit()
-    result.material_override = mineral_mats[rng.randi_range(0,mineral_mats.size()-1)]
-    result.position = at
-    result.rotation.y = rng.randf_range(-PI,PI)
-    result.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(result)
+        _triangle(geo,rings[3][j],rings[3][(j+1)%sides],Vector3(0,radius*.98,0))
+    geo.generate_normals()
+    var rock := MeshInstance3D.new()
+    rock.mesh = geo.commit()
+    rock.material_override = mineral_mats[rng.randi_range(0,mineral_mats.size()-1)]
+    rock.position = at
+    rock.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(rock)
 
-func _triangle(mesh: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
-    mesh.add_vertex(a)
-    mesh.add_vertex(b)
-    mesh.add_vertex(c)
+func _triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
+    st.add_vertex(a)
+    st.add_vertex(b)
+    st.add_vertex(c)
 
-func _vent(at: Vector3, height: float, rng: RandomNumberGenerator) -> void:
-    # Piccolo condotto irregolare mineralizzato, non una torre luminosa.
-    for i in range(8):
-        var angle: float = TAU*float(i)/8.0
-        _stone(at+Vector3(cos(angle)*.55,0,sin(angle)*.55),rng.randf_range(.25,.54),rng)
-    var chimney := CylinderMesh.new()
-    chimney.height = height
-    chimney.top_radius = .18
-    chimney.bottom_radius = .36
-    chimney.radial_segments = 11
-    var shaft := MeshInstance3D.new()
-    shaft.mesh = chimney
-    shaft.position = at+Vector3(0,height*.5,0)
-    shaft.material_override = mineral_mats[2]
-    shaft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(shaft)
-    # Croste minerali sovrapposte attorno al condotto.
-    for i in range(5):
-        var crust := CylinderMesh.new()
-        crust.height = rng.randf_range(.12,.24)
-        crust.top_radius = .21+rng.randf_range(-.055,.095)
-        crust.bottom_radius = crust.top_radius+rng.randf_range(.02,.07)
-        crust.radial_segments = 8
-        var ledge := MeshInstance3D.new()
-        ledge.mesh = crust
-        ledge.position = at+Vector3(rng.randf_range(-.045,.045),height*(.12+float(i)*.185),rng.randf_range(-.045,.045))
-        ledge.rotation.y = rng.randf_range(0,TAU)
-        ledge.material_override = mineral_mats[(i+1)%mineral_mats.size()]
-        ledge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        add_child(ledge)
-    # Fumarola diffusa: colonne di acqua torbida neutra anziche' lava.
-    for i in range(20):
-        var speck := MeshInstance3D.new()
-        var m := SphereMesh.new()
-        m.radius = .016
-        m.height = .032
-        m.radial_segments = 6
-        m.rings = 4
-        speck.mesh = m
-        speck.position = at+Vector3(rng.randf_range(-.35,.35),height+rng.randf_range(.06,2.2),rng.randf_range(-.35,.35))
-        speck.material_override = mineral_mats[3]
-        speck.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        add_child(speck)
+func _volcano(at: Vector3, radius: float, height: float, rng: RandomNumberGenerator) -> void:
+    # Sezione aperta e tronco con facce rocciose. Sotto la bocca si vede
+    # un nucleo caldo soltanto nei due luoghi pericolosi del gameplay.
+    var segments: int = 15
+    var crust := SurfaceTool.new()
+    crust.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for i in range(segments):
+        var a0: float = TAU*float(i)/float(segments)
+        var a1: float = TAU*float(i+1)/float(segments)
+        var base0 := at+Vector3(cos(a0)*radius,0,sin(a0)*radius)
+        var base1 := at+Vector3(cos(a1)*radius,0,sin(a1)*radius)
+        var mid0 := at+Vector3(cos(a0)*radius*.77,height*.49,sin(a0)*radius*.77)
+        var mid1 := at+Vector3(cos(a1)*radius*.77,height*.49,sin(a1)*radius*.77)
+        var top0 := at+Vector3(cos(a0)*radius*.31,height,sin(a0)*radius*.31)
+        var top1 := at+Vector3(cos(a1)*radius*.31,height,sin(a1)*radius*.31)
+        _triangle(crust,base0,base1,mid0)
+        _triangle(crust,base1,mid1,mid0)
+        _triangle(crust,mid0,mid1,top0)
+        _triangle(crust,mid1,top1,top0)
+    crust.generate_normals()
+    var volcano := MeshInstance3D.new()
+    volcano.name = "Camino_vulcanico_minerale"
+    volcano.mesh = crust.commit()
+    volcano.material_override = mineral_mats[2]
+    volcano.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(volcano)
+    var crater := CylinderMesh.new()
+    crater.top_radius = radius*.285
+    crater.bottom_radius = radius*.285
+    crater.height = .036
+    crater.radial_segments = 24
+    var glow := MeshInstance3D.new()
+    glow.name = "Crater_calorico"
+    glow.mesh = crater
+    glow.material_override = molten
+    glow.position = at+Vector3(0,height-.075,0)
+    glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(glow)
+    for i in range(9):
+        var a: float = TAU*float(i)/9.0
+        _stone(at+Vector3(cos(a)*radius*.86,0,sin(a)*radius*.86),
+            rng.randf_range(.29,.58),rng)
+    # Poche linee di materiali incandescenti sul cono: leggibili in alto,
+    # non una superficie di lava continua o una foresta di vulcani.
+    for i in range(3):
+        var a: float = TAU*(float(i)+.19)/3.0
+        _strip([
+            at+Vector3(cos(a)*radius*.35,height-.08,sin(a)*radius*.35),
+            at+Vector3(cos(a+.08)*radius*.61,height*.55,sin(a+.08)*radius*.61),
+            at+Vector3(cos(a-.06)*radius*.92,.13,sin(a-.06)*radius*.92)
+        ],.055,molten)
+    var light := OmniLight3D.new()
+    light.name = "Termico_luce_arancio"
+    light.light_color = Color(1.0,.40,.13)
+    light.light_energy = .92
+    light.omni_range = radius*2.25
+    light.shadow_enabled = false
+    light.position = at+Vector3(0,height*.85,0)
+    add_child(light)
+
+func _fissure(path: Array[Vector3], rng: RandomNumberGenerator) -> void:
+    # La spaccatura rimane neutra in gioco: fessura molto scura con due
+    # bordi azzurro-verdi, gas visibile che non riscalda la cellula.
+    _strip(path,.37,dark_crack)
+    _edge_strip(path,.21,crack_rim,1.0)
+    _edge_strip(path,.21,crack_rim,-1.0)
+    for i in range(3):
+        var start: Vector3 = path[i]
+        _stone(start+Vector3(rng.randf_range(-.6,.6),0,rng.randf_range(-.6,.6)),
+            rng.randf_range(.19,.40),rng)
+
+func _strip(path: Array[Vector3], width: float, material: Material) -> void:
+    var surface := SurfaceTool.new()
+    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for i in range(path.size()-1):
+        var a: Vector3 = path[i]
+        var b: Vector3 = path[i+1]
+        var side: Vector3 = Vector3(-(b.z-a.z),0,b.x-a.x).normalized()
+        _triangle(surface,a-side*width*.5,a+side*width*.5,b+side*width*.5)
+        _triangle(surface,a-side*width*.5,b+side*width*.5,b-side*width*.5)
+    surface.generate_normals()
+    var mesh := MeshInstance3D.new()
+    mesh.mesh = surface.commit()
+    mesh.material_override = material
+    mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(mesh)
+
+func _edge_strip(path: Array[Vector3], offset: float, material: Material, side_sign: float) -> void:
+    var shifted: Array[Vector3] = []
+    for i in range(path.size()):
+        var prev: Vector3 = path[maxi(0,i-1)]
+        var nxt: Vector3 = path[mini(path.size()-1,i+1)]
+        var tangent: Vector3 = nxt-prev
+        var side: Vector3 = Vector3(-tangent.z,0,tangent.x).normalized()
+        shifted.append(path[i]+side*offset*side_sign+Vector3(0,.009,0))
+    _strip(shifted,.028,material)
+
+func _register_bubbles(at: Vector3, count: int, height: float,
+        speed: float, hazard_kind: int) -> void:
+    for i in range(count):
+        var f: float = float(i)/float(count)
+        bubble_sources.append({
+            "origin":at, "height":height, "speed":speed,
+            "phase":f,"seed":float(i*17%19)*.51,
+            "radius":(.048+.030*float(i%4))*(1.07 if hazard_kind == 1 else .92),
+            "hazard":hazard_kind
+        })
+
+func _build_bubbles() -> void:
+    var sphere := SphereMesh.new()
+    sphere.radius = 1.0
+    sphere.height = 2.0
+    sphere.radial_segments = 8
+    sphere.rings = 5
+    var multimesh := MultiMesh.new()
+    multimesh.transform_format = MultiMesh.TRANSFORM_3D
+    multimesh.mesh = sphere
+    multimesh.instance_count = bubble_sources.size()
+    bubbles = MultiMeshInstance3D.new()
+    bubbles.name = "Bolle_che_risalgo"
+    bubbles.multimesh = multimesh
+    bubbles.material_override = bubble_mat
+    bubbles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(bubbles)
+    _animate_bubbles()
+
+func _process(delta: float) -> void:
+    bubble_time += minf(delta,.08)
+    _animate_bubbles()
+
+func _animate_bubbles() -> void:
+    if not is_instance_valid(bubbles):
+        return
+    var mesh: MultiMesh = bubbles.multimesh
+    for i in range(bubble_sources.size()):
+        var b: Dictionary = bubble_sources[i]
+        var rise: float = fposmod(float(b["phase"])+bubble_time*float(b["speed"])/float(b["height"]),1.0)
+        var h: float = rise*float(b["height"])
+        var seed: float = float(b["seed"])
+        var sway: float = .14+rise*.21
+        var pos: Vector3 = b["origin"]+Vector3(
+            sin(seed+bubble_time*.48+rise*6.0)*sway,h,
+            cos(seed*1.72+bubble_time*.37+rise*5.0)*sway)
+        var radius: float = float(b["radius"])*(1.0+.20*sin(bubble_time*.6+seed))
+        var transform := Transform3D(Basis.IDENTITY.scaled(Vector3.ONE*radius),pos)
+        mesh.set_instance_transform(i,transform)
 
 func _dust(rng: RandomNumberGenerator) -> void:
-    var mesh := SphereMesh.new()
-    mesh.radius = .010
-    mesh.height = .020
-    mesh.radial_segments = 5
-    mesh.rings = 3
-    var count: int = 240
+    var grain := SphereMesh.new()
+    grain.radius = .009
+    grain.height = .018
+    grain.radial_segments = 5
+    grain.rings = 3
     var mm := MultiMesh.new()
     mm.transform_format = MultiMesh.TRANSFORM_3D
-    mm.instance_count = count
-    mm.mesh = mesh
-    for i in range(count):
-        var x: float = rng.randf_range(-30,30)
-        var y: float = rng.randf_range(.1,3.8)
-        var z: float = rng.randf_range(-30,30)
-        var xf := Transform3D(Basis.IDENTITY,Vector3(x,y,z))
-        xf.basis = xf.basis.scaled(Vector3.ONE*rng.randf_range(.6,1.7))
-        mm.set_instance_transform(i,xf)
+    mm.mesh = grain
+    mm.instance_count = 130
+    for i in range(130):
+        var pos := Vector3(rng.randf_range(-30,30),rng.randf_range(.1,3.6),
+            rng.randf_range(-30,30))
+        mm.set_instance_transform(i,Transform3D(Basis.IDENTITY,pos))
     dust_root = MultiMeshInstance3D.new()
     dust_root.multimesh = mm
-    var m := StandardMaterial3D.new()
-    m.albedo_color = Color(.34,.42,.41)
-    m.roughness = 1.0
-    dust_root.material_override = m
+    dust_root.material_override = _mat(Color(.35,.68,.73,.55),.0,.55)
     dust_root.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(dust_root)
