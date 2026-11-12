@@ -26,8 +26,8 @@ void fragment() {
     ALBEDO = base;
     ROUGHNESS = .42;
     SPECULAR = .36;
-    RIM = .28;
-    RIM_TINT = .40;
-    ALPHA = clamp(opacity*(.72+internal_scattering*.27) + edge*.37, .08, .64);
-    EMISSION = rim_tint.rgb * edge*.025;
+    RIM = .38;
+    RIM_TINT = .57;
+    ALPHA = clamp(opacity*(.72+internal_scattering*.27) + edge*.48, .08, .72);
+    EMISSION = rim_tint.rgb * edge*.13;
 }
