@@ -43,7 +43,9 @@ func _run() -> void:
     assert(game.call("_digest_substrate",patch))
     assert(patch.portions==2 and is_equal_approx(game.atp,32))
     assert(not game.call("_digest_substrate",patch),"Cooldown blocks repeated digestion")
-    assert(game.resources.carbon>5.0 and game.resources.lipid>1.0)
+    var resource_key: String = "nucleic" if patch.kind=="rna" else ("amino" if patch.kind=="peptide" else "lipid")
+    var expected: float = minf(P.reserve_cap(game.NEED[resource_key]),10.75*float(game.entities[game.player_id].traits.uptake))
+    assert(is_equal_approx(game.resources[resource_key],expected))
     for i in range(2):
         game.skill_cooldown=0
         assert(game.call("_digest_substrate",patch))
@@ -64,11 +66,12 @@ func _run() -> void:
     var loot: float = game.resources.carbon
     game.call("_follow_attack",.01)
     assert(is_equal_approx(game.resources.carbon,loot),"No duplicate kill reward")
+    var saved_kind: String = game.substrates[0].kind
     game.substrates[0].set_portions(2)
     game.entities[game.player_id].traits["point_mutation_progress"]=4
     game.call("_save_game")
     game.call("_load_game")
-    assert(game.substrates[0].portions==2)
+    assert(game.substrates[0].portions==2 and game.substrates[0].kind==saved_kind)
     assert(int(game.entities[game.player_id].traits.point_mutation_progress)==4)
     var f: FileAccess = FileAccess.open(game.SAVE_PATH,FileAccess.READ)
     var legacy: Dictionary = JSON.parse_string(f.get_as_text())

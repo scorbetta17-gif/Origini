@@ -38,8 +38,8 @@ func _verify() -> void:
     assert(not cell.find_child("SingleStrand_RNA",true,false).visible,
         "Imported RNA must be hidden after DNA stabilization")
     var dna: Node = cell.find_child("DNA_DoubleStrand",true,false)
-    assert(dna != null and dna.get_child_count() == 3,
-        "Two real DNA strand meshes and a base-pair group must be present")
+    assert(dna != null and dna.get_child_count() == 1,
+        "Compact nucleoid filament must replace the oversized diagram helix")
     for module_name in ["pili","receptor","protease","transporter","vesicle"]:
         assert(cell.find_child("GeneModule_"+module_name,true,false) != null,
             "Missing GLB gene module "+module_name)

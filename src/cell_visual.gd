@@ -3,7 +3,7 @@ class_name CellVisual
 ## ORIGINI: renderer biologico parametrico, senza asset fittizi precostituiti.
 ## All'inizio: una membrana, un filamento di ssRNA, pochi complessi autocatalitici.
 const Genome = preload("res://src/cell_genome.gd")
-const RNA_COLOR := Color(.86,.43,.96)
+const RNA_COLOR := Color(1.0,.48,.12)
 const CATALYST_COLOR := Color(1.0,.68,.23)
 const MEMBRANE_SHADER = preload("res://shaders/cell_membrane.gdshader")
 const CONTENTS_SHADER = preload("res://shaders/cell_contents.gdshader")
@@ -51,7 +51,7 @@ func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> vo
     motion.setup(self)
 
 func set_growth(value: float) -> void:
-    growth = clampf(value,.58,1.24)
+    growth = clampf(value,.72,.864)
 
 func set_selected(value: bool) -> void:
     is_player = value
@@ -207,38 +207,45 @@ func _build_rna(host: Node3D) -> void:
     strand.name = "SingleStrand_RNA"
     host.add_child(strand)
     var points := PackedVector3Array()
-    for i in range(81):
-        var u: float = float(i)/80.0
-        points.append(Vector3((u-.5)*1.35+sin(u*TAU*2.2)*.07,.20+sin(u*TAU)*.045,sin(u*TAU*1.35)*.29))
-    _tube(strand,points,.042,RNA_COLOR)
-    for i in range(4,78,6):
-        var point: Vector3 = points[i]
-        var tangent: Vector3 = (points[i+1]-points[i-1]).normalized()
-        var direction := Vector3(-tangent.z,0,tangent.x)
-        _tube(strand,PackedVector3Array([point,point+direction*.12]),.019,CATALYST_COLOR)
+    for i in range(97):
+        var u: float = float(i)/96.0
+        var phi: float = u*TAU*1.65
+        var r: float = .12+.21*u
+        points.append(Vector3(cos(phi)*r,.17+sin(phi*1.7)*.065,sin(phi)*r*.76))
+    _tube(strand,points,.022,RNA_COLOR)
 
 func _build_imported_dna(host: Node3D) -> void:
     var dna_root := Node3D.new()
+    # Stable node identifier for save-independent phenotype inspection.
     dna_root.name = "DNA_DoubleStrand"
+    dna_root.set_meta("display","compact coiled genetic material; unconfined in cytoplasm")
     host.add_child(dna_root)
-    for strand in range(2):
-        var points := PackedVector3Array()
-        for i in range(49):
-            var u: float = float(i)/48.0
-            var phase: float = u*TAU*2.0 + float(strand)*PI
-            points.append(Vector3((u-.5)*1.35,.16+sin(phase)*.17,cos(phase)*.24))
-        _tube(dna_root,points,.037,RNA_COLOR.lightened(.09) if strand == 0 else RNA_COLOR.darkened(.08))
-    var bonds := Node3D.new()
-    bonds.name = "BasePairs"
-    dna_root.add_child(bonds)
-    for i in range(13):
-        var u: float = float(i)/12.0
-        var phase: float = u*TAU*2.0
-        var x: float = (u-.5)*1.35
-        _tube(bonds,PackedVector3Array([
-            Vector3(x,.16+sin(phase)*.17,cos(phase)*.24),
-            Vector3(x,.16-sin(phase)*.17,-cos(phase)*.24)
-        ]),.016,CATALYST_COLOR)
+    var points := PackedVector3Array()
+    for i in range(241):
+        var u: float = float(i)/240.0*TAU
+        var r: float = .25+.07*cos(u*7.0)
+        points.append(Vector3(cos(u*3.0)*r,.15+sin(u*7.0)*.15,sin(u*3.0)*r*.8))
+    _tube(dna_root,points,.017,Color(1.0,.60,.22))
+
+func _bilayer() -> void:
+    # Two leaflets of ONE amphiphile bilayer, not two independent membranes.
+    var inner := MeshInstance3D.new()
+    inner.name = "Membrane_InnerLeaflet"
+    inner.mesh = membrane.mesh
+    inner.transform = membrane.transform
+    inner.scale *= .94
+    inner.material_override = membrane.material_override
+    inner.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    membrane.get_parent().add_child(inner)
+    inner.set_meta("display","inner leaflet of lipid bilayer; molecular scale exaggerated")
+    if Genome.has(traits,"hydrolase_secretion"):
+        var enzymes := Node3D.new()
+        enzymes.name = "CytoplasmicEnzymes"
+        interior.add_child(enzymes)
+        for i in range(12):
+            var phi: float = i*2.39996
+            var r: float = .36+.025*(i%4)
+            _tube(enzymes,PackedVector3Array([Vector3(cos(phi)*r,.10,sin(phi)*r),Vector3(cos(phi)*r+.035,.115,sin(phi)*r+.02)]),.009,Color(.65,.91,.80))
 
 func _blender_module(id: String, at: Vector3, normal: Vector3, size: float = 1.0) -> bool:
     if not use_blender_assets or not BLENDER_MODULES.has(id):
@@ -329,6 +336,8 @@ func _build() -> void:
             _ellipsoid(interior,center,Vector3(.075,.047,.06),protein_color)
             _ellipsoid(interior,center+Vector3(.044,.026,-.03),Vector3(.042,.033,.039),protein_color.darkened(.11))
             _ellipsoid(interior,center+Vector3(-.035,-.021,.034),Vector3(.035,.03,.042),protein_color.lightened(.12))
+
+    _bilayer()
 
     # Trasportatori: pori incastonati nella membrana; solo locus maggiore.
     var feature_start: int = get_child_count()

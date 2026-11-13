@@ -105,7 +105,7 @@ func _draw() -> void:
         scale_factor *= clampf(size.x/720.0,.84,1.28)
         var kind: String = str(rec.get("kind",""))
         var hover: float = sin(seconds*1.42+float(rec.get("bob",0.0)))*1.4
-        draw_set_transform(at+Vector2(0,hover),0.0,Vector2.ONE*scale_factor)
+        draw_set_transform(at+Vector2(0,hover),0.0,Vector2.ONE*scale_factor*1.05)
         match kind:
             "carbon":
                 _carbon()

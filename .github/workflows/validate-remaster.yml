@@ -1,7 +1,7 @@
 name: ORIGINI - test rimasterizzazione (senza release)
 on:
   push:
-    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance, work/phase-two-playable, work/cell-redesign]
+    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance, work/phase-two-playable, work/cell-redesign, work/ocean-cell-tree]
   workflow_dispatch:
 
 concurrency:
@@ -61,6 +61,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/mutation_balance_smoke.gd
       - name: Fase 1 - missioni e censimento popolazioni
         run: timeout 120s godot --headless --path . --script res://tests/phase_one_smoke.gd
+      - name: Risorse molecolari, bilayer e crescita
+        run: timeout 90s godot --headless --path . --script res://tests/revision_smoke.gd
       - name: Albero maggiore, icone, geni e fenotipo
         run: timeout 120s godot --headless --path . --script res://tests/skill_tree_major_smoke.gd
       - name: Fase 2 completa - da riconoscimento a trasmissione

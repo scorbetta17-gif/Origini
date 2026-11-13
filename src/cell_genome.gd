@@ -10,7 +10,7 @@ const GENE_INFO: Dictionary = {
     "membrane_transport": {"name":"Complesso di trasporto","max":3},
     "surface_recognition": {"name":"Recettori di riconoscimento","max":3},
     "pili_twitch": {"name":"Pili con ancoraggio e trazione","max":3},
-    "hydrolase_secretion": {"name":"Proteasi extracellulari","max":3},
+    "hydrolase_secretion": {"name":"Idrolasi e recupero molecolare","max":3},
     "vesicle_pathway": {"name":"Via di secrezione vescicolare","max":3},
     "eps_biosynthesis": {"name":"Biosintesi matrice EPS","max":1},
     "thermal_membrane": {"name":"Lipidi di membrana termostabili","max":3},

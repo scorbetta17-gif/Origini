@@ -13,13 +13,18 @@ func _run() -> void:
     game.call("_on_tree")
     var tree: MutationTree = game.tree_view
     assert(tree != null)
-    assert(tree.zoom_level >= 1.20,"Skill tree must be larger than 0.74")
+    assert(tree.zoom_level >= .8,"Initial view shows central cell and first clusters")
+    for a in range(288):
+        for b in range(a+1,288):
+            assert(tree._pos(a).distance_to(tree._pos(b))>32,"Tree nodes must not overlap")
     assert(tree.major_locus(40) == "pili_twitch")
     assert(tree.major_locus(48+40) == "hydrolase_secretion")
     assert(tree.major_locus(2*48+40) == "eps_biosynthesis")
     assert(tree.major_locus(4*48+40) == "membrane_transport")
     assert(tree.major_locus(3) == "","Point mutations stay stat-only")
     assert(not GENES.has(game.entities[game.player_id]["traits"],"pili_twitch"))
+    assert(not tree._available(16),"Cannot skip the connected minor path")
+    assert(tree._available(0) and tree._available(1),"Two initial choices per category")
     # Reach a major node through the actual connected tree path.
     for id in [0,8,16,24,32,40]:
         tree.call("_select",id)

@@ -12,7 +12,7 @@ const COLORS := [
 ]
 var owned: Dictionary = {}
 var points: int = 0
-var zoom_level: float = 1.22
+var zoom_level: float = .85
 var pan: Vector2 = Vector2.ZERO
 var last_pointer: Vector2 = Vector2.ZERO
 var dragging: bool = false
@@ -43,14 +43,33 @@ func configure(data: Dictionary, available_points: int, genome_traits: Dictionar
     source_traits = genome_traits.duplicate(true)
     queue_redraw()
 
+func _cluster(branch: int, cluster: int) -> Vector2:
+    var axis := Vector2.from_angle(-PI*.5+branch*TAU/6.0)
+    var side := Vector2(-axis.y,axis.x)
+    return axis*(240.0+(cluster/2)*190.0)+side*((-1.0 if cluster%2==0 else 1.0)*(60.0+(cluster/2)*32.0))
+
 func _pos(node_id: int) -> Vector2:
-    var branch: int = node_id / 48
-    var local: int = node_id % 48
-    var ring: int = local / 8
-    var lane: int = local % 8
-    var angle: float = -PI * 0.5 + float(branch) * TAU / 6.0 + float(lane - 3) * 0.088
-    var radius: float = 85.0 + float(ring) * 67.0
-    return Vector2(cos(angle), sin(angle)) * radius
+    var branch: int = node_id/48
+    var local: int = node_id%48
+    var cluster: int = local%8
+    var center: Vector2 = _cluster(branch,cluster)
+    if local>=40: return center
+    var stage: int = local/8
+    var angle: float = -PI*.5+branch*TAU/6.0+PI+stage*TAU/5.0
+    return center+Vector2.from_angle(angle)*45.0
+
+func _parent_id(id: int) -> int:
+    var local: int = id%48
+    var cluster: int = local%8
+    if local>=40: return id-8
+    if local>=8: return id-8
+    return -1 if cluster<2 else id/48*48+40+cluster-2
+
+func _cluster_points(id: int) -> int:
+    var total: int = 0
+    for stage in range(5):
+        if owned.has(str(id/48*48+stage*8+id%8)): total+=1
+    return total
 
 func _screen(world_pos: Vector2) -> Vector2:
     return size * 0.5 + pan + world_pos * zoom_level
@@ -139,7 +158,8 @@ func _available(node_id: int) -> bool:
     if node_id<0 or node_id>=288 or owned.has(str(node_id)):
         return false
     if _type(node_id)!=2:
-        return true
+        var parent: int = _parent_id(node_id)
+        return parent<0 or owned.has(str(parent))
     var locus: String = major_locus(node_id)
     if GenomeScript.allele(source_traits,locus)>=int(GenomeScript.GENE_INFO[locus]["max"]):
         return false
@@ -147,7 +167,7 @@ func _available(node_id: int) -> bool:
     if node_id==88 and cell_generation>=1 and not GenomeScript.has(source_traits,"hydrolase_secretion"):
         return true
     var branch: int = node_id/48
-    return point_count(branch)>=Balance.POINTS_PER_MAJOR*(major_count(branch)+1)
+    return _cluster_points(node_id)>=Balance.POINTS_PER_MAJOR
 
 func focus_node(id: int) -> void:
     inspected = clampi(id,0,287)
@@ -157,7 +177,18 @@ func focus_node(id: int) -> void:
 func _draw() -> void:
     draw_rect(Rect2(Vector2.ZERO,size),Color(.011,.061,.085,.99))
     var center: Vector2 = _screen(Vector2.ZERO)
+    # Draw the same edges that govern purchases; original biology-themed artwork.
+    for id in range(288):
+        var parent: int = _parent_id(id)
+        var start: Vector2 = center if parent<0 else _screen(_pos(parent))
+        var finish: Vector2 = _screen(_pos(id))
+        var tint: Color = COLORS[id/48]
+        var lit: bool = owned.has(str(id))
+        draw_line(start,finish,tint.darkened(.28) if lit else Color(.15,.27,.29),3.2*zoom_level,true)
+        if lit: draw_line(start,finish,tint.lightened(.20),1.1*zoom_level,true)
     for branch in range(6):
+        for cluster in range(8):
+            draw_arc(_screen(_cluster(branch,cluster)),45.0*zoom_level,0,TAU,48,Color(.17,.30,.32,.45),1.0,true)
         for local in range(48):
             var id: int = branch*48+local
             var at: Vector2 = _screen(_pos(id))
@@ -177,8 +208,12 @@ func _draw() -> void:
                 _draw_major_icon(at,radius,major_locus(id),color if ready or active else Color(.31,.48,.50))
     draw_circle(center,26*zoom_level,Color(.42,.87,.78))
     draw_circle(center,18*zoom_level,Color(.13,.38,.42))
-    draw_string(ThemeDB.fallback_font,center+Vector2(-19,4)*zoom_level,
-        "RNA",HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(11,int(12*zoom_level)),Color(.92,1,1))
+    draw_arc(center,23*zoom_level,0,TAU,48,Color(.68,.94,.88),1.6,true)
+    var rna := PackedVector2Array()
+    for i in range(25):
+        var u: float = float(i)/24.0
+        rna.append(center+Vector2((u-.5)*25,sin(u*TAU*1.4)*6)*zoom_level)
+    draw_polyline(rna,Color(1,.59,.22),2.2*zoom_level,true)
 
     # Classic mobile visual hierarchy: six stat cards and branch selector.
     draw_rect(Rect2(0,0,size.x,165),Color(.015,.088,.115,.985))
@@ -243,24 +278,24 @@ func _draw() -> void:
             "TOCCA ANCORA PER ACQUISTARE" if affordable else "Servono puntiformi, punti o il locus e gia al massimo",
             HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.57,.92,.77) if affordable else Color(.95,.77,.59),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-32),
-            ("Enzimi iniziali: GEN 1 · 2 punti" if inspected==88 else "Puntiformi categoria: %d / %d per la prossima maggiore" % [point_count(branch),5*(major_count(branch)+1)]),
+            ("Enzimi iniziali: GEN 1 · 2 punti" if inspected==88 else "Puntiformi del cluster: %d / %d per la maggiore" % [_cluster_points(inspected),5]),
             HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(.69,.79,.88),size.x-34)
     else:
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-120),
             "Tocca un nodo per esaminarne l'effetto",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color(.90,.96,.96))
 
 func zoom_by(factor: float) -> void:
-    zoom_level = clampf(zoom_level*factor,.62,3.0)
+    zoom_level = clampf(zoom_level*factor,.25,3.0)
     queue_redraw()
 
 func center_view() -> void:
-    zoom_level = 1.22
+    zoom_level = .85
     pan = Vector2.ZERO
     queue_redraw()
 
 func inspect_branch(branch: int) -> void:
-    inspected = clampi(branch,0,5)*48
-    queue_redraw()
+    zoom_level = 1.22
+    focus_node(clampi(branch,0,5)*48+40)
 
 func _pick(at: Vector2) -> int:
     var best: int = -1
@@ -278,7 +313,7 @@ func _gui_input(event: InputEvent) -> void:
             zoom_level = minf(3.0, zoom_level * 1.12)
             queue_redraw()
         elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-            zoom_level = maxf(.62, zoom_level / 1.12)
+            zoom_level = maxf(.25, zoom_level / 1.12)
             queue_redraw()
         elif event.button_index == MOUSE_BUTTON_LEFT:
             if event.pressed:
@@ -313,6 +348,10 @@ func _gui_input(event: InputEvent) -> void:
         pan += event.relative
         queue_redraw()
     if event is InputEventMouseButton and not touch_seen and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed and gesture_travel < 9.0:
+        if event.position.y>=130 and event.position.y<=162:
+            inspect_branch(clampi(int((event.position.x-10)*6/maxf(1,size.x-20)),0,5))
+            return
+        if event.position.y<170 or event.position.y>=size.y-176: return
         var picked: int = _pick(event.position)
         if picked >= 0:
             _select(picked)

@@ -1,7 +1,7 @@
 extends Node3D
 ## Bounded visual response inspired by overdamped vesicles, not a CFD solver.
 ## Shared affine deformation keeps every membrane-bound module attached.
-const RESPONSE: float = 9.0
+const RESPONSE: float = 7.5
 var cell: Node3D
 var body: Node3D
 var filtered_velocity := Vector3.ZERO
@@ -35,7 +35,7 @@ func setup(host: Node3D) -> void:
     if is_instance_valid(cell.membrane):
         shell_material = cell.membrane.material_override as ShaderMaterial
         if shell_material != null:
-            shell_material.set_shader_parameter("membrane_motion",.025*flexibility)
+            shell_material.set_shader_parameter("membrane_motion",.035*flexibility)
     advance_motion(Vector3.ZERO,0.0)
 
 func _process(delta: float) -> void:
@@ -56,12 +56,12 @@ func advance_motion(velocity: Vector3, delta: float) -> void:
     phase = fmod(phase+dt,10000.0)
     var blend: float = 1.0-exp(-RESPONSE*dt)
     filtered_velocity = filtered_velocity.lerp(velocity.limit_length(8.0),blend)
-    var target: float = minf(filtered_velocity.length()/3.0,1.0)*.12*flexibility
+    var target: float = minf(filtered_velocity.length()/3.0,1.0)*.19*flexibility
     strain = lerpf(strain,target,blend)
     var local: Vector3 = cell.global_basis.orthonormalized().inverse()*filtered_velocity
     var axis: Vector3 = local.normalized() if local.length_squared()>.00001 else Vector3.RIGHT
     var rotation := Basis(Quaternion(Vector3.RIGHT,axis))
-    var stretch: float = 1.0+strain+sin(phase*1.35)*.005*flexibility
+    var stretch: float = 1.0-strain+sin(phase*1.35)*.008*flexibility
     var transverse: float = 1.0/sqrt(stretch)
     var deformation: Basis = rotation*Basis.from_scale(Vector3(stretch,transverse,transverse))*rotation.transposed()
     last_volume_ratio = deformation.determinant()
@@ -74,12 +74,15 @@ func advance_motion(velocity: Vector3, delta: float) -> void:
         var unit: Vector3 = (rest-center)/cell.body_radii
         var azimuth: float = atan2(unit.z,unit.x)
         var wave: float = sin(unit.x*3.1+phase*.72)*sin(unit.z*2.4-phase*.53)
-        var lobes: float = sin(azimuth*3.0+phase*.31)*.035+cos(azimuth*2.0-phase*.23)*.025
+        var lobes: float = sin(azimuth*3.0+phase*.31)*.050+cos(azimuth*2.0-phase*.23)*.035
         var organic: float = sin(azimuth*3.0+.65)*.11+cos(azimuth*5.0-.7)*.045
-        var displacement: float = (wave*.025+(lobes+organic)*clampf(Vector2(unit.x,unit.z).length(),0,1))*flexibility
+        var pressure: float = -maxf(0.0,unit.normalized().dot(axis))*strain*.22
+        var displacement: float = (wave*.035+(lobes+organic)*clampf(Vector2(unit.x,unit.z).length(),0,1))*flexibility+pressure
         anchor["node"].position = rest+unit.normalized()*cell.body_radii*displacement
     surface_phase = fmod(surface_phase+dt*(.10+minf(filtered_velocity.length(),3.0)*.19)*3.0,TAU)
     if shell_material != null:
         shell_material.set_shader_parameter("membrane_time",phase)
         shell_material.set_shader_parameter("surface_phase",surface_phase)
         shell_material.set_shader_parameter("flexibility",flexibility)
+        shell_material.set_shader_parameter("flow_axis",axis)
+        shell_material.set_shader_parameter("flow_strain",strain)

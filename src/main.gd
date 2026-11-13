@@ -454,6 +454,7 @@ func _process(delta: float) -> void:
     if is_paused or not is_instance_valid(player) or not entities.has(player_id):
         return
     delta = minf(delta,.07)
+    world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso").update_focus(player.position)
     t += delta
     if is_instance_valid(tips_label) and notice_expires >= 0 and t > notice_expires:
         tips_label.visible = false
@@ -749,13 +750,13 @@ func _award_bundle(bundle: Dictionary, controlled: bool, cell_id: String = "") -
         entity["energy"] = minf(85.0,float(entity["energy"])+float(bundle.get("atp",0)))
         entity["atp"] = entity["energy"]
 
-func _spawn_substrate(at: Vector3, portions: int = 3) -> void:
+func _spawn_substrate(at: Vector3, portions: int = 3, kind: String = "") -> void:
     var patch: Node3D = SubstrateScript.new()
     patch.name = "Substrato_organico"
     world_root.add_child(patch)
     var terrain: Node = world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso")
     patch.position = Vector3(at.x,terrain.surface_height(Vector2(at.x,at.z))+.04,at.z)
-    patch.setup(int(absf(at.x*731+at.z*997))+441,portions)
+    patch.setup(int(absf(at.x*731+at.z*997))+441,portions,kind)
     substrates.append(patch)
 
 func _reset_substrates(saved: Array = [], from_save: bool = false) -> void:
@@ -768,10 +769,10 @@ func _reset_substrates(saved: Array = [], from_save: bool = false) -> void:
     if from_save:
         for record in saved.slice(0,6):
             if record is Dictionary and record.get("pos",[]) is Array and record["pos"].size()==3:
-                _spawn_substrate(Vector3(float(record["pos"][0]),0,float(record["pos"][2])),clampi(int(record.get("portions",3)),1,3))
+                _spawn_substrate(Vector3(float(record["pos"][0]),0,float(record["pos"][2])),clampi(int(record.get("portions",3)),1,3),str(record.get("kind","")))
     else:
         for p in [Vector3(3.8,0,1.5),Vector3(-4,0,2),Vector3(4,0,-5),Vector3(-7,0,-6),Vector3(8,0,8),Vector3(0,0,12)]:
-            _spawn_substrate(p)
+            _spawn_substrate(p,3,SubstrateScript.KINDS[substrates.size()%3])
 
 func _maintain_substrates(delta: float) -> void:
     if not is_instance_valid(player):
@@ -796,10 +797,10 @@ func _digest_substrate(patch: Node3D) -> bool:
     if offset.length()>1.55:
         return false
     atp -= Balance.ENZYME_COST
-    _award_bundle(Balance.SUBSTRATE_REWARD,true)
+    _award_bundle(patch.reward(),true)
     skill_cooldown = 2.0
     patch.set_portions(patch.portions-1)
-    _notice("Substrato digerito · C +6 · AA +3 · lipidi +2 · nucleotidi +1")
+    _notice("%s: fino a 5 molecole recuperate (limite delle riserve)" % patch.LABELS[patch.kind])
     if patch.portions<=0:
         substrates.erase(patch)
         patch.queue_free()
@@ -878,7 +879,7 @@ func _update_nutrient_markers() -> void:
         var screen: Vector2 = camera.unproject_position(where)
         if screen.y < top_safe or screen.y > bottom_safe:
             continue
-        points.append({"pos":screen,"kind":str(n["kind"]),"scale":1.10})
+        points.append({"pos":screen,"kind":str(n["kind"]),"scale":1.155})
     nutrient_markers.configure(points,top_safe,bottom_safe,rect)
 
 func _update_cell_world_glyphs() -> void:
@@ -1921,7 +1922,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
     var substrate_data: Array = []
     for patch in substrates:
         if is_instance_valid(patch):
-            substrate_data.append({"pos":[patch.position.x,patch.position.y,patch.position.z],"portions":patch.portions})
+            substrate_data.append({"pos":[patch.position.x,patch.position.y,patch.position.z],"portions":patch.portions,"kind":patch.kind})
     var data: Dictionary = {"substrates":substrate_data,"substrate_respawn":substrate_respawn,"version":71,"elapsed":t,"player_id":player_id,"next_id":next_id,
         "entities":cells,"genealogy":genealogy,"nutrients":particle_data,
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,

@@ -1,8 +1,14 @@
 extends Node3D
-## Deterministic 512x512 seabed; independent sectors allow engine frustum culling.
+## Streamed deterministic 2304x2304 cartographic metres; cellular size is symbolic.
 const Palette = preload("res://src/seabed_palette.gd")
 const TILE: int = 32
-const HALF: int = 256
+const HALF: int = 1152
+var sectors: Dictionary = {}
+var pending: Array[Vector2i] = []
+var focus_key := Vector2i(99999,99999)
+var ground_material: Material
+var rock_material: Material
+var rock_meshes: Array[Mesh] = []
 var noise := FastNoiseLite.new()
 var faults: Array[PackedVector2Array] = []
 var fault_buckets: Dictionary = {}
@@ -22,10 +28,40 @@ func setup() -> void:
     var stone_mat := StandardMaterial3D.new()
     stone_mat.albedo_color = Palette.BASALT
     stone_mat.roughness = .98
-    var stone_mesh: ArrayMesh = _stone_mesh()
-    for z in range(-HALF,HALF,TILE):
-        for x in range(-HALF,HALF,TILE):
-            _sector(Vector2i(x,z),material,stone_mesh,stone_mat)
+    ground_material = material
+    rock_material = stone_mat
+    for variant in range(5):
+        rock_meshes.append(_stone_mesh(variant))
+    update_focus(Vector3.ZERO,true)
+
+func update_focus(at: Vector3, immediate: bool = false) -> void:
+    var key := Vector2i(floori(at.x/TILE),floori(at.z/TILE))
+    if key != focus_key:
+        focus_key = key
+        var wanted: Dictionary = {}
+        pending.clear()
+        for z in range(key.y-2,key.y+3):
+            for x in range(key.x-2,key.x+3):
+                var origin := Vector2i(x,z)*TILE
+                if origin.x < -HALF or origin.y < -HALF or origin.x >= HALF or origin.y >= HALF:
+                    continue
+                wanted[origin] = true
+                if not sectors.has(origin): pending.append(origin)
+        for origin in sectors.keys():
+            if not wanted.has(origin):
+                var node: Node = sectors[origin]
+                rock_count -= int(node.get_meta("rocks"))
+                terrain_triangles -= int(node.get_meta("triangles"))
+                remove_child(node)
+                node.queue_free()
+                sectors.erase(origin)
+        pending.sort_custom(func(a: Vector2i,b: Vector2i): return (a-key*TILE).length_squared() < (b-key*TILE).length_squared())
+    var budget: int = pending.size() if immediate else 1
+    for i in range(budget):
+        if pending.is_empty(): break
+        var origin: Vector2i = pending.pop_front()
+        _sector(origin,ground_material,rock_meshes[posmod(origin.x/32+origin.y/32,5)],rock_material)
+    sector_count = sectors.size()
 
 func _make_faults() -> void:
     # Four original harmless gas sites; new scars extend beyond the old arena.
@@ -38,15 +74,15 @@ func _make_faults() -> void:
         faults.append(path)
     var rng := RandomNumberGenerator.new()
     rng.seed = 76113
-    for i in range(34):
-        var start := Vector2(rng.randf_range(-220,220),rng.randf_range(-220,220))
+    for i in range(420):
+        var start := Vector2(rng.randf_range(-1100,1100),rng.randf_range(-1100,1100))
         if start.length()<36:
             start += Vector2(48,36)
         var direction := Vector2.from_angle(rng.randf()*TAU)
         var path := PackedVector2Array([start])
         for j in range(9):
             start += direction.rotated(rng.randf_range(-.6,.6))*rng.randf_range(3,8)
-            start = start.clamp(Vector2.ONE*-250,Vector2.ONE*250)
+            start = start.clamp(Vector2.ONE*-1148,Vector2.ONE*1148)
             path.append(start)
         faults.append(path)
         faults.append(PackedVector2Array([path[4],path[4]+direction.rotated(1.1)*8,path[4]+direction.rotated(.9)*16]))
@@ -77,7 +113,11 @@ func height_at(p: Vector2) -> float:
     var detail: float = noise.get_noise_2d(p.x*4+91,p.y*4-63)
     var basin: float = smoothstep(-.15,.45,noise.get_noise_2d(p.x*.42-150,p.y*.42+230))
     var terraces: float = floorf((broad+.65)*7.0)/7.0
+    var geology: float = noise.get_noise_2d(p.x*.18+710,p.y*.18-590)
+    var scarps: float = floorf((noise.get_noise_2d(p.x*.8+52,p.y*.8)+1.0)*5.0)*.32
     var height: float = -.40-(broad+.55)*.75-terraces*.65-basin*1.35+detail*.17
+    height -= scarps*smoothstep(-.30,.25,geology)
+    height -= absf(noise.get_noise_2d(p.x*.3,p.y*.3+830))*2.4
     # Flat collars anchor volcano skirts in the same geological surface.
     for vent in [Vector2(-11,3),Vector2(16,-14)]:
         height = lerpf(-.265,height,smoothstep(3.8,6.5,p.distance_to(vent)))
@@ -112,6 +152,7 @@ func _sector(origin: Vector2i, material: Material, stone_mesh: Mesh, stone_mat: 
     node.name = "Settore_%d_%d" % [origin.x,origin.y]
     node.position = Vector3(origin.x,0,origin.y)
     add_child(node)
+    sectors[origin] = node
     var step: int = 1 if absi(origin.x+16)<48 and absi(origin.y+16)<48 else 2
     var size: int = TILE/step+1
     var vertices := PackedVector3Array()
@@ -143,7 +184,7 @@ func _sector(origin: Vector2i, material: Material, stone_mesh: Mesh, stone_mat: 
     var mm := MultiMesh.new()
     mm.transform_format = MultiMesh.TRANSFORM_3D
     mm.mesh = stone_mesh
-    mm.instance_count = 34
+    mm.instance_count = 48+int(40.0*(noise.get_noise_2d(origin.x*.23,origin.y*.23)+1.0))
     for i in range(mm.instance_count):
         var p := Vector2(rng.randf_range(1,31),rng.randf_range(1,31))
         var world: Vector2 = p+Vector2(origin)
@@ -155,7 +196,7 @@ func _sector(origin: Vector2i, material: Material, stone_mesh: Mesh, stone_mat: 
             radius = rng.randf_range(1.4,3.1) if ridge>-.12 else .6
         if world.length()<4 or world.distance_to(Vector2(-11,3))<4 or world.distance_to(Vector2(16,-14))<3:
             radius = .025
-        var basis := Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3(radius,radius*rng.randf_range(.4,.9),radius*.8))
+        var basis := Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3(radius,radius*rng.randf_range(.22,.48),radius*.8))
         mm.set_instance_transform(i,Transform3D(basis,Vector3(p.x,surface_height(world)-radius*.14,p.y)))
     var stones := MultiMeshInstance3D.new()
     stones.name = "Blocchi_e_detrito"
@@ -163,6 +204,8 @@ func _sector(origin: Vector2i, material: Material, stone_mesh: Mesh, stone_mat: 
     stones.material_override = stone_mat
     stones.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     node.add_child(stones)
+    node.set_meta("rocks",mm.instance_count)
+    node.set_meta("triangles",(size-1)*(size-1)*2)
     sector_count += 1
     rock_count += mm.instance_count
 
@@ -171,17 +214,17 @@ func _tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
     st.add_vertex(c)
     st.add_vertex(b)
 
-func _stone_mesh() -> ArrayMesh:
+func _stone_mesh(variant: int = 0) -> ArrayMesh:
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     st.set_smooth_group(-1)
-    for i in range(7):
-        var a: float = TAU*i/7
-        var b: float = TAU*(i+1)/7
-        var low_a := Vector3(cos(a),0,sin(a))
-        var low_b := Vector3(cos(b),0,sin(b))
-        var top_a := Vector3(cos(a)*.65,.8+.12*sin(a*3),sin(a)*.65)
-        var top_b := Vector3(cos(b)*.65,.8+.12*sin(b*3),sin(b)*.65)
+    for i in range(5+variant):
+        var a: float = TAU*i/(5+variant)
+        var b: float = TAU*(i+1)/(5+variant)
+        var low_a := Vector3(cos(a)*(1.0+.18*sin(a*3+variant)),0,sin(a))
+        var low_b := Vector3(cos(b)*(1.0+.18*sin(b*3+variant)),0,sin(b))
+        var top_a := Vector3(cos(a)*.65,.5+.25*sin(a*3+variant)+variant*.08,sin(a)*.65)
+        var top_b := Vector3(cos(b)*.65,.5+.25*sin(b*3+variant)+variant*.08,sin(b)*.65)
         _tri(st,low_a,top_a,low_b)
         _tri(st,low_b,top_a,top_b)
         _tri(st,top_a,Vector3(.1,1,-.1),top_b)
