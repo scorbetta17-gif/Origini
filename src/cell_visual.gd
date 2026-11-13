@@ -30,6 +30,10 @@ var material_cache: Dictionary = {}
 var body_radii: Vector3 = Vector3(.79,.72,.79)
 var blender_interior: bool = false
 var use_blender_assets: bool = false
+var division_progress: float = 0.0
+var replication_source: Node3D
+var replication_copy: Node3D
+var replication_origin: Vector3 = Vector3.ZERO
 
 func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> void:
     traits = Genome.normalize(value,cell_branch)
@@ -44,6 +48,9 @@ func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> vo
     age = 0.0
     blender_interior = false
     use_blender_assets = false
+    division_progress = 0.0
+    replication_source = null
+    replication_copy = null
     _build()
     var motion = preload("res://src/cell_fluid_motion.gd").new()
     motion.name = "FluidMotion"
@@ -52,6 +59,18 @@ func setup(value: Dictionary, cell_branch: String, selected: bool = false) -> vo
 
 func set_growth(value: float) -> void:
     growth = clampf(value,.72,.864)
+
+func set_division_progress(value: float) -> void:
+    division_progress = clampf(value,0.0,1.0)
+    if is_instance_valid(membrane) and membrane.material_override is ShaderMaterial:
+        membrane.material_override.set_shader_parameter("division_progress",division_progress)
+    if is_instance_valid(replication_source):
+        var separation: float = smoothstep(.15,.95,division_progress)*.34
+        replication_source.position = replication_origin+Vector3(-separation,0,0)
+        if is_instance_valid(replication_copy):
+            replication_copy.visible = division_progress > .12
+            replication_copy.position = replication_origin+Vector3(separation,0,0)
+            replication_copy.scale = replication_source.scale*lerpf(.35,1.0,smoothstep(.12,.65,division_progress))
 
 func set_selected(value: bool) -> void:
     is_player = value
@@ -434,6 +453,8 @@ func _build() -> void:
     _record_children("archaellar_motor" if branch == "archaea" else "flagellar_motor",feature_start)
 
     _record_genetic_core()
+    _build_evolution_capabilities()
+    _prepare_replication()
 
     # Ombra di contatto morbida: il fondo resta lontano dalla cellula,
     # ma l'osservatore percepisce l'altezza del corpo sopra il sedimento.
@@ -465,6 +486,87 @@ func _build() -> void:
 
 func _level(locus: String) -> int:
     return Genome.expressed_allele(traits,locus,branch)
+
+func _capability_root(id: String, external: bool = false) -> Node3D:
+    var node := Node3D.new()
+    node.name = "Evolution_"+id
+    node.set_meta("evolution_capability",id)
+    if external:
+        add_child(node)
+    else:
+        interior.add_child(node)
+    feature_nodes[id] = {"allele":1,"nodes":[node]}
+    return node
+
+func _build_evolution_capabilities() -> void:
+    var caps: Dictionary = traits.get("evolution_capabilities",{})
+    if bool(caps.get("asgard_host",false)):
+        var protrusions: Node3D = _capability_root("asgard_host",true)
+        for i in range(4):
+            var a: float = float(i)*TAU/4.0+.35
+            var n := Vector3(cos(a),0,sin(a))
+            var anchor := Vector3(n.x*body_radii.x,.81,n.z*body_radii.z)
+            _tube(protrusions,PackedVector3Array([anchor,anchor+n*.18+Vector3(0,.06,0),anchor+n*.36+Vector3(0,.02,0)]),.035,Color(.52,.78,.85),.65)
+    var mature_mito: bool = bool(caps.get("mitochondrion",false))
+    if bool(caps.get("internal_symbiont",false)) or mature_mito:
+        var symbiont: Node3D = _capability_root("internal_symbiont")
+        var center := Vector3(.38,.02,.18)
+        _ellipsoid(symbiont,center,Vector3(.19,.105,.11),Color(.82,.52,.28),.50)
+        if mature_mito:
+            var mitochondrion: Node3D = _capability_root("mitochondrion")
+            _ellipsoid(mitochondrion,center,Vector3(.157,.080,.085),Color(.95,.72,.35),.50)
+            for i in range(4):
+                var x: float = center.x-.10+float(i)*.065
+                _tube(mitochondrion,PackedVector3Array([Vector3(x,.04,.12),Vector3(x+.02,.075,.18),Vector3(x,.04,.24)]),.012,Color(.98,.74,.37))
+            mitochondrion.set_meta("display","double outline with internal cristae; stylized")
+    if bool(caps.get("membrane_traffic",false)):
+        var er: Node3D = _capability_root("membrane_traffic")
+        for i in range(4):
+            var path := PackedVector3Array()
+            for j in range(13):
+                var a: float = float(j)/12.0*PI*1.4+.2
+                var radius: float = .24+float(i)*.047
+                path.append(Vector3(cos(a)*radius-.12,-.06+float(i)*.035,sin(a)*radius-.02))
+            _tube(er,path,.018,Color(.49,.76,.85),.70)
+    if bool(caps.get("er_golgi",false)):
+        var golgi: Node3D = _capability_root("er_golgi")
+        for i in range(4):
+            var path := PackedVector3Array()
+            for j in range(9):
+                var x: float = (float(j)/8.0-.5)*.29
+                path.append(Vector3(x+.24,.10+float(i)*.043,-.29+sin(float(j)/8.0*PI)*.055))
+            _tube(golgi,path,.023,Color(.84,.61,.84),.85)
+        for i in range(3):
+            _ellipsoid(golgi,Vector3(.43,.12+float(i)*.06,-.27),Vector3.ONE*.026,Color(.89,.72,.90),.70)
+    if bool(caps.get("nucleus",false)):
+        var nucleus: Node3D = _capability_root("nucleus")
+        _ellipsoid(nucleus,Vector3(-.15,.13,.02),Vector3(.24,.22,.23),Color(.61,.57,.87),.20)
+        var dna: Node3D = find_child("DNA_DoubleStrand",true,false) as Node3D
+        if dna == null:
+            _build_imported_dna(interior)
+            dna = interior.get_node("DNA_DoubleStrand")
+        dna.position = Vector3(-.15,.06,.02)
+        dna.scale = Vector3.ONE*.60
+        dna.set_meta("display","compact DNA inside nuclear envelope")
+    if bool(caps.get("leca",false)):
+        var leca: Node3D = _capability_root("leca")
+        leca.set_meta("display","integrated phenotype; organelles remain gated by individual capabilities")
+        # Sparse coordinated trafficking markers, no duplicate organelles or extra shell.
+        for i in range(4):
+            _ellipsoid(leca,Vector3(-.02+float(i)*.09,.28,-.12),Vector3.ONE*.014,Color(.76,.86,.92),.75)
+
+func _prepare_replication() -> void:
+    replication_source = find_child("DNA_DoubleStrand",true,false) as Node3D
+    if replication_source == null:
+        replication_source = find_child("SingleStrand_RNA",true,false) as Node3D
+    if replication_source == null:
+        return
+    replication_origin = replication_source.position
+    replication_copy = replication_source.duplicate() as Node3D
+    replication_copy.name = "Replicated_GeneticMaterial"
+    replication_source.get_parent().add_child(replication_copy)
+    replication_copy.hide()
+    set_division_progress(0.0)
 
 func _record(locus: String, node: Node3D) -> void:
     var level: int = _level(locus)

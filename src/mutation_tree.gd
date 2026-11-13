@@ -1,15 +1,17 @@
 extends Control
 class_name MutationTree
-## 288 nodi collegati, con zoom/pan e allocazione reale dei punti.
+## 336 nodi collegati, con zoom/pan e allocazione reale dei punti.
 
 signal mutation_unlocked(node_id: int, stat: String, value: float, cost: int)
 
-const BRANCHES := ["MOTILITA", "ATTACCO", "DIFESA", "MUTAZIONI", "METABOLISMO", "ASSORBIMENTO"]
-const STATS := ["motility", "attack", "defense", "mutation", "metabolism", "uptake"]
+const BRANCHES := ["MOTILITA", "ATTACCO", "DIFESA", "ADATTABILITA (PM)", "METABOLISMO", "ASSORBIMENTO", "VITALITA (HP)"]
+const STATS := ["motility", "attack", "defense", "mutation", "metabolism", "uptake", "vitality"]
 const COLORS := [
     Color(0.25, 0.86, 0.98), Color(1.0, 0.45, 0.43), Color(0.94, 0.74, 0.29),
-    Color(0.83, 0.48, 1.0), Color(0.38, 0.94, 0.49), Color(0.41, 0.81, 0.92)
+    Color(0.83, 0.48, 1.0), Color(0.38, 0.94, 0.49), Color(0.41, 0.81, 0.92), Color(1.0, 0.61, 0.78)
 ]
+const NODE_COUNT: int = 336
+const SHORT_NAMES := ["MOV","ATK","DIF","PM","ATP","ASS","HP"]
 var owned: Dictionary = {}
 var points: int = 0
 var zoom_level: float = .85
@@ -32,7 +34,8 @@ const MAJOR_LOCUS_BY_BRANCH := [
     ["eps_biosynthesis","thermal_membrane","chaperone_complex","cell_elongation","thermal_membrane","chaperone_complex","eps_biosynthesis","thermal_membrane"],
     ["surface_recognition","vesicle_pathway","membrane_transport","chaperone_complex","thermal_membrane","surface_recognition","vesicle_pathway","membrane_transport"],
     ["membrane_transport","chaperone_complex","thermal_membrane","vesicle_pathway","chaperone_complex","membrane_transport","thermal_membrane","vesicle_pathway"],
-    ["membrane_transport","vesicle_pathway","surface_recognition","pili_twitch","vesicle_pathway","membrane_transport","surface_recognition","pili_twitch"]
+    ["membrane_transport","vesicle_pathway","surface_recognition","pili_twitch","vesicle_pathway","membrane_transport","surface_recognition","pili_twitch"],
+    ["chaperone_complex","thermal_membrane","eps_biosynthesis","chaperone_complex","thermal_membrane","chaperone_complex","eps_biosynthesis","thermal_membrane"]
 ]
 
 func configure(data: Dictionary, available_points: int, genome_traits: Dictionary = {}, generation: int = 0) -> void:
@@ -44,9 +47,10 @@ func configure(data: Dictionary, available_points: int, genome_traits: Dictionar
     queue_redraw()
 
 func _cluster(branch: int, cluster: int) -> Vector2:
-    var axis := Vector2.from_angle(-PI*.5+branch*TAU/6.0)
+    var axis := Vector2.from_angle(-PI*.5+branch*TAU/float(STATS.size()))
     var side := Vector2(-axis.y,axis.x)
-    return axis*(240.0+(cluster/2)*190.0)+side*((-1.0 if cluster%2==0 else 1.0)*(60.0+(cluster/2)*32.0))
+    # Seven sectors require a wider inner ring; keep all node pairs >32 units.
+    return axis*(280.0+(cluster/2)*190.0)+side*((-1.0 if cluster%2==0 else 1.0)*(60.0+(cluster/2)*32.0))
 
 func _pos(node_id: int) -> Vector2:
     var branch: int = node_id/48
@@ -55,7 +59,7 @@ func _pos(node_id: int) -> Vector2:
     var center: Vector2 = _cluster(branch,cluster)
     if local>=40: return center
     var stage: int = local/8
-    var angle: float = -PI*.5+branch*TAU/6.0+PI+stage*TAU/5.0
+    var angle: float = -PI*.5+branch*TAU/float(STATS.size())+PI+stage*TAU/5.0
     return center+Vector2.from_angle(angle)*45.0
 
 func _parent_id(id: int) -> int:
@@ -155,14 +159,14 @@ func major_count(branch: int) -> int:
     return count
 
 func _available(node_id: int) -> bool:
-    if node_id<0 or node_id>=288 or owned.has(str(node_id)):
+    if node_id<0 or node_id>=NODE_COUNT or owned.has(str(node_id)):
         return false
     if _type(node_id)!=2:
         var parent: int = _parent_id(node_id)
         return parent<0 or owned.has(str(parent))
     var locus: String = major_locus(node_id)
-    if GenomeScript.allele(source_traits,locus)>=int(GenomeScript.GENE_INFO[locus]["max"]):
-        return false
+    # A mastered locus must not block access to later clusters: the node
+    # still buys quantitative specialization, never an extra allele.
     # Deliberate introductory exception: two points from the first division.
     if node_id==88 and cell_generation>=1 and not GenomeScript.has(source_traits,"hydrolase_secretion"):
         return true
@@ -170,7 +174,7 @@ func _available(node_id: int) -> bool:
     return _cluster_points(node_id)>=Balance.POINTS_PER_MAJOR
 
 func focus_node(id: int) -> void:
-    inspected = clampi(id,0,287)
+    inspected = clampi(id,0,NODE_COUNT-1)
     pan = -_pos(inspected)*zoom_level
     queue_redraw()
 
@@ -178,7 +182,7 @@ func _draw() -> void:
     draw_rect(Rect2(Vector2.ZERO,size),Color(.011,.061,.085,.99))
     var center: Vector2 = _screen(Vector2.ZERO)
     # Draw the same edges that govern purchases; original biology-themed artwork.
-    for id in range(288):
+    for id in range(NODE_COUNT):
         var parent: int = _parent_id(id)
         var start: Vector2 = center if parent<0 else _screen(_pos(parent))
         var finish: Vector2 = _screen(_pos(id))
@@ -186,7 +190,7 @@ func _draw() -> void:
         var lit: bool = owned.has(str(id))
         draw_line(start,finish,tint.darkened(.28) if lit else Color(.15,.27,.29),3.2*zoom_level,true)
         if lit: draw_line(start,finish,tint.lightened(.20),1.1*zoom_level,true)
-    for branch in range(6):
+    for branch in range(STATS.size()):
         for cluster in range(8):
             draw_arc(_screen(_cluster(branch,cluster)),45.0*zoom_level,0,TAU,48,Color(.17,.30,.32,.45),1.0,true)
         for local in range(48):
@@ -215,17 +219,17 @@ func _draw() -> void:
         rna.append(center+Vector2((u-.5)*25,sin(u*TAU*1.4)*6)*zoom_level)
     draw_polyline(rna,Color(1,.59,.22),2.2*zoom_level,true)
 
-    # Classic mobile visual hierarchy: six stat cards and branch selector.
+    # Classic mobile visual hierarchy: seven stat cards and branch selector.
     draw_rect(Rect2(0,0,size.x,165),Color(.015,.088,.115,.985))
     draw_line(Vector2(0,165),Vector2(size.x,165),Color(.21,.51,.56,.71),2,true)
     draw_string(ThemeDB.fallback_font,Vector2(16,27),
         "ALBERO EVOLUTIVO",HORIZONTAL_ALIGNMENT_LEFT,-1,22,Color(.94,.99,.99))
     draw_string(ThemeDB.fallback_font,Vector2(16,51),
-        "240 puntiformi + 48 scelte maggiori · %d acquisite · %d punti" % [owned.size(),points],
+        "280 puntiformi + 56 scelte maggiori · %d acquisite · %d punti" % [owned.size(),points],
         HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.65,.84,.87))
-    var stats: Array[String] = ["MOV","ATK","DIF","MUT","ATP","ASS"]
-    var box_width: float = (size.x-26.0-5*5.0)/6.0
-    for i in range(6):
+    var stats: Array = SHORT_NAMES
+    var box_width: float = (size.x-26.0-6*5.0)/7.0
+    for i in range(STATS.size()):
         var x: float = 13.0+float(i)*(box_width+5)
         var rect := Rect2(x,66,box_width,56)
         draw_rect(rect,Color(.03,.13,.17,.99),true)
@@ -238,10 +242,10 @@ func _draw() -> void:
             "%d/48" % purchased_count,HORIZONTAL_ALIGNMENT_LEFT,-1,18,COLORS[i],box_width-9)
         draw_string(ThemeDB.fallback_font,Vector2(x+7,110),stats[i],
             HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(.75,.88,.89),box_width-9)
-    var chip: Array[String] = ["MOTILITA","ATTACCO","DIFESA","MUTAZ.","ENERGIA","ASSORB."]
-    for i in range(6):
-        var x: float = 10.0+float(i)*(size.x-20.0)/6.0
-        var rect := Rect2(x,131,(size.x-26.0)/6.0,28)
+    var chip: Array[String] = ["MOV","ATK","DIF","ADATT.","ENERGIA","ASSORB.","HP"]
+    for i in range(STATS.size()):
+        var x: float = 10.0+float(i)*(size.x-20.0)/7.0
+        var rect := Rect2(x,131,(size.x-26.0)/7.0,28)
         draw_rect(rect,Color(.032,.15,.195,.98),true)
         draw_rect(rect,Color(COLORS[i].r,COLORS[i].g,COLORS[i].b,.66),false,1)
         draw_string(ThemeDB.fallback_font,Vector2(x+5,151),chip[i],HORIZONTAL_ALIGNMENT_LEFT,-1,11,
@@ -264,18 +268,21 @@ func _draw() -> void:
         if kind == 2:
             var locus: String = major_locus(inspected)
             genetic_name = str(GenomeScript.GENE_INFO[locus]["name"])
+            if GenomeScript.allele(source_traits,locus)>=int(GenomeScript.GENE_INFO[locus]["max"]):
+                genetic_name += " · maestria"
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-113),
-            ("GENE: "+genetic_name+" · +%.1f%% · %d P" % [gain*100.0,_cost(inspected)]) if kind == 2 else (
-                "Effetto: +%.1f%% %s  ·  Costo %d punti" % [
+            ("GENE: "+genetic_name+" · %+.1f%% · %d P" % [gain*100.0,_cost(inspected)]) if kind == 2 else (
+                "Effetto: %+.1f%% %s  ·  Costo %d punti" % [
                     gain*100.0,
                     BRANCHES[branch],_cost(inspected)]),
             HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.88,.96,.96),size.x-34)
-        draw_string(ThemeDB.fallback_font,Vector2(17,size.y-87),
-            ("Fenotipo + bonus; -1,2 punti % "+str(Balance.TRADEOFF[STATS[branch]]) if kind == 2
-                else "Bonus decrescente; -0,4 punti % "+str(Balance.TRADEOFF[STATS[branch]])),
-            HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.65,.86,.87),size.x-34)
-        draw_string(ThemeDB.fallback_font,Vector2(17,size.y-60),
-            "TOCCA ANCORA PER ACQUISTARE" if affordable else "Servono puntiformi, punti o il locus e gia al massimo",
+        var changes: Array[String] = preview_changes(inspected)
+        for row in range(2):
+            draw_string(ThemeDB.fallback_font,Vector2(17,size.y-91+row*17),
+                " | ".join(changes.slice(row*4,mini(row*4+4,changes.size()))),
+                HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(.65,.86,.87),size.x-34)
+        draw_string(ThemeDB.fallback_font,Vector2(17,size.y-52),
+            "TOCCA ANCORA PER ACQUISTARE" if affordable else "Servono puntiformi e punti, oppure nodo già acquisito",
             HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(.57,.92,.77) if affordable else Color(.95,.77,.59),size.x-34)
         draw_string(ThemeDB.fallback_font,Vector2(17,size.y-32),
             ("Enzimi iniziali: GEN 1 · 2 punti" if inspected==88 else "Puntiformi del cluster: %d / %d per la maggiore" % [_cluster_points(inspected),5]),
@@ -295,12 +302,12 @@ func center_view() -> void:
 
 func inspect_branch(branch: int) -> void:
     zoom_level = 1.22
-    focus_node(clampi(branch,0,5)*48+40)
+    focus_node(clampi(branch,0,STATS.size()-1)*48+40)
 
 func _pick(at: Vector2) -> int:
     var best: int = -1
     var distance: float = 999.0
-    for i in range(288):
+    for i in range(NODE_COUNT):
         var d: float = at.distance_to(_screen(_pos(i)))
         if d < maxf(24.0,25.0*zoom_level) and d < distance:
             best = i
@@ -335,7 +342,7 @@ func _gui_input(event: InputEvent) -> void:
             touch_dragged = false
         elif not touch_dragged:
             if event.position.y >= 130 and event.position.y <= 162:
-                var branch: int = clampi(int((event.position.x-10.0)*6.0/maxf(1.0,size.x-20.0)),0,5)
+                var branch: int = clampi(int((event.position.x-10.0)*float(STATS.size())/maxf(1.0,size.x-20.0)),0,STATS.size()-1)
                 inspect_branch(branch)
             elif event.position.y >= 170 and event.position.y < size.y-176:
                 var tapped: int = _pick(event.position)
@@ -349,7 +356,7 @@ func _gui_input(event: InputEvent) -> void:
         queue_redraw()
     if event is InputEventMouseButton and not touch_seen and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed and gesture_travel < 9.0:
         if event.position.y>=130 and event.position.y<=162:
-            inspect_branch(clampi(int((event.position.x-10)*6/maxf(1,size.x-20)),0,5))
+            inspect_branch(clampi(int((event.position.x-10)*STATS.size()/maxf(1,size.x-20)),0,STATS.size()-1))
             return
         if event.position.y<170 or event.position.y>=size.y-176: return
         var picked: int = _pick(event.position)
@@ -365,3 +372,16 @@ func _select(id: int) -> void:
         mutation_unlocked.emit(id, STATS[branch], value, _cost(id))
     inspected = id
     queue_redraw()
+
+func preview_changes(node_id: int) -> Array[String]:
+    var changes: Array[String] = []
+    if node_id < 0 or node_id >= NODE_COUNT:
+        return changes
+    var preview: Dictionary = Balance.tree_effect(source_traits,STATS[node_id/48],_type(node_id)==2)
+    for index in range(STATS.size()):
+        var stat: String = STATS[index]
+        var baseline: float = float(source_traits.get(stat,0.0 if stat=="mutation" else 1.0))
+        var delta: float = float(preview[stat])-baseline
+        if absf(delta)>.000001:
+            changes.append("%s %+.2f%%" % [SHORT_NAMES[index],delta*100.0])
+    return changes

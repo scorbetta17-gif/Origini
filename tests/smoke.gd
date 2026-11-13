@@ -27,9 +27,13 @@ func run_checks() -> void:
     for k in required:
         game.resources[k] = float(required[k])
     game.atp = 96.0
+    game.call("_close_overlay")
+    game.set_process(false)
+    game.cycle_age = 75.0
     game._divide_pressed()
     assert(game.division_options.size() == 2)
-    game._choose_daughter(1)
+    await create_timer(2.7).timeout
+    assert(game.generation==1 and game.division_options.is_empty())
     assert(game.genealogy.size() == 3)
     assert(str(game.genealogy[0]["status"]) == "divisa")
     assert(game.entities.size() == 2)

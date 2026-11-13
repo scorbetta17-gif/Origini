@@ -1,0 +1,698 @@
+{
+  "seed": 20261113,
+  "kind": "analytic surrogate, NOT Godot runtime",
+  "budgets": {
+    "10": {
+      "tested_builds": 10029,
+      "habitats": {
+        "ricco": {
+          "winner": "metabolism+uptake",
+          "score": 1.1545,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 5.0,
+            "uptake": 5.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.983,
+            "defense": 0.974,
+            "vitality": 0.99,
+            "mutation": 1.0,
+            "metabolism": 1.144,
+            "uptake": 1.155
+          },
+          "baseline_score": 0.8547,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.9413
+        },
+        "povero": {
+          "winner": "metabolism+uptake",
+          "score": 0.557,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 5.0,
+            "uptake": 5.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.983,
+            "defense": 0.974,
+            "vitality": 0.99,
+            "mutation": 1.0,
+            "metabolism": 1.144,
+            "uptake": 1.155
+          },
+          "baseline_score": 0.3917,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.433
+        },
+        "disperso": {
+          "winner": "metabolism+uptake",
+          "score": 0.6259,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 5.0,
+            "uptake": 5.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.983,
+            "defense": 0.974,
+            "vitality": 0.99,
+            "mutation": 1.0,
+            "metabolism": 1.144,
+            "uptake": 1.155
+          },
+          "baseline_score": 0.4315,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.4826
+        },
+        "predatori": {
+          "winner": "metabolism+uptake",
+          "score": 0.4145,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 5.0,
+            "uptake": 5.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.983,
+            "defense": 0.974,
+            "vitality": 0.99,
+            "mutation": 1.0,
+            "metabolism": 1.144,
+            "uptake": 1.155
+          },
+          "baseline_score": 0.3082,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.359
+        },
+        "prede": {
+          "winner": "metabolism+uptake",
+          "score": 0.5696,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 5.0,
+            "uptake": 5.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.983,
+            "defense": 0.974,
+            "vitality": 0.99,
+            "mutation": 1.0,
+            "metabolism": 1.144,
+            "uptake": 1.155
+          },
+          "baseline_score": 0.4334,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.4914
+        }
+      },
+      "all_six_above_1_2": 0
+    },
+    "30": {
+      "tested_builds": 10029,
+      "habitats": {
+        "ricco": {
+          "winner": "metabolism+uptake",
+          "score": 1.5982,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 15.0,
+            "uptake": 15.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.93,
+            "defense": 0.891,
+            "vitality": 0.958,
+            "mutation": 1.0,
+            "metabolism": 1.343,
+            "uptake": 1.369
+          },
+          "baseline_score": 0.8547,
+          "starved_fraction": 0.0,
+          "balanced_score": 1.0736
+        },
+        "povero": {
+          "winner": "metabolism+uptake",
+          "score": 0.7927,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 15.0,
+            "uptake": 15.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.93,
+            "defense": 0.891,
+            "vitality": 0.958,
+            "mutation": 1.0,
+            "metabolism": 1.343,
+            "uptake": 1.369
+          },
+          "baseline_score": 0.3917,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.4917
+        },
+        "disperso": {
+          "winner": "metabolism+uptake",
+          "score": 0.9012,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 15.0,
+            "uptake": 15.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.93,
+            "defense": 0.891,
+            "vitality": 0.958,
+            "mutation": 1.0,
+            "metabolism": 1.343,
+            "uptake": 1.369
+          },
+          "baseline_score": 0.4315,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.5576
+        },
+        "predatori": {
+          "winner": "random_8626",
+          "score": 0.5783,
+          "investment": {
+            "motility": 1.53,
+            "attack": 0.23,
+            "defense": 2.95,
+            "vitality": 2.67,
+            "mutation": 0.18,
+            "metabolism": 14.04,
+            "uptake": 8.41
+          },
+          "phenotype": {
+            "motility": 1.03,
+            "attack": 0.945,
+            "defense": 1.035,
+            "vitality": 1.068,
+            "mutation": 1.004,
+            "metabolism": 1.318,
+            "uptake": 1.236
+          },
+          "baseline_score": 0.3082,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.4408
+        },
+        "prede": {
+          "winner": "random_150",
+          "score": 0.7386,
+          "investment": {
+            "motility": 2.01,
+            "attack": 1.42,
+            "defense": 0.21,
+            "vitality": 0.08,
+            "mutation": 0.12,
+            "metabolism": 14.62,
+            "uptake": 11.53
+          },
+          "phenotype": {
+            "motility": 1.057,
+            "attack": 0.991,
+            "defense": 0.919,
+            "vitality": 0.973,
+            "mutation": 1.003,
+            "metabolism": 1.329,
+            "uptake": 1.303
+          },
+          "baseline_score": 0.4334,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.582
+        }
+      },
+      "all_six_above_1_2": 0
+    },
+    "60": {
+      "tested_builds": 10029,
+      "habitats": {
+        "ricco": {
+          "winner": "metabolism+uptake",
+          "score": 1.892,
+          "investment": {
+            "motility": 0,
+            "attack": 0,
+            "defense": 0,
+            "vitality": 0,
+            "mutation": 0,
+            "metabolism": 30.0,
+            "uptake": 30.0
+          },
+          "phenotype": {
+            "motility": 1.0,
+            "attack": 0.828,
+            "defense": 0.732,
+            "vitality": 0.897,
+            "mutation": 1.0,
+            "metabolism": 1.505,
+            "uptake": 1.544
+          },
+          "baseline_score": 0.8547,
+          "starved_fraction": 0.0,
+          "balanced_score": 1.1904
+        },
+        "povero": {
+          "winner": "random_4953",
+          "score": 0.9289,
+          "investment": {
+            "motility": 4.7,
+            "attack": 0.22,
+            "defense": 2.69,
+            "vitality": 2.45,
+            "mutation": 1.5,
+            "metabolism": 29.58,
+            "uptake": 18.87
+          },
+          "phenotype": {
+            "motility": 1.113,
+            "attack": 0.84,
+            "defense": 0.904,
+            "vitality": 1.022,
+            "mutation": 1.036,
+            "metabolism": 1.477,
+            "uptake": 1.424
+          },
+          "baseline_score": 0.3917,
+          "starved_fraction": 0.0003,
+          "balanced_score": 0.5318
+        },
+        "disperso": {
+          "winner": "random_4953",
+          "score": 1.0644,
+          "investment": {
+            "motility": 4.7,
+            "attack": 0.22,
+            "defense": 2.69,
+            "vitality": 2.45,
+            "mutation": 1.5,
+            "metabolism": 29.58,
+            "uptake": 18.87
+          },
+          "phenotype": {
+            "motility": 1.113,
+            "attack": 0.84,
+            "defense": 0.904,
+            "vitality": 1.022,
+            "mutation": 1.036,
+            "metabolism": 1.477,
+            "uptake": 1.424
+          },
+          "baseline_score": 0.4315,
+          "starved_fraction": 0.0004,
+          "balanced_score": 0.615
+        },
+        "predatori": {
+          "winner": "random_5061",
+          "score": 0.736,
+          "investment": {
+            "motility": 0.45,
+            "attack": 0.05,
+            "defense": 10.24,
+            "vitality": 9.89,
+            "mutation": 1.58,
+            "metabolism": 16.12,
+            "uptake": 21.66
+          },
+          "phenotype": {
+            "motility": 0.938,
+            "attack": 0.925,
+            "defense": 1.142,
+            "vitality": 1.203,
+            "mutation": 1.038,
+            "metabolism": 1.323,
+            "uptake": 1.442
+          },
+          "baseline_score": 0.3082,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.518
+        },
+        "prede": {
+          "winner": "random_6818",
+          "score": 0.8792,
+          "investment": {
+            "motility": 3.86,
+            "attack": 6.0,
+            "defense": 7.37,
+            "vitality": 0.58,
+            "mutation": 0.22,
+            "metabolism": 26.18,
+            "uptake": 15.8
+          },
+          "phenotype": {
+            "motility": 1.071,
+            "attack": 1.076,
+            "defense": 1.076,
+            "vitality": 0.975,
+            "mutation": 1.006,
+            "metabolism": 1.448,
+            "uptake": 1.343
+          },
+          "baseline_score": 0.4334,
+          "starved_fraction": 0.0,
+          "balanced_score": 0.6631
+        }
+      },
+      "all_six_above_1_2": 0
+    },
+    "120": {
+      "tested_builds": 10029,
+      "habitats": {
+        "ricco": {
+          "winner": "random_1146",
+          "score": 2.0574,
+          "investment": {
+            "motility": 7.93,
+            "attack": 1.59,
+            "defense": 13.63,
+            "vitality": 5.23,
+            "mutation": 3.03,
+            "metabolism": 48.89,
+            "uptake": 39.71
+          },
+          "phenotype": {
+            "motility": 1.112,
+            "attack": 0.741,
+            "defense": 0.933,
+            "vitality": 1.007,
+            "mutation": 1.07,
+            "metabolism": 1.536,
+            "uptake": 1.57
+          },
+          "baseline_score": 0.8547,
+          "starved_fraction": 0.0053,
+          "balanced_score": 1.1642
+        },
+        "povero": {
+          "winner": "random_1146",
+          "score": 0.9598,
+          "investment": {
+            "motility": 7.93,
+            "attack": 1.59,
+            "defense": 13.63,
+            "vitality": 5.23,
+            "mutation": 3.03,
+            "metabolism": 48.89,
+            "uptake": 39.71
+          },
+          "phenotype": {
+            "motility": 1.112,
+            "attack": 0.741,
+            "defense": 0.933,
+            "vitality": 1.007,
+            "mutation": 1.07,
+            "metabolism": 1.536,
+            "uptake": 1.57
+          },
+          "baseline_score": 0.3917,
+          "starved_fraction": 0.1746,
+          "balanced_score": 0.4579
+        },
+        "disperso": {
+          "winner": "random_1146",
+          "score": 1.1206,
+          "investment": {
+            "motility": 7.93,
+            "attack": 1.59,
+            "defense": 13.63,
+            "vitality": 5.23,
+            "mutation": 3.03,
+            "metabolism": 48.89,
+            "uptake": 39.71
+          },
+          "phenotype": {
+            "motility": 1.112,
+            "attack": 0.741,
+            "defense": 0.933,
+            "vitality": 1.007,
+            "mutation": 1.07,
+            "metabolism": 1.536,
+            "uptake": 1.57
+          },
+          "baseline_score": 0.4315,
+          "starved_fraction": 0.1608,
+          "balanced_score": 0.5524
+        },
+        "predatori": {
+          "winner": "random_3853",
+          "score": 0.8184,
+          "investment": {
+            "motility": 12.06,
+            "attack": 3.09,
+            "defense": 16.36,
+            "vitality": 13.8,
+            "mutation": 1.02,
+            "metabolism": 39.02,
+            "uptake": 34.65
+          },
+          "phenotype": {
+            "motility": 1.14,
+            "attack": 0.879,
+            "defense": 1.054,
+            "vitality": 1.223,
+            "mutation": 1.025,
+            "metabolism": 1.443,
+            "uptake": 1.528
+          },
+          "baseline_score": 0.3082,
+          "starved_fraction": 0.0414,
+          "balanced_score": 0.5123
+        },
+        "prede": {
+          "winner": "random_7027",
+          "score": 0.8967,
+          "investment": {
+            "motility": 8.48,
+            "attack": 9.79,
+            "defense": 21.61,
+            "vitality": 5.12,
+            "mutation": 0.26,
+            "metabolism": 42.72,
+            "uptake": 32.03
+          },
+          "phenotype": {
+            "motility": 1.062,
+            "attack": 1.057,
+            "defense": 1.146,
+            "vitality": 1.045,
+            "mutation": 1.006,
+            "metabolism": 1.499,
+            "uptake": 1.457
+          },
+          "baseline_score": 0.4334,
+          "starved_fraction": 0.024,
+          "balanced_score": 0.641
+        }
+      },
+      "all_six_above_1_2": 4
+    },
+    "240": {
+      "tested_builds": 10029,
+      "habitats": {
+        "ricco": {
+          "winner": "random_1853",
+          "score": 1.579,
+          "investment": {
+            "motility": 22.67,
+            "attack": 3.7,
+            "defense": 12.45,
+            "vitality": 15.08,
+            "mutation": 2.26,
+            "metabolism": 100.16,
+            "uptake": 83.69
+          },
+          "phenotype": {
+            "motility": 1.299,
+            "attack": 0.65,
+            "defense": 0.65,
+            "vitality": 0.975,
+            "mutation": 1.053,
+            "metabolism": 1.448,
+            "uptake": 1.649
+          },
+          "baseline_score": 0.8547,
+          "starved_fraction": 0.4626,
+          "balanced_score": 0.4095
+        },
+        "povero": {
+          "winner": "random_1853",
+          "score": 0.5093,
+          "investment": {
+            "motility": 22.67,
+            "attack": 3.7,
+            "defense": 12.45,
+            "vitality": 15.08,
+            "mutation": 2.26,
+            "metabolism": 100.16,
+            "uptake": 83.69
+          },
+          "phenotype": {
+            "motility": 1.299,
+            "attack": 0.65,
+            "defense": 0.65,
+            "vitality": 0.975,
+            "mutation": 1.053,
+            "metabolism": 1.448,
+            "uptake": 1.649
+          },
+          "baseline_score": 0.3917,
+          "starved_fraction": 0.8728,
+          "balanced_score": 0.0
+        },
+        "disperso": {
+          "winner": "random_1853",
+          "score": 0.6508,
+          "investment": {
+            "motility": 22.67,
+            "attack": 3.7,
+            "defense": 12.45,
+            "vitality": 15.08,
+            "mutation": 2.26,
+            "metabolism": 100.16,
+            "uptake": 83.69
+          },
+          "phenotype": {
+            "motility": 1.299,
+            "attack": 0.65,
+            "defense": 0.65,
+            "vitality": 0.975,
+            "mutation": 1.053,
+            "metabolism": 1.448,
+            "uptake": 1.649
+          },
+          "baseline_score": 0.4315,
+          "starved_fraction": 0.8304,
+          "balanced_score": 0.0
+        },
+        "predatori": {
+          "winner": "random_3093",
+          "score": 0.392,
+          "investment": {
+            "motility": 14.73,
+            "attack": 9.23,
+            "defense": 30.87,
+            "vitality": 34.45,
+            "mutation": 6.58,
+            "metabolism": 104.52,
+            "uptake": 39.62
+          },
+          "phenotype": {
+            "motility": 0.975,
+            "attack": 0.65,
+            "defense": 0.872,
+            "vitality": 1.412,
+            "mutation": 1.14,
+            "metabolism": 1.365,
+            "uptake": 1.473
+          },
+          "baseline_score": 0.3082,
+          "starved_fraction": 0.7366,
+          "balanced_score": 0.0709
+        },
+        "prede": {
+          "winner": "random_302",
+          "score": 0.3802,
+          "investment": {
+            "motility": 18.16,
+            "attack": 16.09,
+            "defense": 14.18,
+            "vitality": 23.44,
+            "mutation": 9.72,
+            "metabolism": 55.01,
+            "uptake": 103.4
+          },
+          "phenotype": {
+            "motility": 1.205,
+            "attack": 1.091,
+            "defense": 0.65,
+            "vitality": 0.944,
+            "mutation": 1.192,
+            "metabolism": 1.331,
+            "uptake": 1.573
+          },
+          "baseline_score": 0.4334,
+          "starved_fraction": 0.7918,
+          "balanced_score": 0.0809
+        }
+      },
+      "all_six_above_1_2": 0
+    }
+  },
+  "pacing": {
+    "base_points_per_division": 2,
+    "phases": [
+      {
+        "name": "prima_discendenza_LUCA",
+        "divisions": 12,
+        "seconds_per_division": 90,
+        "minutes": 18.0
+      },
+      {
+        "name": "diversificazione",
+        "divisions": 20,
+        "seconds_per_division": 120,
+        "minutes": 40.0
+      },
+      {
+        "name": "consorzio",
+        "divisions": 24,
+        "seconds_per_division": 150,
+        "minutes": 60.0
+      },
+      {
+        "name": "integrazione_LECA",
+        "divisions": 24,
+        "seconds_per_division": 180,
+        "minutes": 72.0
+      }
+    ],
+    "total_minutes": 190.0,
+    "total_base_points": 160,
+    "first_division_target_seconds": [
+      60,
+      120
+    ],
+    "note": "80 successful divisions plus exploration/failure; innovation gates required independently of points"
+  },
+  "checks": "PASS: 50145 builds, 250725 habitat evaluations, bounds and dominance edges"
+}

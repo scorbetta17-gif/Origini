@@ -1,0 +1,15 @@
+{
+  "name": "C - Bilancio energetico e capacita limitata",
+  "gains": {"motility":0.60,"attack":0.85,"defense":0.75,"vitality":0.70,"mutation":0.50,"metabolism":0.65,"uptake":0.70},
+  "caps": {"motility":1.60,"attack":1.85,"defense":1.75,"vitality":1.70,"mutation":1.50,"metabolism":1.65,"uptake":1.70},
+  "floors": {"motility":0.65,"attack":0.65,"defense":0.65,"vitality":0.75,"mutation":1.00,"metabolism":0.65,"uptake":0.65},
+  "tradeoffs": {
+    "motility":{"metabolism":0.27,"defense":0.12},
+    "attack":{"uptake":0.30,"metabolism":0.15},
+    "defense":{"motility":0.30,"uptake":0.12},
+    "vitality":{"metabolism":0.20,"motility":0.15},
+    "mutation":{"metabolism":0.22,"vitality":0.15},
+    "metabolism":{"attack":0.25,"defense":0.12},
+    "uptake":{"defense":0.27,"vitality":0.15}
+  }
+}
