@@ -2059,7 +2059,9 @@ func _button(text: String, action: Callable, key: String) -> Button:
     b.add_theme_stylebox_override("normal",_style(Color(.035,.17,.21,.93), Color(.28,.7,.77,.76)))
     b.add_theme_stylebox_override("hover",_style(Color(.08,.30,.37),Color(.51,.9,.92)))
     b.add_theme_stylebox_override("pressed",_style(Color(.08,.41,.42),Color(.74,.96,.87)))
-    b.pressed.connect(action)
+    b.pressed.connect(func():
+        if not division_active:
+            action.call())
     hud.add_child(b)
     buttons[key] = b
     return b
@@ -2353,7 +2355,9 @@ func _add_overlay_button(text: String, action: Callable) -> void:
     b.clip_text = true
     b.add_theme_font_size_override("font_size",15)
     b.add_theme_stylebox_override("normal",_style(Color(.07,.24,.29),Color(.32,.79,.8)))
-    b.pressed.connect(action)
+    b.pressed.connect(func():
+        if not division_active:
+            action.call())
     overlay_list.add_child(b)
 
 func _close_overlay() -> void:

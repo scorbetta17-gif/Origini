@@ -56,6 +56,9 @@ func _run() -> void:
     game.call("_divide_pressed")
     assert(game.division_options.size() == 2)
     assert(not game.overlay.visible,"Fission must not open random daughter cards")
+    game.buttons["tree"].pressed.emit()
+    game.buttons["menu"].pressed.emit()
+    assert(not game.overlay.visible and game.division_active,"HUD actions cannot interrupt fission")
     await create_timer(2.7).timeout
     assert(game.division_options.is_empty() and game.generation==1)
     assert(game.entities.has(game.player_id))
