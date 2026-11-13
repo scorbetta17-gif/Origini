@@ -10,16 +10,16 @@ func _run() -> void:
     await process_frame
     game.set_process(false)
     var terrain: Node = game.world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso")
-    assert(game.world_radius == 240.0)
-    assert(terrain.sector_count == 256)
-    assert(terrain.rock_count == 8704)
+    assert(game.world_radius == 1150.0)
+    assert(terrain.sector_count == 25)
+    assert(terrain.rock_count > 1200 and terrain.rock_count < 3200)
     assert(terrain.terrain_triangles < 150000)
-    assert(terrain.faults.size() == 72)
+    assert(terrain.faults.size() == 844)
     var low: float = 1000
     var high: float = -1000
     var unique_heights: Dictionary = {}
-    for x in range(-240,241,8):
-        for z in range(-240,241,8):
+    for x in range(-1150,1151,40):
+        for z in range(-1150,1151,40):
             var h: float = terrain.surface_height(Vector2(x,z))
             assert(is_finite(h) and h<=-.26)
             low = minf(low,h)
@@ -41,20 +41,29 @@ func _run() -> void:
                 var tangent := Vector2(0,1) if axis==0 else Vector2(1,0)
                 var midpoint: float = (terrain.height_at(p-tangent)+terrain.height_at(p+tangent))*.5
                 assert(is_equal_approx(terrain._vertex_height(p,1),midpoint))
+    # Streaming is bounded and reproducible at arbitrary distant positions.
+    assert(pow(game.world_radius*2,2)>=5000000)
+    var origin_height: float = terrain.surface_height(Vector2(13,19))
+    for at in [Vector3(1040,0,-1040),Vector3(-700,0,920),Vector3.ZERO]:
+        terrain.update_focus(at,true)
+        assert(terrain.sectors.size()<=25 and terrain.pending.is_empty())
+        assert(terrain.terrain_triangles<25000)
+        assert(terrain.sectors.has(Vector2i(floori(at.x/32),floori(at.z/32))*32))
+    assert(is_equal_approx(origin_height,terrain.surface_height(Vector2(13,19))))
     # Movement really crosses the old +/-25 boundary and respects the new one.
     game.player.position = Vector3(30,0,30)
     game.call("_move_player",Vector2.ONE.normalized(),.5)
     assert(game.player.position.x>30 and game.player.position.z>30)
-    game.player.position = Vector3(239.99,0,239.99)
+    game.player.position = Vector3(1149.99,0,1149.99)
     game.call("_move_player",Vector2.ONE.normalized(),1.0)
-    assert(game.player.position.x<=240 and game.player.position.z<=240)
+    assert(game.player.position.x<=1150 and game.player.position.z<=1150)
     # A far-away jump must still offer local abiotic resources, under the cap.
-    game.player.position = Vector3(210,0,-210)
+    game.player.position = Vector3(1040,0,-1040)
     game.call("_respawn_nutrients",.3)
     var near: int = 0
     for n in game.nutrients:
         var p: Vector3 = n["node"].position
-        assert(absf(p.x)<=240 and absf(p.z)<=240)
+        assert(absf(p.x)<=1150 and absf(p.z)<=1150)
         if p.distance_to(game.player.position)<30:
             near += 1
     assert(near>=70,"Exploration must not leave all nutrients in the old arena")
@@ -70,7 +79,7 @@ func _run() -> void:
     game.call("_save_game")
     game.player.position = Vector3.ZERO
     game.call("_load_game")
-    assert(game.player.position.distance_to(Vector3(210,0,-210))<.01)
+    assert(game.player.position.distance_to(Vector3(1040,0,-1040))<.01)
     print("SEABED sectors=",terrain.sector_count," triangles=",terrain.terrain_triangles,
         " rocks=",terrain.rock_count," relief=",high-low," setup+checks_ms=",Time.get_ticks_msec()-started)
     print("PASS: large seabed, upward faces, joined sectors, relief, distant nutrients and saves")

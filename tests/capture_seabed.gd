@@ -33,14 +33,13 @@ func _capture() -> void:
     var path: PackedVector2Array = terrain.faults[10]
     var point: Vector2 = path[4]
     target = Vector3(point.x,-1,point.y)
+    terrain.update_focus(target,true)
     camera.size = 28
     camera.position = target+Vector3(9,19,17)
     camera.look_at(target)
     await _save("seabed-distant")
-    camera.size = 510
-    camera.position = Vector3(0,420,60)
-    camera.look_at(Vector3.ZERO)
-    await _save("seabed-map")
+    # Only local geometry is resident; no misleading full-map render.
+    terrain.update_focus(Vector3.ZERO,true)
     # Real portrait framing and gameplay HUD, with the cell outside the crater.
     root.size = Vector2i(720, 1280)
     root.content_scale_size = Vector2i(720, 1280)

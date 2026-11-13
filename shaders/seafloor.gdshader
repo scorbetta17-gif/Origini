@@ -23,11 +23,11 @@ float plates(vec2 p) {
 void vertex() { seabed_pos=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz; }
 void fragment() {
     vec2 p=seabed_pos.xz;
-    float deposits=smoothstep(.25,.78,noise2(p*.09)+noise2(p*.37)*.18);
+    float deposits=smoothstep(.65,.88,noise2(p*.025)+noise2(p*.17)*.12)*.65;
     float grain=noise2(p*13.0)-.5;
     float strata=sin(p.y*5.5+noise2(p*.32)*5.0)*.008;
     float depth=clamp((-seabed_pos.y-.8)*.10,0.0,.25);
-    ALBEDO=mix(basalt,sediment,deposits)*(1.0-depth+grain*.025+strata+(plates(p*.35)-.5)*.045);
+    ALBEDO=mix(basalt,sediment,deposits)*(1.0-depth+grain*.025+strata+(plates(p*.35)-.5)*.22);
     ROUGHNESS=.98;
     SPECULAR=0.0;
 }

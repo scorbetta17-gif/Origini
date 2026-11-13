@@ -56,8 +56,8 @@ func _run() -> void:
     assert(nutrients.visible)
     assert(nutrients.markers.size() >= 3)
     for molecule in nutrients.markers:
-        assert(is_equal_approx(float(molecule["scale"]),1.10),
-            "All nutrient icons must be +10% of previous preview")
+        assert(is_equal_approx(float(molecule["scale"]),1.155),
+            "All nutrient icons must be +5% relative to version 0.78")
     var carbon_count: int = 0
     var phospholipid_count: int = 0
     for n in game.get("nutrients"):
@@ -78,5 +78,5 @@ func _run() -> void:
     game.call("_toggle_focus")
     assert(camera.projection == Camera3D.PROJECTION_ORTHOGONAL)
     assert(game.player.visible)
-    print("PASS: genuine isometric overhead world; 2 thermal volcanic cones, 4 harmless fissures, %d rising bubble particles and chemical nutrient glyphs +10 percent" % bubbles.multimesh.instance_count)
+    print("PASS: genuine isometric overhead world; 2 thermal volcanic cones, 4 harmless fissures, %d rising bubble particles and chemical nutrient glyphs enlarged by a further 5 percent" % bubbles.multimesh.instance_count)
     quit(0)

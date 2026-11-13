@@ -21,18 +21,23 @@ func _run() -> void:
         var shape: Basis = motion.body.basis
         assert(shape.is_finite())
         assert(absf(shape.determinant()-1.0)<.0001,"Visual deformation preserves volume")
-        assert(shape.x.length()>.9 and shape.x.length()<1.14)
+        assert(shape.x.length()>.79 and shape.x.length()<1.14)
         assert(shape.y.length()>.9 and shape.y.length()<1.14)
         peak = maxf(peak,motion.strain)
     assert(peak>.08,"Swimming must produce a visible, bounded response")
     assert(motion.strain<.0001,"Membrane relaxes after stopping")
+    for axis in [Vector3.RIGHT,Vector3.LEFT,Vector3.FORWARD,Vector3.BACK]:
+        motion.filtered_velocity=Vector3.ZERO
+        for frame in range(120): motion.advance_motion(axis*3,1.0/60)
+        assert((motion.body.basis*axis).length()<.85,"Water compresses the direction of travel")
+        assert(motion.shell_material.get_shader_parameter("flow_axis").dot(axis)>.99)
     var before: Transform3D = motion.body.transform
     motion.advance_motion(Vector3.INF,.01)
     assert(motion.body.transform == before)
     motion.advance_motion(Vector3.ONE,-1)
     assert(motion.body.transform == before)
     motion.advance_motion(Vector3.ONE*1e20,100)
-    assert(motion.body.transform.is_finite() and motion.strain<=.12)
+    assert(motion.body.transform.is_finite() and motion.strain<=.19)
     var traits: Dictionary = G.grant({"genome":G.origin()},"monoderm_envelope",1,"test","bacteria")
     cell.setup(traits,"bacteria")
     motion = cell.get_node("FluidMotion")

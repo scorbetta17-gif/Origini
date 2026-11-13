@@ -7,6 +7,8 @@ uniform float membrane_motion : hint_range(0.0,0.04) = .010;
 uniform float internal_scattering : hint_range(0.0,1.0) = .46;
 uniform float membrane_time = 0.0;
 uniform float surface_phase = 0.0;
+uniform vec3 flow_axis = vec3(1.0,0.0,0.0);
+uniform float flow_strain = 0.0;
 uniform float flexibility = 1.0;
 varying vec3 sphere_p;
 
@@ -18,10 +20,11 @@ void vertex() {
     // Low-order smooth undulations, bounded amplitude; no particle/explosion mode.
     float wave = sin(VERTEX.x*3.1+membrane_time*.72)*sin(VERTEX.z*2.4-membrane_time*.53);
     float azimuth=atan(VERTEX.z,VERTEX.x);
-    float lobes=sin(azimuth*3.0+membrane_time*.31)*.035+cos(azimuth*2.0-membrane_time*.23)*.025;
+    float lobes=sin(azimuth*3.0+membrane_time*.31)*.050+cos(azimuth*2.0-membrane_time*.23)*.035;
     float equator=clamp(length(VERTEX.xz),0.0,1.0);
     float organic = sin(azimuth*3.0+0.65)*0.11+cos(azimuth*5.0-0.7)*0.045;
-    VERTEX += NORMAL * (wave * membrane_motion+(lobes+organic)*equator*flexibility);
+    float pressure = -max(0.0,dot(normalize(VERTEX),flow_axis))*flow_strain*.22;
+    VERTEX += NORMAL * (wave * membrane_motion+(lobes+organic)*equator*flexibility+pressure);
 }
 void fragment() {
     vec3 n = normalize(NORMAL);
@@ -33,5 +36,5 @@ void fragment() {
     vec3 cytoplasm = mix(membrane_tint.rgb*0.48,membrane_tint.rgb*0.85,broad);
     vec3 edge_color = mix(membrane_tint.rgb,rim_tint.rgb,rim);
     ALBEDO = mix(cytoplasm,edge_color,shoulder*0.75)+vec3(0.65,0.9,1.0)*highlight*0.38;
-    ALPHA = clamp(0.15+opacity*0.30+rim*0.56+highlight*0.12,0.0,0.94);
+    ALPHA = clamp(0.025+opacity*0.12+rim*0.46+highlight*0.12,0.0,0.94);
 }
