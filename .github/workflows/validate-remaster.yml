@@ -117,7 +117,7 @@ jobs:
           test -s build/previews/volcano-detail.png
           test -s build/previews/volcano-reverse.png
           test -s build/previews/volcano-gameplay.png
-      - name: Fondale reale - faglie, regione distante, mappa e gameplay
+      - name: Fondale reale - faglie, regione distante e gameplay
         run: |
           timeout 120s xvfb-run -a -s "-screen 0 1440x1600x24" godot --resolution 1280x720 --path . --rendering-method gl_compatibility --script res://tests/capture_seabed.gd
           test -s build/previews/seabed-start.png
