@@ -469,6 +469,7 @@ func _activate_lineage(id: String) -> void:
 func _remove_entity(id: String, cause: String) -> void:
     if not entities.has(id):
         return
+    if battle.active() and cause not in ["scissione","internalizzazione"]: battle.scoring.death(battle.state,id)
     var rec: Dictionary = entities[id]
     var at: Vector3 = rec["node"].position if is_instance_valid(rec["node"]) else Vector3.ZERO
     if is_instance_valid(rec["node"]):
@@ -734,6 +735,8 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
     if battle.active():
         var intake_team: String = battle.team(player_id if controlled else cell_id)
         battle.state.packets[intake_team] = int(battle.state.packets.get(intake_team,0))+1
+    var intake_id: String = player_id if controlled else cell_id
+    var intake_before: Dictionary = resources.duplicate(true) if controlled else entities[cell_id].resources.duplicate(true)
     var kind: String = str(n["kind"])
     if controlled:
         var previous_stock: Dictionary = resources.duplicate(true)
@@ -761,10 +764,11 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
             stock[kind] = minf(Physiology.reserve_cap(float(NEED[kind])),float(stock.get(kind,0.0))+2.15*uptake_npc)
         stock["biomass"] = e["biomass"]
         e["resources"] = stock
-        e["energy"] = minf(85.0,float(e["energy"])+(6.0 if kind=="carbon" else 3.0)*Physiology.energy_yield_multiplier(e["traits"]))
+        e["energy"] = minf(100.0 if battle.active() else 85.0,float(e["energy"])+(6.0 if kind=="carbon" else 3.0)*Physiology.energy_yield_multiplier(e["traits"]))
         e["atp"] = e["energy"]
         if float(e["energy"]) > 0.0:
             e["zero_energy_seconds"] = 0.0
+    if battle.active(): battle.scoring.intake(battle.state,intake_id,intake_before,resources if controlled else entities[cell_id].resources)
     if is_instance_valid(n["node"]):
         n["node"].queue_free()
     nutrients.remove_at(index)
@@ -772,12 +776,13 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
 func _award_bundle(bundle: Dictionary, controlled: bool, cell_id: String = "") -> void:
     if not controlled and not entities.has(cell_id):
         return
-    var before_stock: Dictionary = resources.duplicate(true) if controlled else {}
+    var before_stock: Dictionary = resources.duplicate(true) if controlled else entities[cell_id].resources.duplicate(true)
     var stock: Dictionary = resources if controlled else entities[cell_id]["resources"]
     var traits: Dictionary = entities[player_id if controlled else cell_id]["traits"]
     var uptake: float = clampf(float(traits.get("uptake",1.0)),.50,1.80)
     for key in NEED:
         stock[key] = minf(Physiology.reserve_cap(float(NEED[key])),float(stock.get(key,0))+float(bundle.get(key,0))*uptake)
+    if battle.active(): battle.scoring.intake(battle.state,player_id if controlled else cell_id,before_stock,stock)
     if controlled:
         resources = stock
         Statistics.record_intake(statistics,before_stock,resources)
@@ -788,7 +793,7 @@ func _award_bundle(bundle: Dictionary, controlled: bool, cell_id: String = "") -
         var entity: Dictionary = entities[cell_id]
         entity["resources"] = stock
         entity["biomass"] = stock["biomass"]
-        entity["energy"] = minf(85.0,float(entity["energy"])+float(bundle.get("atp",0))*Physiology.energy_yield_multiplier(traits))
+        entity["energy"] = minf(100.0 if battle.active() else 85.0,float(entity["energy"])+float(bundle.get("atp",0))*Physiology.energy_yield_multiplier(traits))
         entity["atp"] = entity["energy"]
 
 func _spawn_substrate(at: Vector3, portions: int = 3, kind: String = "") -> void:
@@ -901,7 +906,7 @@ func _recycle_distant_nutrients() -> void:
             continue
         var occupied: bool = false
         for entity in entities.values():
-            if is_instance_valid(entity["node"]) and entity["node"].position.distance_squared_to(node.position)<625.0:
+            if is_instance_valid(entity["node"]) and entity["node"].position.distance_squared_to(node.position)<36.0:
                 occupied = true
                 break
         if not occupied:
@@ -1109,12 +1114,16 @@ func _update_ecosystem(dt: float) -> void:
             if nearest_id != "":
                 if nearest_id == player_id:
                     var was_alive: bool = hp>0.0
+                    var before_hp: float = hp
                     hp = maxf(0.0,hp-dt*5.0/maxf(.5,float(entities[player_id]["traits"].get("defense",1.0)))/maxf(.65,float(entities[player_id]["traits"].get("vitality",1.0))))
+                    if battle.active(): battle.record_hit(player_id,str(id),before_hp-hp)
                     if was_alive and hp<=0.0:
                         _award_bundle(Balance.KILL_REWARD,false,str(id))
                 else:
                     var prey: Dictionary = entities[nearest_id]
-                    prey["hp"] = float(prey["hp"])-dt*5.0/maxf(.5,float(prey["traits"].get("defense",1.0)))
+                    var dealt: float = dt*5.0/maxf(.5,float(prey["traits"].get("defense",1.0)))
+                    if battle.active(): battle.record_hit(nearest_id,str(id),minf(float(prey["hp"]),dealt))
+                    prey["hp"] = float(prey["hp"])-dealt
                     if float(prey["hp"]) <= 0:
                         _remove_entity(nearest_id,"predazione")
                         _award_bundle(Balance.KILL_REWARD,false,str(id))
@@ -1333,6 +1342,7 @@ func _choose_daughter(choice: int) -> void:
     statistics.divisions += 1
     phase1_progress["player_divisions"] = int(phase1_progress.get("player_divisions",0))+1
     _activate_lineage(chosen_id)
+    if battle.active(): battle.inherit_score(old_id,chosen_id)
     _close_overlay()
     journey.after_division()
     _save_game()
@@ -1465,6 +1475,7 @@ func _follow_attack(delta: float) -> void:
     var power: float = 36.0 if attack_mode == "lysis" else 20.0
     var defense: float = maxf(.4,float(target["traits"].get("defense",1.0)))
     var damage: float = power*float(entities[player_id]["traits"].get("attack",1.0))/defense/maxf(.65,float(target["traits"].get("vitality",1.0)))
+    if battle.active(): battle.record_hit(selected_target_id,player_id,minf(float(target["hp"]),damage))
     target["hp"] = float(target["hp"])-damage
     if float(target["hp"]) <= 0:
         var prey_id: String = selected_target_id
@@ -1810,6 +1821,7 @@ func _on_phase_two() -> void:
 
 func _game_over() -> void:
     if battle.active():
+        battle.scoring.death(battle.state,player_id)
         battle.finish("sconfitta")
         return
     is_paused = true
@@ -2106,7 +2118,7 @@ func _refresh_hud() -> void:
         if battle.active():
             chapter_title = "BATTLE ROYALE · SOPRAVVIVENZA"
             chapter_detail = battle.hud_text()
-            simple_objective = "Rifugio verde · depositi arancioni · COOPERA per allearti"
+            simple_objective = battle.objective_text()
             phase_label = "ARENA ECOLOGICA"
             chapter_fraction = float(battle.state.elapsed)/battle.rules.DURATION
         classic_hud.configure({

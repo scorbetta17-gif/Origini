@@ -51,10 +51,10 @@ static func environment(elapsed: float, at: Vector3) -> Dictionary:
 static func depot(elapsed: float, index: int) -> Vector3:
     var z: Dictionary = zone(elapsed)
     var angle: float = TAU*index/3.0+int(z.stage)*.6
-    return center(int(z.stage))+Vector3(cos(angle),0,sin(angle))*float(RADII[int(z.stage)])*.48
+    return center(int(z.stage))+Vector3(cos(angle),0,sin(angle))*float(RADII[int(z.stage)])*[.85,.28,.48][index]
 
 static func score(health: float, energy: float, packets: int) -> float:
-    # No kill score; collection contribution capped to prevent snowballing.
+    # Frozen 0.82 formula, retained only for same-event comparison reports.
     return clampf(health,0,100)*.60+clampf(energy,0,100)*.30+minf(10.0,packets*.25)
 
 static func valid(raw: Variant) -> bool:
@@ -77,4 +77,5 @@ static func valid(raw: Variant) -> bool:
     for key in ["harvest","repair","packets"]:
         for value in raw[key].values():
             if not (value is int or value is float) or not is_finite(float(value)) or float(value)<0: return false
+    if not preload("res://src/battle_scoring.gd").valid(raw): return false
     return str(raw.get("result","")) in ["","vittoria","sconfitta","pareggio"]

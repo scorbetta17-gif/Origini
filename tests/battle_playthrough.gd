@@ -50,7 +50,7 @@ func run() -> void:
             game.battle.advance(dt)
             if not is_finite(game.hp) or not is_finite(game.atp): boundary_errors += 1
             if tick%100==0: await process_frame
-        results.append({"profile":profile,"seed":scenario_seed,"result":game.battle.state.result,"elapsed":game.battle.state.elapsed,"survivors":game.entities.size(),"initial":initial,"hp":game.hp,"atp":game.atp,"invalid":boundary_errors})
+        results.append({"profile":profile,"seed":scenario_seed,"result":game.battle.state.result,"elapsed":game.battle.state.elapsed,"survivors":game.entities.size(),"initial":initial,"hp":game.hp,"atp":game.atp,"invalid":boundary_errors,"ranking_new":game.battle.ranking(),"ranking_old_same_events":game.battle.ranking(true),"personal":game.battle.scoring.breakdown(game.battle.state,game.player_id,game.hp,game.atp),"nutrition_target":game.battle.state.nutrition_target})
         assert(boundary_errors==0)
         assert(not str(game.battle.state.result).is_empty())
     var report_path: String = ProjectSettings.globalize_path("res://build/battle-playthrough.json")

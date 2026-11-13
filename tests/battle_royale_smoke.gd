@@ -83,6 +83,8 @@ func run() -> void:
     for e in game.entities.values():
         e.hp = 100
         e.energy = 100
+    game.battle.state.harvest = {}
+    for id in game.entities: game.battle.state.harvest[id] = 1200.0
     game.battle.advance(0)
     check(game.battle.state.result=="pareggio","Deadline resolves equal vitality as a draw")
     game.battle.start(2)

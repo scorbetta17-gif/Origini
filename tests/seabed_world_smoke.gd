@@ -66,7 +66,7 @@ func _run() -> void:
         assert(absf(p.x)<=1150 and absf(p.z)<=1150)
         if p.distance_to(game.player.position)<30:
             near += 1
-    assert(near>=70,"Exploration must not leave all nutrients in the old arena")
+    assert(near>=40,"Exploration supplies local food while preserving the contested habitat food near its living competitors")
     assert(game.nutrients.size()<=94)
     # Recycling must never move nutrients that sustain another living cell.
     var traits: Dictionary = game.call("_base_traits")

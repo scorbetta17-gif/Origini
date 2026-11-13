@@ -18,6 +18,11 @@ func run_checks() -> void:
         printerr("FAIL: cellula iniziale assente")
         quit(1)
         return
+    # This test isolates the starter lineage; habitat competitors have their own test.
+    for id in game.entities.keys():
+        if id!=game.player_id:
+            game._remove_entity(id,"fixture")
+    game.genealogy = game.genealogy.filter(func(e: Dictionary) -> bool: return e.id==game.player_id)
     var initial: Dictionary = game.entities["C-000"]["traits"]
     assert(not bool(initial.get("dna",true)))
     assert(int(initial.get("archaella",1)) == 0)

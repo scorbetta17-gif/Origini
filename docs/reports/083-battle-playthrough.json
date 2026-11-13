@@ -1,0 +1,3945 @@
+[
+  {
+    "atp": 97.6359325428008,
+    "elapsed": 1200.0,
+    "hp": 77.0588235294118,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 58.688,
+      "eliminations": 12.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [
+        "BR-005",
+        "BR-001",
+        "BR-009"
+      ],
+      "nutrition": 7.82506666666667,
+      "objectives": 20.0,
+      "total": 73.7351624304398,
+      "vitality": 33.9100957637731
+    },
+    "profile": 0,
+    "ranking_new": [
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-009"
+          ],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 73.7351624304398,
+          "vitality": 33.9100957637731
+        },
+        "id": "C-000",
+        "points": 73.7351624304398
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8920736093521,
+          "vitality": 39.9480736093521
+        },
+        "id": "BR-006",
+        "points": 66.8920736093521
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8413708170652,
+          "vitality": 39.8973708170652
+        },
+        "id": "BR-004",
+        "points": 66.8413708170652
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7103421869278,
+          "vitality": 39.7663421869278
+        },
+        "id": "BR-003",
+        "points": 66.7103421869278
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7083963723183,
+          "vitality": 39.7643963723183
+        },
+        "id": "BR-007",
+        "points": 66.7083963723183
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.6781806869507,
+          "vitality": 39.7341806869507
+        },
+        "id": "BR-011",
+        "points": 66.6781806869507
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 64.9908454803051,
+          "vitality": 37.1657788136385
+        },
+        "id": "BR-012",
+        "points": 64.9908454803051
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8920736093521,
+          "vitality": 39.9480736093521
+        },
+        "id": "BR-006",
+        "points": 99.8961472187042
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8413708170652,
+          "vitality": 39.8973708170652
+        },
+        "id": "BR-004",
+        "points": 99.7947416341305
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7083963723183,
+          "vitality": 39.7643963723183
+        },
+        "id": "BR-007",
+        "points": 99.4942927446365
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7103421869278,
+          "vitality": 39.7663421869278
+        },
+        "id": "BR-003",
+        "points": 99.4513093738556
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.6781806869507,
+          "vitality": 39.7341806869507
+        },
+        "id": "BR-011",
+        "points": 99.4267363739013
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 64.9908454803051,
+          "vitality": 37.1657788136385
+        },
+        "id": "BR-012",
+        "points": 93.2406485363678
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-009"
+          ],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 73.7351624304398,
+          "vitality": 33.9100957637731
+        },
+        "id": "C-000",
+        "points": 85.5260738804873
+      }
+    ],
+    "result": "vittoria",
+    "seed": 8200,
+    "survivors": 8
+  },
+  {
+    "atp": 95.6985226337909,
+    "elapsed": 1200.0,
+    "hp": 85.1851851851852,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 52.08,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 6.944,
+      "objectives": 20.0,
+      "total": 62.5950746913649,
+      "vitality": 35.6510746913649
+    },
+    "profile": 1,
+    "ranking_new": [
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 82.426904,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001",
+            "BR-005",
+            "BR-006"
+          ],
+          "nutrition": 10.9902538666667,
+          "objectives": 20.0,
+          "total": 79.4268100667918,
+          "vitality": 32.4365562001251
+        },
+        "id": "BR-009",
+        "points": 79.4268100667918
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 184.9444979656,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 20.0,
+          "objectives": 20.0,
+          "total": 73.5835627854489,
+          "vitality": 33.5835627854489
+        },
+        "id": "BR-010",
+        "points": 73.5835627854489
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8002422842979,
+          "vitality": 39.8562422842979
+        },
+        "id": "BR-003",
+        "points": 66.8002422842979
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7809740657806,
+          "vitality": 39.8369740657806
+        },
+        "id": "BR-007",
+        "points": 66.7809740657806
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.0394667683068,
+          "vitality": 39.0954667683068
+        },
+        "id": "BR-011",
+        "points": 66.0394667683068
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 65.1616,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.68821333333333,
+          "objectives": 20.0,
+          "total": 62.6273359589444,
+          "vitality": 33.9391226256111
+        },
+        "id": "BR-008",
+        "points": 62.6273359589444
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.5950746913649,
+          "vitality": 35.6510746913649
+        },
+        "id": "C-000",
+        "points": 62.5950746913649
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 61.0305904453003,
+          "vitality": 33.2055237786337
+        },
+        "id": "BR-012",
+        "points": 61.0305904453003
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8002422842979,
+          "vitality": 39.8562422842979
+        },
+        "id": "BR-003",
+        "points": 99.6656095685959
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7809740657806,
+          "vitality": 39.8369740657806
+        },
+        "id": "BR-007",
+        "points": 99.6615731315613
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.0394667683068,
+          "vitality": 39.0954667683068
+        },
+        "id": "BR-011",
+        "points": 97.8525658895549
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.5950746913649,
+          "vitality": 35.6510746913649
+        },
+        "id": "C-000",
+        "points": 89.8206679012484
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 65.1616,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.68821333333333,
+          "objectives": 20.0,
+          "total": 62.6273359589444,
+          "vitality": 33.9391226256111
+        },
+        "id": "BR-008",
+        "points": 85.4691543421313
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 184.9444979656,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 20.0,
+          "objectives": 20.0,
+          "total": 73.5835627854489,
+          "vitality": 33.5835627854489
+        },
+        "id": "BR-010",
+        "points": 84.6486070523792
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 61.0305904453003,
+          "vitality": 33.2055237786337
+        },
+        "id": "BR-012",
+        "points": 83.7292293754492
+      },
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 82.426904,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001",
+            "BR-005",
+            "BR-006"
+          ],
+          "nutrition": 10.9902538666667,
+          "objectives": 20.0,
+          "total": 79.4268100667918,
+          "vitality": 32.4365562001251
+        },
+        "id": "BR-009",
+        "points": 82.5201712237797
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8200,
+    "survivors": 8
+  },
+  {
+    "atp": 99.2773699617724,
+    "elapsed": 1200.0,
+    "hp": 100.0,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 52.08,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 6.944,
+      "objectives": 20.0,
+      "total": 66.8356054942659,
+      "vitality": 39.8916054942659
+    },
+    "profile": 2,
+    "ranking_new": [
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 82.426904,
+          "eliminations": 20.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001",
+            "BR-005",
+            "BR-010",
+            "BR-006"
+          ],
+          "nutrition": 10.9902538666667,
+          "objectives": 20.0,
+          "total": 84.8393149103007,
+          "vitality": 33.8490610436341
+        },
+        "id": "BR-009",
+        "points": 84.8393149103007
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8356054942659,
+          "vitality": 39.8916054942659
+        },
+        "id": "C-000",
+        "points": 66.8356054942659
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.2383070358108,
+          "vitality": 37.2943070358108
+        },
+        "id": "BR-003",
+        "points": 64.2383070358108
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 97.03414,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 12.9378853333333,
+          "objectives": 20.0,
+          "total": 63.4769390625642,
+          "vitality": 30.5390537292308
+        },
+        "id": "BR-012",
+        "points": 63.4769390625642
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.7493823106008,
+          "vitality": 35.8053823106008
+        },
+        "id": "BR-011",
+        "points": 62.7493823106008
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.3681235101363,
+          "vitality": 35.4241235101363
+        },
+        "id": "BR-007",
+        "points": 62.3681235101363
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 59.4069160991676,
+          "vitality": 31.581849432501
+        },
+        "id": "BR-008",
+        "points": 59.4069160991676
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8356054942659,
+          "vitality": 39.8916054942659
+        },
+        "id": "C-000",
+        "points": 99.7832109885317
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.2383070358108,
+          "vitality": 37.2943070358108
+        },
+        "id": "BR-003",
+        "points": 93.5990111304451
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.7493823106008,
+          "vitality": 35.8053823106008
+        },
+        "id": "BR-011",
+        "points": 90.1128013859075
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.3681235101363,
+          "vitality": 35.4241235101363
+        },
+        "id": "BR-007",
+        "points": 89.0464161379197
+      },
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 82.426904,
+          "eliminations": 20.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001",
+            "BR-005",
+            "BR-010",
+            "BR-006"
+          ],
+          "nutrition": 10.9902538666667,
+          "objectives": 20.0,
+          "total": 84.8393149103007,
+          "vitality": 33.8490610436341
+        },
+        "id": "BR-009",
+        "points": 85.9334162049152
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 59.4069160991676,
+          "vitality": 31.581849432501
+        },
+        "id": "BR-008",
+        "points": 79.8000625013656
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 97.03414,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 12.9378853333333,
+          "objectives": 20.0,
+          "total": 63.4769390625642,
+          "vitality": 30.5390537292308
+        },
+        "id": "BR-012",
+        "points": 77.3053801857344
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8200,
+    "survivors": 7
+  },
+  {
+    "atp": 88.6878788494571,
+    "elapsed": 557.0,
+    "hp": 0.0,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 78.512,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 10.4682666666667,
+      "objectives": 10.0,
+      "total": 33.7714484940852,
+      "vitality": 13.3031818274186
+    },
+    "profile": 3,
+    "ranking_new": [
+      {
+        "alliance": "BR-001",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [
+            "BR-002",
+            "BR-005",
+            "BR-010",
+            "C-000"
+          ],
+          "nutrition": 8.70613333333333,
+          "objectives": 10.0,
+          "total": 70.5685518696598,
+          "vitality": 35.8624185363265
+        },
+        "id": "BR-001",
+        "points": 70.5685518696598
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.90568872118,
+          "vitality": 39.96168872118
+        },
+        "id": "BR-007",
+        "points": 56.90568872118
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.8797438292503,
+          "vitality": 39.9357438292503
+        },
+        "id": "BR-004",
+        "points": 56.8797438292503
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.8603637375832,
+          "vitality": 39.9163637375832
+        },
+        "id": "BR-012",
+        "points": 56.8603637375832
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.8548786945343,
+          "vitality": 39.9108786945343
+        },
+        "id": "BR-011",
+        "points": 56.8548786945343
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.7640792102814,
+          "vitality": 39.8200792102814
+        },
+        "id": "BR-003",
+        "points": 56.7640792102814
+      },
+      {
+        "alliance": "BR-006|player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 47.8342292819152,
+          "vitality": 30.8902292819152
+        },
+        "id": "BR-006",
+        "points": 47.8342292819152
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.90568872118,
+          "vitality": 39.96168872118
+        },
+        "id": "BR-007",
+        "points": 99.9136274423599
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.8797438292503,
+          "vitality": 39.9357438292503
+        },
+        "id": "BR-004",
+        "points": 99.8714876585007
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.8603637375832,
+          "vitality": 39.9163637375832
+        },
+        "id": "BR-012",
+        "points": 99.8327274751663
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.8548786945343,
+          "vitality": 39.9108786945343
+        },
+        "id": "BR-011",
+        "points": 99.8146323890686
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 56.7640792102814,
+          "vitality": 39.8200792102814
+        },
+        "id": "BR-003",
+        "points": 99.6187834205627
+      },
+      {
+        "alliance": "BR-001",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [
+            "BR-002",
+            "BR-005",
+            "BR-010",
+            "C-000"
+          ],
+          "nutrition": 8.70613333333333,
+          "objectives": 10.0,
+          "total": 70.5685518696598,
+          "vitality": 35.8624185363265
+        },
+        "id": "BR-001",
+        "points": 90.0777782491236
+      },
+      {
+        "alliance": "BR-006|player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 10.0,
+          "total": 47.8342292819152,
+          "vitality": 30.8902292819152
+        },
+        "id": "BR-006",
+        "points": 80.7953474527192
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8200,
+    "survivors": 9
+  },
+  {
+    "atp": 99.8029943892956,
+    "elapsed": 1200.0,
+    "hp": 71.1764705882354,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 58.688,
+      "eliminations": 12.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [
+        "BR-005",
+        "BR-001",
+        "BR-009"
+      ],
+      "nutrition": 7.82506666666667,
+      "objectives": 20.0,
+      "total": 72.5896334721198,
+      "vitality": 32.7645668054532
+    },
+    "profile": 0,
+    "ranking_new": [
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-009"
+          ],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 72.5896334721198,
+          "vitality": 32.7645668054532
+        },
+        "id": "C-000",
+        "points": 72.5896334721198
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 64.97205,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.66294,
+          "objectives": 20.0,
+          "total": 68.501555978241,
+          "vitality": 39.838615978241
+        },
+        "id": "BR-008",
+        "points": 68.501555978241
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8242187001705,
+          "vitality": 39.8802187001705
+        },
+        "id": "BR-006",
+        "points": 66.8242187001705
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7689869031906,
+          "vitality": 39.8249869031906
+        },
+        "id": "BR-003",
+        "points": 66.7689869031906
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.0606285200119,
+          "vitality": 39.1166285200119
+        },
+        "id": "BR-011",
+        "points": 66.0606285200119
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 75.6505757,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 10.0867434266667,
+          "objectives": 20.0,
+          "total": 65.6163357883288,
+          "vitality": 35.5295923616621
+        },
+        "id": "BR-010",
+        "points": 65.6163357883288
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 65.0845530837001,
+          "vitality": 37.2594864170335
+        },
+        "id": "BR-012",
+        "points": 65.0845530837001
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 61.3264310965402,
+          "vitality": 33.5013644298736
+        },
+        "id": "BR-007",
+        "points": 61.3264310965402
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8242187001705,
+          "vitality": 39.8802187001705
+        },
+        "id": "BR-006",
+        "points": 99.760437400341
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 64.97205,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.66294,
+          "objectives": 20.0,
+          "total": 68.501555978241,
+          "vitality": 39.838615978241
+        },
+        "id": "BR-008",
+        "points": 99.6772319564819
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.7689869031906,
+          "vitality": 39.8249869031906
+        },
+        "id": "BR-003",
+        "points": 99.5985988063812
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.0606285200119,
+          "vitality": 39.1166285200119
+        },
+        "id": "BR-011",
+        "points": 98.1811320400238
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 65.0845530837001,
+          "vitality": 37.2594864170335
+        },
+        "id": "BR-012",
+        "points": 93.4280637431578
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 75.6505757,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 10.0867434266667,
+          "objectives": 20.0,
+          "total": 65.6163357883288,
+          "vitality": 35.5295923616621
+        },
+        "id": "BR-010",
+        "points": 89.2814069455465
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 61.3264310965402,
+          "vitality": 33.5013644298736
+        },
+        "id": "BR-007",
+        "points": 84.6636112126883
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-009"
+          ],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 72.5896334721198,
+          "vitality": 32.7645668054532
+        },
+        "id": "C-000",
+        "points": 82.6467806697299
+      }
+    ],
+    "result": "vittoria",
+    "seed": 8201,
+    "survivors": 9
+  },
+  {
+    "atp": 98.9913375866413,
+    "elapsed": 1200.0,
+    "hp": 84.4444444444447,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 71.5422,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 9.53896,
+      "objectives": 20.0,
+      "total": 65.4987717491074,
+      "vitality": 35.9598117491074
+    },
+    "profile": 1,
+    "ranking_new": [
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 71.2432,
+          "eliminations": 8.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001"
+          ],
+          "nutrition": 9.49909333333333,
+          "objectives": 20.0,
+          "total": 71.7248734170728,
+          "vitality": 34.2257800837394
+        },
+        "id": "BR-009",
+        "points": 71.7248734170728
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.2954431792199,
+          "vitality": 39.3514431792199
+        },
+        "id": "BR-011",
+        "points": 66.2954431792199
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.9020946700573,
+          "vitality": 38.9580946700573
+        },
+        "id": "BR-003",
+        "points": 65.9020946700573
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 71.5422,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 9.53896,
+          "objectives": 20.0,
+          "total": 65.4987717491074,
+          "vitality": 35.9598117491074
+        },
+        "id": "C-000",
+        "points": 65.4987717491074
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.70613333333333,
+          "objectives": 20.0,
+          "total": 65.3941296437408,
+          "vitality": 36.6879963104075
+        },
+        "id": "BR-008",
+        "points": 65.3941296437408
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.2098445992469,
+          "vitality": 38.2658445992469
+        },
+        "id": "BR-007",
+        "points": 65.2098445992469
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 77.441644,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 10.3255525333333,
+          "objectives": 20.0,
+          "total": 64.9857967075537,
+          "vitality": 34.6602441742204
+        },
+        "id": "BR-012",
+        "points": 64.9857967075537
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 78.784056,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 10.5045408,
+          "objectives": 20.0,
+          "total": 60.4880576457032,
+          "vitality": 29.9835168457032
+        },
+        "id": "BR-010",
+        "points": 60.4880576457032
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 176.56697533464,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 20.0,
+          "objectives": 20.0,
+          "total": 58.3351111111111,
+          "vitality": 18.3351111111111
+        },
+        "id": "BR-006",
+        "points": 58.3351111111111
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.2954431792199,
+          "vitality": 39.3514431792199
+        },
+        "id": "BR-011",
+        "points": 98.6215113584398
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.9020946700573,
+          "vitality": 38.9580946700573
+        },
+        "id": "BR-003",
+        "points": 97.8648143401145
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.2098445992469,
+          "vitality": 38.2658445992469
+        },
+        "id": "BR-007",
+        "points": 96.4848141984938
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.70613333333333,
+          "objectives": 20.0,
+          "total": 65.3941296437408,
+          "vitality": 36.6879963104075
+        },
+        "id": "BR-008",
+        "points": 92.1032653480877
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 71.5422,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 9.53896,
+          "objectives": 20.0,
+          "total": 65.4987717491074,
+          "vitality": 35.9598117491074
+        },
+        "id": "C-000",
+        "points": 90.3640679426592
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 77.441644,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 10.3255525333333,
+          "objectives": 20.0,
+          "total": 64.9857967075537,
+          "vitality": 34.6602441742204
+        },
+        "id": "BR-012",
+        "points": 87.2295792575317
+      },
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 71.2432,
+          "eliminations": 8.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001"
+          ],
+          "nutrition": 9.49909333333333,
+          "objectives": 20.0,
+          "total": 71.7248734170728,
+          "vitality": 34.2257800837394
+        },
+        "id": "BR-009",
+        "points": 86.8633248733612
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 78.784056,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 10.5045408,
+          "objectives": 20.0,
+          "total": 60.4880576457032,
+          "vitality": 29.9835168457032
+        },
+        "id": "BR-010",
+        "points": 75.9670336914063
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 176.56697533464,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 20.0,
+          "objectives": 20.0,
+          "total": 58.3351111111111,
+          "vitality": 18.3351111111111
+        },
+        "id": "BR-006",
+        "points": 48.1146666666666
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8201,
+    "survivors": 9
+  },
+  {
+    "atp": 95.6799544495224,
+    "elapsed": 1200.0,
+    "hp": 97.0588235294118,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 52.08,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 6.944,
+      "objectives": 20.0,
+      "total": 65.5606990497813,
+      "vitality": 38.6166990497813
+    },
+    "profile": 2,
+    "ranking_new": [
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 71.2432,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001",
+            "BR-006",
+            "BR-010"
+          ],
+          "nutrition": 9.49909333333333,
+          "objectives": 20.0,
+          "total": 81.2372241699043,
+          "vitality": 35.738130836571
+        },
+        "id": "BR-009",
+        "points": 81.2372241699043
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.2441864795685,
+          "vitality": 39.3001864795685
+        },
+        "id": "BR-007",
+        "points": 66.2441864795685
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.8937534239713,
+          "vitality": 38.9497534239713
+        },
+        "id": "BR-011",
+        "points": 65.8937534239713
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.5606990497813,
+          "vitality": 38.6166990497813
+        },
+        "id": "C-000",
+        "points": 65.5606990497813
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 113.860816,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 15.1814421333333,
+          "objectives": 20.0,
+          "total": 65.4959760859598,
+          "vitality": 30.3145339526264
+        },
+        "id": "BR-012",
+        "points": 65.4959760859598
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.382015104814,
+          "vitality": 35.438015104814
+        },
+        "id": "BR-008",
+        "points": 62.382015104814
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 59.7306917672368,
+          "vitality": 32.7866917672368
+        },
+        "id": "BR-003",
+        "points": 59.7306917672368
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.2441864795685,
+          "vitality": 39.3001864795685
+        },
+        "id": "BR-007",
+        "points": 98.5261229591369
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.8937534239713,
+          "vitality": 38.9497534239713
+        },
+        "id": "BR-011",
+        "points": 97.5787642008837
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 65.5606990497813,
+          "vitality": 38.6166990497813
+        },
+        "id": "C-000",
+        "points": 96.9392804525038
+      },
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 71.2432,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-004",
+            "BR-001",
+            "BR-006",
+            "BR-010"
+          ],
+          "nutrition": 9.49909333333333,
+          "objectives": 20.0,
+          "total": 81.2372241699043,
+          "vitality": 35.738130836571
+        },
+        "id": "BR-009",
+        "points": 89.8880263790243
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.382015104814,
+          "vitality": 35.438015104814
+        },
+        "id": "BR-008",
+        "points": 89.0578483914462
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 59.7306917672368,
+          "vitality": 32.7866917672368
+        },
+        "id": "BR-003",
+        "points": 82.8423247109441
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 113.860816,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 15.1814421333333,
+          "objectives": 20.0,
+          "total": 65.4959760859598,
+          "vitality": 30.3145339526264
+        },
+        "id": "BR-012",
+        "points": 76.7654315416166
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8201,
+    "survivors": 7
+  },
+  {
+    "atp": 95.7222545022963,
+    "elapsed": 1200.0,
+    "hp": 100.0,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 188.98389,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 20.0,
+      "objectives": 20.0,
+      "total": 79.3583381753444,
+      "vitality": 39.3583381753444
+    },
+    "profile": 3,
+    "ranking_new": [
+      {
+        "alliance": "BR-006|player",
+        "breakdown": {
+          "absorbed": 188.98389,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 20.0,
+          "objectives": 20.0,
+          "total": 79.3583381753444,
+          "vitality": 39.3583381753444
+        },
+        "id": "C-000",
+        "points": 79.3583381753444
+      },
+      {
+        "alliance": "BR-001",
+        "breakdown": {
+          "absorbed": 71.68,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-002",
+            "BR-005",
+            "BR-010"
+          ],
+          "nutrition": 9.55733333333333,
+          "objectives": 20.0,
+          "total": 74.9062378405005,
+          "vitality": 33.3489045071672
+        },
+        "id": "BR-001",
+        "points": 74.9062378405005
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 66.873253145921,
+          "vitality": 39.0481864792543
+        },
+        "id": "BR-004",
+        "points": 66.873253145921
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.5663978880714,
+          "vitality": 37.6223978880714
+        },
+        "id": "BR-007",
+        "points": 64.5663978880714
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 63.6477560214891,
+          "vitality": 36.7037560214891
+        },
+        "id": "BR-003",
+        "points": 63.6477560214891
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 116.088,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 15.4784,
+          "objectives": 20.0,
+          "total": 62.5023122113749,
+          "vitality": 27.0239122113749
+        },
+        "id": "BR-012",
+        "points": 62.5023122113749
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.0031680495879,
+          "vitality": 35.0591680495879
+        },
+        "id": "BR-011",
+        "points": 62.0031680495879
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-006|player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8800736064911,
+          "vitality": 39.9360736064911
+        },
+        "id": "BR-006",
+        "points": 99.8721472129822
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.5242341859936,
+          "vitality": 39.5802341859936
+        },
+        "id": "BR-008",
+        "points": 99.1604683719873
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.5663978880714,
+          "vitality": 37.6223978880714
+        },
+        "id": "BR-007",
+        "points": 94.3226928349663
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 63.6477560214891,
+          "vitality": 36.7037560214891
+        },
+        "id": "BR-003",
+        "points": 92.1762914547429
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.0031680495879,
+          "vitality": 35.0591680495879
+        },
+        "id": "BR-011",
+        "points": 88.3120052168229
+      },
+      {
+        "alliance": "BR-001",
+        "breakdown": {
+          "absorbed": 71.68,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-002",
+            "BR-005",
+            "BR-010"
+          ],
+          "nutrition": 9.55733333333333,
+          "objectives": 20.0,
+          "total": 74.9062378405005,
+          "vitality": 33.3489045071672
+        },
+        "id": "BR-001",
+        "points": 84.8154560731579
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 116.088,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 15.4784,
+          "objectives": 20.0,
+          "total": 62.5023122113749,
+          "vitality": 27.0239122113749
+        },
+        "id": "BR-012",
+        "points": 68.8660062409317
+      }
+    ],
+    "result": "vittoria",
+    "seed": 8201,
+    "survivors": 9
+  },
+  {
+    "atp": 98.1736543431282,
+    "elapsed": 1200.0,
+    "hp": 92.3529411764707,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 65.296,
+      "eliminations": 16.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [
+        "BR-005",
+        "BR-001",
+        "BR-009",
+        "BR-011"
+      ],
+      "nutrition": 8.70613333333333,
+      "objectives": 20.0,
+      "total": 82.5204167789202,
+      "vitality": 37.8142834455869
+    },
+    "profile": 0,
+    "ranking_new": [
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-009",
+            "BR-011"
+          ],
+          "nutrition": 8.70613333333333,
+          "objectives": 20.0,
+          "total": 82.5204167789202,
+          "vitality": 37.8142834455869
+        },
+        "id": "C-000",
+        "points": 82.5204167789202
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.9088719081879,
+          "vitality": 39.9648719081879
+        },
+        "id": "BR-004",
+        "points": 66.9088719081879
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.886932808876,
+          "vitality": 39.942932808876
+        },
+        "id": "BR-006",
+        "points": 66.886932808876
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.3667756600976,
+          "vitality": 39.4227756600976
+        },
+        "id": "BR-007",
+        "points": 66.3667756600976
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 65.0855738208713,
+          "vitality": 37.2605071542046
+        },
+        "id": "BR-012",
+        "points": 65.0855738208713
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 55.635,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.418,
+          "objectives": 20.0,
+          "total": 61.4518740261022,
+          "vitality": 34.0338740261022
+        },
+        "id": "BR-003",
+        "points": 61.4518740261022
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 62.3520762,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.31361016,
+          "objectives": 20.0,
+          "total": 60.5098691868983,
+          "vitality": 32.1962590268983
+        },
+        "id": "BR-010",
+        "points": 60.5098691868983
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.9088719081879,
+          "vitality": 39.9648719081879
+        },
+        "id": "BR-004",
+        "points": 99.9297438163757
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.886932808876,
+          "vitality": 39.942932808876
+        },
+        "id": "BR-006",
+        "points": 99.8858656177521
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.3667756600976,
+          "vitality": 39.4227756600976
+        },
+        "id": "BR-007",
+        "points": 98.7960513201952
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-009",
+            "BR-011"
+          ],
+          "nutrition": 8.70613333333333,
+          "objectives": 20.0,
+          "total": 82.5204167789202,
+          "vitality": 37.8142834455869
+        },
+        "id": "C-000",
+        "points": 94.8638610088208
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666667,
+          "objectives": 20.0,
+          "total": 65.0855738208713,
+          "vitality": 37.2605071542046
+        },
+        "id": "BR-012",
+        "points": 93.4301052175002
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 55.635,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.418,
+          "objectives": 20.0,
+          "total": 61.4518740261022,
+          "vitality": 34.0338740261022
+        },
+        "id": "BR-003",
+        "points": 85.7391304051455
+      },
+      {
+        "alliance": "BR-010",
+        "breakdown": {
+          "absorbed": 62.3520762,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.31361016,
+          "objectives": 20.0,
+          "total": 60.5098691868983,
+          "vitality": 32.1962590268983
+        },
+        "id": "BR-010",
+        "points": 81.2814069426854
+      }
+    ],
+    "result": "vittoria",
+    "seed": 8202,
+    "survivors": 8
+  },
+  {
+    "atp": 96.8866427838802,
+    "elapsed": 1200.0,
+    "hp": 70.3703703703704,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 52.08,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 6.944,
+      "objectives": 20.0,
+      "total": 59.0695890101746,
+      "vitality": 32.1255890101746
+    },
+    "profile": 1,
+    "ranking_new": [
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 71.2432,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-010"
+          ],
+          "nutrition": 9.49909333333333,
+          "objectives": 20.0,
+          "total": 74.6014084472419,
+          "vitality": 33.1023151139085
+        },
+        "id": "BR-009",
+        "points": 74.6014084472419
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 91.3248,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 12.17664,
+          "objectives": 20.0,
+          "total": 68.5649781675916,
+          "vitality": 36.3883381675916
+        },
+        "id": "BR-012",
+        "points": 68.5649781675916
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 91.0017,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 12.13356,
+          "objectives": 20.0,
+          "total": 66.5362500928671,
+          "vitality": 34.4026900928671
+        },
+        "id": "BR-004",
+        "points": 66.5362500928671
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 111.6572,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 14.8876266666667,
+          "objectives": 20.0,
+          "total": 65.1134780537966,
+          "vitality": 30.2258513871299
+        },
+        "id": "BR-006",
+        "points": 65.1134780537966
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.7213382896255,
+          "vitality": 37.7773382896255
+        },
+        "id": "BR-011",
+        "points": 64.7213382896255
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.3339354474685,
+          "vitality": 35.3899354474685
+        },
+        "id": "BR-007",
+        "points": 62.3339354474685
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.2552203147552,
+          "vitality": 35.3112203147552
+        },
+        "id": "BR-003",
+        "points": 62.2552203147552
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 59.0695890101746,
+          "vitality": 32.1255890101746
+        },
+        "id": "C-000",
+        "points": 59.0695890101746
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.7213382896255,
+          "vitality": 37.7773382896255
+        },
+        "id": "BR-011",
+        "points": 94.6723236380745
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 91.3248,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 12.17664,
+          "objectives": 20.0,
+          "total": 68.5649781675916,
+          "vitality": 36.3883381675916
+        },
+        "id": "BR-012",
+        "points": 91.4584945170014
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.3339354474685,
+          "vitality": 35.3899354474685
+        },
+        "id": "BR-007",
+        "points": 88.993040012584
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 62.2552203147552,
+          "vitality": 35.3112203147552
+        },
+        "id": "BR-003",
+        "points": 88.8108597471574
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 91.0017,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 12.13356,
+          "objectives": 20.0,
+          "total": 66.5362500928671,
+          "vitality": 34.4026900928671
+        },
+        "id": "BR-004",
+        "points": 86.5781074584615
+      },
+      {
+        "alliance": "BR-009",
+        "breakdown": {
+          "absorbed": 71.2432,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-005",
+            "BR-001",
+            "BR-010"
+          ],
+          "nutrition": 9.49909333333333,
+          "objectives": 20.0,
+          "total": 74.6014084472419,
+          "vitality": 33.1023151139085
+        },
+        "id": "BR-009",
+        "points": 84.3222772866406
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 59.0695890101746,
+          "vitality": 32.1255890101746
+        },
+        "id": "C-000",
+        "points": 81.2882150573863
+      },
+      {
+        "alliance": "BR-006",
+        "breakdown": {
+          "absorbed": 111.6572,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 14.8876266666667,
+          "objectives": 20.0,
+          "total": 65.1134780537966,
+          "vitality": 30.2258513871299
+        },
+        "id": "BR-006",
+        "points": 76.562813885371
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8202,
+    "survivors": 8
+  },
+  {
+    "atp": 96.7899498886244,
+    "elapsed": 1200.0,
+    "hp": 94.1176470588235,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 52.08,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 6.944,
+      "objectives": 20.0,
+      "total": 64.9919042479995,
+      "vitality": 38.0479042479995
+    },
+    "profile": 2,
+    "ranking_new": [
+      {
+        "alliance": "BR-005",
+        "breakdown": {
+          "absorbed": 64.6352,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-001",
+            "BR-010",
+            "BR-006"
+          ],
+          "nutrition": 8.61802666666667,
+          "objectives": 20.0,
+          "total": 69.9909878931894,
+          "vitality": 29.3729612265227
+        },
+        "id": "BR-005",
+        "points": 69.9909878931894
+      },
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.9919042479995,
+          "vitality": 38.0479042479995
+        },
+        "id": "C-000",
+        "points": 64.9919042479995
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.4676465531658,
+          "vitality": 37.5236465531658
+        },
+        "id": "BR-007",
+        "points": 64.4676465531658
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 63.1120744023043,
+          "vitality": 36.1680744023043
+        },
+        "id": "BR-003",
+        "points": 63.1120744023043
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666666,
+          "objectives": 20.0,
+          "total": 61.0732180362168,
+          "vitality": 33.2481513695501
+        },
+        "id": "BR-008",
+        "points": 61.0732180362168
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.70613333333333,
+          "objectives": 20.0,
+          "total": 58.6682413488707,
+          "vitality": 29.9621080155373
+        },
+        "id": "BR-012",
+        "points": 58.6682413488707
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 58.6270756445983,
+          "vitality": 31.6830756445983
+        },
+        "id": "BR-011",
+        "points": 58.6270756445983
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.9919042479995,
+          "vitality": 38.0479042479995
+        },
+        "id": "C-000",
+        "points": 95.5075732018814
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 64.4676465531658,
+          "vitality": 37.5236465531658
+        },
+        "id": "BR-007",
+        "points": 94.1304401651551
+      },
+      {
+        "alliance": "BR-003",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 63.1120744023043,
+          "vitality": 36.1680744023043
+        },
+        "id": "BR-003",
+        "points": 90.8310605693144
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 58.688,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 7.82506666666666,
+          "objectives": 20.0,
+          "total": 61.0732180362168,
+          "vitality": 33.2481513695501
+        },
+        "id": "BR-008",
+        "points": 83.8653936481911
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 58.6270756445983,
+          "vitality": 31.6830756445983
+        },
+        "id": "BR-011",
+        "points": 80.1113571715495
+      },
+      {
+        "alliance": "BR-012",
+        "breakdown": {
+          "absorbed": 65.296,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.70613333333333,
+          "objectives": 20.0,
+          "total": 58.6682413488707,
+          "vitality": 29.9621080155373
+        },
+        "id": "BR-012",
+        "points": 75.9242160310747
+      },
+      {
+        "alliance": "BR-005",
+        "breakdown": {
+          "absorbed": 64.6352,
+          "eliminations": 12.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-001",
+            "BR-010",
+            "BR-006"
+          ],
+          "nutrition": 8.61802666666667,
+          "objectives": 20.0,
+          "total": 69.9909878931894,
+          "vitality": 29.3729612265227
+        },
+        "id": "BR-005",
+        "points": 74.7459224530455
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8202,
+    "survivors": 8
+  },
+  {
+    "atp": 99.96,
+    "elapsed": 1200.0,
+    "hp": 76.4690909090914,
+    "initial": 13,
+    "invalid": 0,
+    "nutrition_target": 150.0,
+    "personal": {
+      "absorbed": 52.08,
+      "eliminations": 0.0,
+      "fronts": {
+        "1": "refugio anticipato",
+        "2": "refugio anticipato",
+        "3": "refugio anticipato",
+        "4": "refugio anticipato"
+      },
+      "kills": [],
+      "nutrition": 6.944,
+      "objectives": 20.0,
+      "total": 61.0552727272729,
+      "vitality": 34.1112727272728
+    },
+    "profile": 3,
+    "ranking_new": [
+      {
+        "alliance": "BR-005",
+        "breakdown": {
+          "absorbed": 103.04987392,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-001",
+            "BR-006",
+            "BR-010",
+            "BR-012"
+          ],
+          "nutrition": 13.7399831893333,
+          "objectives": 20.0,
+          "total": 78.4976025205949,
+          "vitality": 28.7576193312616
+        },
+        "id": "BR-005",
+        "points": 78.4976025205949
+      },
+      {
+        "alliance": "BR-003|player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8102763824463,
+          "vitality": 39.8662763824463
+        },
+        "id": "BR-003",
+        "points": 66.8102763824463
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.3943770122528,
+          "vitality": 39.4503770122528
+        },
+        "id": "BR-007",
+        "points": 66.3943770122528
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 64.904,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.65386666666667,
+          "objectives": 20.0,
+          "total": 65.1600939437723,
+          "vitality": 36.5062272771056
+        },
+        "id": "BR-004",
+        "points": 65.1600939437723
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 63.8868676139607,
+          "vitality": 36.9428676139607
+        },
+        "id": "BR-011",
+        "points": 63.8868676139607
+      }
+    ],
+    "ranking_old_same_events": [
+      {
+        "alliance": "BR-003|player",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.8102763824463,
+          "vitality": 39.8662763824463
+        },
+        "id": "BR-003",
+        "points": 99.7325527648926
+      },
+      {
+        "alliance": "BR-007",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 66.3943770122528,
+          "vitality": 39.4503770122528
+        },
+        "id": "BR-007",
+        "points": 98.8707540245056
+      },
+      {
+        "alliance": "BR-011",
+        "breakdown": {
+          "absorbed": 52.08,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 6.944,
+          "objectives": 20.0,
+          "total": 63.8868676139607,
+          "vitality": 36.9428676139607
+        },
+        "id": "BR-011",
+        "points": 92.7021396396861
+      },
+      {
+        "alliance": "BR-004|BR-008",
+        "breakdown": {
+          "absorbed": 64.904,
+          "eliminations": 0.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [],
+          "nutrition": 8.65386666666667,
+          "objectives": 20.0,
+          "total": 65.1600939437723,
+          "vitality": 36.5062272771056
+        },
+        "id": "BR-004",
+        "points": 91.6491818269385
+      },
+      {
+        "alliance": "BR-005",
+        "breakdown": {
+          "absorbed": 103.04987392,
+          "eliminations": 16.0,
+          "fronts": {
+            "1": "refugio anticipato",
+            "2": "refugio anticipato",
+            "3": "refugio anticipato",
+            "4": "refugio anticipato"
+          },
+          "kills": [
+            "BR-001",
+            "BR-006",
+            "BR-010",
+            "BR-012"
+          ],
+          "nutrition": 13.7399831893333,
+          "objectives": 20.0,
+          "total": 78.4976025205949,
+          "vitality": 28.7576193312616
+        },
+        "id": "BR-005",
+        "points": 73.8681798389937
+      }
+    ],
+    "result": "sconfitta",
+    "seed": 8202,
+    "survivors": 7
+  }
+]

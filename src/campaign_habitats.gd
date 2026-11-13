@@ -37,6 +37,18 @@ func rebuild(enabled: bool) -> void:
         label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
         label.position = center+Vector3(0,1.2,-3.5)
         visual.add_child(label)
+    for radius in [2.5,4.5]:
+        var lines := ImmediateMesh.new()
+        lines.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
+        for j in range(97):
+            var at: Vector3 = CENTERS[1]+Vector3(cos(TAU*j/96.0),0,sin(TAU*j/96.0))*radius
+            at.y = terrain.surface_height(Vector2(at.x,at.z))+.08
+            lines.surface_add_vertex(at)
+        lines.surface_end()
+        var contour := MeshInstance3D.new()
+        contour.mesh = lines
+        contour.material_override = game._solid(Color(.65,.32,.20) if radius<3 else Color(.45,.48,.28))
+        visual.add_child(contour)
     # Existing source (16,-14) already supplies animated plume and temperature.
 
 func description(at: Vector3) -> String:
@@ -60,9 +72,13 @@ func food_position(index: int = -1) -> Vector3:
     return CENTERS[i]+Vector3(cos(angle)*r,.29,sin(angle)*r)
 
 func seed_world() -> void:
+    var cursor: int = game.nutrients.size()-48
     for i in range(3):
         for j in range([10,16,22][i]):
-            game._create_nutrient(game.Balance.NUTRIENT_CYCLE[j%game.Balance.NUTRIENT_CYCLE.size()],food_position(i))
+            var n: Dictionary = game.nutrients[cursor]
+            n.node.position = food_position(i)
+            n.origin_y = n.node.position.y
+            cursor += 1
     for i in range(3):
         var tr: Dictionary = game._base_traits()
         tr["uptake"] = 1.1

@@ -130,7 +130,7 @@ func update_ui() -> void:
         game.hud.add_child(skip_button)
     skip_button.visible = active()
     var wh: Vector2 = game.get_viewport().get_visible_rect().size
-    skip_button.position = Vector2(wh.x/2-65,wh.y-58)
+    skip_button.position = Vector2(wh.x/2-65,wh.y-208)
     skip_button.size = Vector2(130,40)
     # Contextual actions, while the complete tree remains in its tab and menu.
     var tr: Dictionary = game.entities[game.player_id].traits
@@ -155,9 +155,14 @@ func update_ui() -> void:
     if state.step == "gather":
         target = null
         var nearest: float = INF
+        var needed: String = ""
+        for kind in game.TYPES:
+            if float(game.resources[kind])<float(game.NEED[kind])-.001:
+                needed = kind
+                break
         for n in game.nutrients:
             if not is_instance_valid(n.node): continue
-            var useful: bool = game.resources.biomass<game.NEED.biomass or (n.kind in game.TYPES and game.resources[n.kind]<game.NEED[n.kind]) or (n.kind=="carbon" and game.atp<30)
+            var useful: bool = n.kind==needed if not needed.is_empty() else (game.resources.biomass<game.NEED.biomass or (n.kind=="carbon" and game.atp<30))
             var d: float = n.node.position.distance_squared_to(game.player.position)
             if useful and game._temperature_at(n.node.position)<40 and d<nearest:
                 target = n.node

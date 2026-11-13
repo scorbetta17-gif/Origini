@@ -40,10 +40,10 @@ func _run() -> void:
     var game: Node = load("res://scenes/Main.tscn").instantiate()
     root.add_child(game)
     await process_frame
-    assert(game.nutrients.size() == 84)
-    assert(game.overlay.visible,"First launch MUST show Phase 1 mission board")
+    assert(game.nutrients.size() == 84,"Habitat resources redistribute the bounded starter budget")
+    assert(not game.overlay.visible and game.journey.active(),"First launch guides in-world without blocking introduction")
     assert(not bool(game.phase1_progress["complete"]))
-    assert(game.is_paused)
+    assert(not game.is_paused)
     game.call("_close_overlay")
     game.call("_create_entity","TEST-NPC","",2,"pre_luca",game.call("_base_traits"),
         Vector3(3.0,0,2.0),false,false)

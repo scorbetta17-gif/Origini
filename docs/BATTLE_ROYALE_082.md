@@ -1,5 +1,7 @@
 # Battle Royale ecologico — 0.82
 
+> Documento storico. Per il comportamento corrente, il punteggio su100 e i nuovi percorsi vedere [0.83](BATTLE_ROYALE_083.md).
+
 ## Accesso e partita
 
 MENU → Battle Royale → scegli Predazione, Difesa, Mobilità o Cooperazione. Modalità locale per un giocatore contro 12 IA, su un'arena di 80 × 80 unità cartografiche del fondale esistente. La campagna mantiene la sua mappa di 5,29 km². Si parte con una cellula batterica, apparati di digestione e riconoscimento, 6 PM e una specializzazione con bonus e malus. Questa è una modalità competitiva, non una ricostruzione dell'origine dei batteri.
