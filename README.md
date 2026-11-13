@@ -1,83 +1,17 @@
-> **Cellule 12/11/2026:** modelli 3D anche in gameplay, membrane deformabili e 16 loci con fenotipo. [Revisione, ricerca e verifiche](docs/CELL_MODEL_REVIEW_2026-11-12.md).
+# ORIGINI — dalla Cellula Zero al grado LECA
 
-> **Fondale 12/11/2026:** mappa esplorabile 480x480, faglie geometriche e palette condivisa senza caustiche. [Revisione e verifiche](docs/SEABED_REVIEW_2026-11-12.md).
+Prototipo Godot 4.7.2 per desktop e Android ARM64. La versione 0.80 introduce una campagna continua: scissione animata, punti mutazione, specializzazioni con bonus e malus, nicchie persistenti e capacità cellulari fino al grado LECA.
 
-# ORIGINI — Campagna cellulare · Fase 1 + Fase 2
+- 336 nodi di specializzazione e 23 capacità evolutive con prerequisiti.
+- Tre alternative di bilanciamento confrontate; build B con capacità finita integrata.
+- Mappa cartografica di 5,29 km² e 25 nicchie con densità, coesistenza e dominanza.
+- Consorzio esterno, simbionte interno e mitocondrio funzionale distinti; nucleo e RE-Golgi paralleli.
+- Migrazione dei salvataggi precedenti; nessuna selezione casuale delle figlie per il giocatore.
 
-> Sviluppo successivo alla 0.76: [revisione vulcani e audit del 12 novembre 2026](docs/VOLCANO_REVIEW_2026-11-12.md).
-> **Revisione Fase 2:** [stato, bug corretti e prove di giocabilita](docs/PHASE_TWO_PLAYABLE_REVIEW.md). La versione degli APK storici non identifica questo ramo sorgente.
+[Comportamento, limiti scientifici, ritmo e verifiche](docs/UNIFIED_CAMPAIGN_080.md) · [Confronto dei tre bilanciamenti](docs/balance_candidates/COMPARISON.md).
 
-**Stato:** versione giocabile fino al traguardo della Fase 2, con interfaccia Android verticale ricostruita dalle schermate web originali 0.56–0.62, sviluppata in **Godot 4.7.2**, con modelli cellulari originali generati da **Blender** ed esportati in **glTF/GLB**.
+Aprire `project.godot` con Godot 4.7.2 e avviare `scenes/Main.tscn`. Movimento WASD/frecce o joystick; DIVIDI quando maturità, ATP e nutrienti sono sufficienti; EVOLUZIONE per spendere PM; CAPACITÀ per scegliere il percorso; META per le nicchie; MENU per salvataggi e genealogia.
 
-Il progetto parte da una **cellula primordiale** composta da membrana, singolo RNA e tre complessi autocatalitici. Il giocatore nutre la cellula, accumula biomassa e ATP, si divide in **due figlie vive**, sceglie quale controllare e segue la genealogia delle altre popolazioni. Le mutazioni minori modificano le statistiche; quelle maggiori cambiano loci ereditabili e introducono strutture 3D coerenti.
+Test: `python tests/run_suite.py --timeout 180` (Godot portatile rilevato automaticamente oppure `--godot godot`). `python tests/qa_static.py` controlla i contratti statici. I test accelerati fino a LECA non misurano la durata di una partita naturale; il dispositivo Android fisico resta da provare.
 
-## Contenuti giocabili
-### Fase 1 — Origine e diversificazione
-- Cellula iniziale essenziale in oceano primordiale senza vita macroscopica.
-- Raccolta di carbonio, amminoacidi, lipidi e materiale nucleico; biomassa e ATP.
-- Scissione in due discendenti, antenati genealogici, NPC indipendenti e selezione della linea.
-- DNA stabile come traguardo semplificato, poi divergenza in Bacteria e Archaea da antenati comuni.
-- Genoma modulare, albero con bonus passivi, fenotipi visibili (pili, recettori, EPS, trasportatori, proteasi, vescicole, termotolleranza).
-- Predazione, proteolisi, rigenerazione, ambienti termici con sorgenti idrotermali e danni.
-
-### Fase 2 — Cooperazione procariotica
-Traguardi in cinque tappe:
-1. Riconosci una cellula **Bacteria** separata dalla linea Archaea.
-2. Forma un'adesione recettore/EPS-dipendente.
-3. Scambia metaboliti per almeno **12 secondi** reali (consuma carbonio, modifica ATP ed energia del partner).
-4. Mantieni il consorzio metabolico per **25 secondi** di vicinanza stabile.
-5. Completa una scissione e segui la figlia che eredita i loci e l'associazione cooperativa.
-
-**Traguardo di fine Fase 2:** consorzio metabolico stabile e trasmissibile.
-Questo NON rappresenta la formazione di mitocondri, nucleo o una cellula eucariotica; l'aggregazione procariotica resta facoltativa per la storia evolutiva generale.
-
-## Come giocare
-- Joystick virtuale (Android) oppure WASD/frecce (desktop): movimento.
-- Raggiungi i nutrienti e premi **SCISSIONE** quando risorse e ATP raggiungono la soglia.
-- Scegli una delle due figlie; la sorella resta nel mondo come NPC.
-- Scegli la variante con DNA stabile e successivamente la discendente Archaea.
-- Sulle generazioni Archaea seleziona progressivamente **recettori** e **trasportatori** come mutazioni maggiori.
-- Segui l'indicatore **BACTERIA** sullo schermo. Avvicinati e premi **COOPERA**.
-- **COOPERA** cerca una Bacteria compatibile e permette di raggiungerla. Il joystick annulla l'avvicinamento automatico.
-- A legame attivo, **CONSORZIO → GESTISCI** mostra tempi, energia e distanza del partner; permette di sospendere/riprendere lo scambio o separarsi.
-- Mantieni il contatto per 25 s e lo scambio effettivo per 12 s. Sospendi lo scambio per conservare carbonio, raccogli le risorse, poi dividi e scegli una figlia.
-- Se controlli Bacteria, il pannello Fase 2 permette di seguire una Archaea distinta (esistente o immigrata): non cambia il ramo biologico della tua cellula.
-- All'apertura della Fase 2 viene creato un checkpoint separato. Dal menu puoi rigiocare il capitolo; il salvataggio ordinario resta distinto.
-- **CELLULA** apre la vista ravvicinata; **MENU** contiene **Come giocare**, **Fase 2**, **GENOMA**, **Obiettivi**, **ALBERO**, **LINEE**, **SALVA** e **CARICA**.
-
-## Interfaccia Classic
-- Android portrait 720 × 1280, con layout che si adatta a dimensioni diverse.
-- ATP e HP su due barre separate; quattro schede nutrienti; obiettivo e progressione; quattro tab RISORSE/EVOLUZIONE/META/LINEA.
-- Joystick grande, comandi laterali, pulsante DIVIDI, lista di requisiti alla scissione.
-- Nutrienti proiettati come simboli chimici colorati sulle loro vere coordinate 3D.
-- Due card per scegliere quale figlia controllare, con disegni del fenotipo coerenti con il genoma e differenze numeriche.
-- Albero evolutivo con 6 categorie, 288 nodi, zoom, descrizione e costi; puntiformi libere e maggiori ogni cinque puntiformi della categoria, oltre alle tappe di campagna in scissione.
-- Menu e risorse in schede native Godot; nessun browser, WebView o emulatore necessario nell'APK.
-- Screenshot automatici veri: `classic-main`, `classic-daughters`, `classic-evolution`, `classic-lineage`.
-
-I salvataggi usano il formato logico v71; la lettura delle partite v67 e v70 precedenti è supportata con migrazione controllata dei campi genetici e di consorzio, senza attribuire retroattivamente mutazioni mai osservate.
-
-## Build e grafica
-- Android ARM64, **Godot Mobile/Vulkan** e APK alternativo **GL Compatibility**. Il progetto usa `mobile` come renderer predefinito e `gl_compatibility` sul Web.
-- I sei asset Blender GLB reali, sotto `assets/models/`, sono creati in modo riproducibile con `tools/blender/create_cell_assets.py`.
-- Lo shader della membrana è in `shaders/cell_membrane.gdshader`; qualità grafica ancora soggetta a iterazioni. La build non è una produzione fotorealistica.
-- L'APK di prova usa un **package differente** da `demo-6`, per non sovrascrivere la vecchia installazione.
-- Nessun multiplayer né permesso INTERNET: Nakama è riservato a una fase futura.
-- MCP Godot resta uno strumento **editor-only**. Configurazione sicura: [Guida di sviluppo](docs/DEVELOPMENT_BLENDER_GODOT_MCP.md).
-
-## Verifiche automatizzate
-Il workflow `.github/workflows/validate-remaster.yml` esegue:
-- validazione glTF dei modelli reali Blender;
-- controlli statici e parsing Godot;
-- smoke test di scissione, genealogia, salvataggi e genoma;
-- test della progressione Fase 2 dall'adesione fino alla figlia;
-- **test completo della campagna dalla primordiale fino alla Fase 2**;
-- catture autentiche da Godot GL e Vulkan;
-- sul ramo storico `work/remaster-068`, esportazione e ispezione APK; sui rami di revisione, test e screenshot senza creare automaticamente APK o release.
-
-La pipeline di Blender è in `.github/workflows/bake-cell-assets.yml`.
-
-**Limiti:** animazioni/asset e resa scientifica restano semplificazioni 3D; non è un simulatore molecolare. I test CI non equivalgono a una prova di prestazioni o compatibilità su smartphone fisico.
-
-## Sicurezza
-Non committare keystore, token MCP, `.mcp.json` o credenziali Nakama. L'APK di preview è firmato come build debug e potrebbe richiedere reinstallazione tra run, in caso di certificato differente.
+Le vecchie note a due fasi sono conservate come [documentazione storica 0.79](docs/README_PRE_UNIFIED_079.md), superata dalla direzione attuale.

@@ -1,0 +1,374 @@
+{
+  "seed": 131126,
+  "model": "weighted geometric habitat utility; not population simulation",
+  "habitat_weights": {
+    "sparse_open_water": {
+      "motility": 0.65,
+      "uptake": 0.25,
+      "metabolism": 0.1
+    },
+    "rich_substrate": {
+      "uptake": 0.65,
+      "metabolism": 0.25,
+      "vitality": 0.1
+    },
+    "predation_front": {
+      "attack": 0.6,
+      "motility": 0.25,
+      "vitality": 0.15
+    },
+    "exposed_refuge": {
+      "defense": 0.55,
+      "vitality": 0.35,
+      "metabolism": 0.1
+    },
+    "energy_poor_vent": {
+      "metabolism": 0.7,
+      "vitality": 0.15,
+      "uptake": 0.15
+    }
+  },
+  "budgets": {
+    "10": {
+      "sample_size": 1230,
+      "winners": {
+        "sparse_open_water": {
+          "build": "motility",
+          "investments": {
+            "motility": 10
+          },
+          "utility": 1.1444465194582192
+        },
+        "rich_substrate": {
+          "build": "uptake",
+          "investments": {
+            "uptake": 10
+          },
+          "utility": 1.1713224970845486
+        },
+        "predation_front": {
+          "build": "attack",
+          "investments": {
+            "attack": 10
+          },
+          "utility": 1.1860356370139926
+        },
+        "exposed_refuge": {
+          "build": "defense",
+          "investments": {
+            "defense": 10
+          },
+          "utility": 1.1431701390444573
+        },
+        "energy_poor_vent": {
+          "build": "metabolism",
+          "investments": {
+            "metabolism": 10
+          },
+          "utility": 1.1728256579296585
+        }
+      },
+      "top25_per_habitat_dominant_investment_distribution": {
+        "motility": 26,
+        "uptake": 22,
+        "metabolism": 26,
+        "vitality": 3,
+        "attack": 24,
+        "defense": 24
+      },
+      "universal_habitat_winners": [],
+      "all_seven_stats_above_baseline_count": 739,
+      "division_seconds_range": [
+        101.1773982627676,
+        123.15965559770201
+      ]
+    },
+    "30": {
+      "sample_size": 1230,
+      "winners": {
+        "sparse_open_water": {
+          "build": "motility+uptake",
+          "investments": {
+            "motility": 15.0,
+            "uptake": 15.0
+          },
+          "utility": 1.2872275975994383
+        },
+        "rich_substrate": {
+          "build": "uptake",
+          "investments": {
+            "uptake": 30
+          },
+          "utility": 1.3261290812085067
+        },
+        "predation_front": {
+          "build": "attack",
+          "investments": {
+            "attack": 30
+          },
+          "utility": 1.3411416846410853
+        },
+        "exposed_refuge": {
+          "build": "defense+vitality",
+          "investments": {
+            "defense": 15.0,
+            "vitality": 15.0
+          },
+          "utility": 1.315364885182949
+        },
+        "energy_poor_vent": {
+          "build": "metabolism",
+          "investments": {
+            "metabolism": 30
+          },
+          "utility": 1.3312774016022497
+        }
+      },
+      "top25_per_habitat_dominant_investment_distribution": {
+        "motility": 25,
+        "uptake": 25,
+        "metabolism": 25,
+        "vitality": 6,
+        "attack": 23,
+        "defense": 21
+      },
+      "universal_habitat_winners": [],
+      "all_seven_stats_above_baseline_count": 569,
+      "division_seconds_range": [
+        89.47600493986155,
+        134.39557822837088
+      ]
+    },
+    "60": {
+      "sample_size": 1230,
+      "winners": {
+        "sparse_open_water": {
+          "build": "motility+uptake",
+          "investments": {
+            "motility": 30.0,
+            "uptake": 30.0
+          },
+          "utility": 1.4117477095658315
+        },
+        "rich_substrate": {
+          "build": "metabolism+uptake",
+          "investments": {
+            "metabolism": 30.0,
+            "uptake": 30.0
+          },
+          "utility": 1.46881611098567
+        },
+        "predation_front": {
+          "build": "motility+attack",
+          "investments": {
+            "motility": 30.0,
+            "attack": 30.0
+          },
+          "utility": 1.4757649170532403
+        },
+        "exposed_refuge": {
+          "build": "defense+vitality",
+          "investments": {
+            "defense": 30.0,
+            "vitality": 30.0
+          },
+          "utility": 1.45786451408667
+        },
+        "energy_poor_vent": {
+          "build": "random_826",
+          "investments": {
+            "motility": 2.40551012253546,
+            "attack": 0.06489114474376832,
+            "defense": 0.07254210366562593,
+            "vitality": 10.690955399104494,
+            "mutation": 3.678856888944666,
+            "metabolism": 37.72033165079061,
+            "uptake": 5.366912690215376
+          },
+          "utility": 1.4299135234915348
+        }
+      },
+      "top25_per_habitat_dominant_investment_distribution": {
+        "motility": 25,
+        "uptake": 27,
+        "metabolism": 26,
+        "attack": 22,
+        "defense": 17,
+        "vitality": 8
+      },
+      "universal_habitat_winners": [],
+      "all_seven_stats_above_baseline_count": 461,
+      "division_seconds_range": [
+        81.31376387481288,
+        163.1231698273289
+      ]
+    },
+    "120": {
+      "sample_size": 1230,
+      "winners": {
+        "sparse_open_water": {
+          "build": "random_229",
+          "investments": {
+            "motility": 43.860806418678735,
+            "attack": 0.7874194422654158,
+            "defense": 0.193917916981111,
+            "vitality": 4.933798250549439,
+            "mutation": 5.06382001258192,
+            "metabolism": 30.5901627433596,
+            "uptake": 34.57007521558379
+          },
+          "utility": 1.5142987949515265
+        },
+        "rich_substrate": {
+          "build": "metabolism+uptake",
+          "investments": {
+            "metabolism": 60.0,
+            "uptake": 60.0
+          },
+          "utility": 1.5709591305037762
+        },
+        "predation_front": {
+          "build": "random_1199",
+          "investments": {
+            "motility": 31.45989244260927,
+            "attack": 38.048230893376584,
+            "defense": 0.7819757372655063,
+            "vitality": 31.684102372015698,
+            "mutation": 4.662552855779999,
+            "metabolism": 10.16708163383789,
+            "uptake": 3.1961640651150507
+          },
+          "utility": 1.5701476020181053
+        },
+        "exposed_refuge": {
+          "build": "defense+vitality",
+          "investments": {
+            "defense": 60.0,
+            "vitality": 60.0
+          },
+          "utility": 1.5467707112067959
+        },
+        "energy_poor_vent": {
+          "build": "random_644",
+          "investments": {
+            "motility": 6.85392320131661,
+            "attack": 1.2726975479213263,
+            "defense": 1.543395735438135,
+            "vitality": 16.996361508439506,
+            "mutation": 5.420865958347666,
+            "metabolism": 57.66318918858311,
+            "uptake": 30.24956685995365
+          },
+          "utility": 1.53392203417624
+        }
+      },
+      "top25_per_habitat_dominant_investment_distribution": {
+        "motility": 28,
+        "metabolism": 34,
+        "uptake": 22,
+        "mutation": 1,
+        "attack": 15,
+        "vitality": 8,
+        "defense": 17
+      },
+      "universal_habitat_winners": [],
+      "all_seven_stats_above_baseline_count": 307,
+      "division_seconds_range": [
+        76.38645568170722,
+        183.25229446789064
+      ]
+    },
+    "240": {
+      "sample_size": 1230,
+      "winners": {
+        "sparse_open_water": {
+          "build": "random_133",
+          "investments": {
+            "motility": 62.16128539057954,
+            "attack": 0.07366216801803213,
+            "defense": 6.16018979007037,
+            "vitality": 4.3394348117063295,
+            "mutation": 11.1030901497212,
+            "metabolism": 73.53880787599708,
+            "uptake": 82.62352981390747
+          },
+          "utility": 1.5584440564446518
+        },
+        "rich_substrate": {
+          "build": "random_1020",
+          "investments": {
+            "motility": 0.45466699863297516,
+            "attack": 5.522042771125976,
+            "defense": 6.849514751969404,
+            "vitality": 49.053032480930185,
+            "mutation": 13.369224614169635,
+            "metabolism": 40.91406910170064,
+            "uptake": 123.83744928147118
+          },
+          "utility": 1.6065189299253693
+        },
+        "predation_front": {
+          "build": "random_381",
+          "investments": {
+            "motility": 100.72155616685396,
+            "attack": 64.87175967789997,
+            "defense": 1.906320702205222,
+            "vitality": 28.15005657511443,
+            "mutation": 28.487629227307114,
+            "metabolism": 11.177216000102714,
+            "uptake": 4.6854616505165865
+          },
+          "utility": 1.619218261248008
+        },
+        "exposed_refuge": {
+          "build": "random_806",
+          "investments": {
+            "motility": 2.959983718469298,
+            "attack": 10.151795327453375,
+            "defense": 141.43162034556832,
+            "vitality": 38.942952599245245,
+            "mutation": 1.7117644166489836,
+            "metabolism": 39.66313376585685,
+            "uptake": 5.1387498267579375
+          },
+          "utility": 1.613851574421484
+        },
+        "energy_poor_vent": {
+          "build": "random_929",
+          "investments": {
+            "motility": 3.0983963497491267,
+            "attack": 13.384986464879276,
+            "defense": 13.74335327820312,
+            "vitality": 26.33061132332305,
+            "mutation": 6.800841132121769,
+            "metabolism": 124.27081534989287,
+            "uptake": 52.3709961018308
+          },
+          "utility": 1.5495156119392461
+        }
+      },
+      "top25_per_habitat_dominant_investment_distribution": {
+        "uptake": 27,
+        "metabolism": 46,
+        "motility": 18,
+        "mutation": 3,
+        "vitality": 5,
+        "attack": 11,
+        "defense": 15
+      },
+      "universal_habitat_winners": [],
+      "all_seven_stats_above_baseline_count": 176,
+      "division_seconds_range": [
+        75,
+        184.6153846153846
+      ]
+    }
+  },
+  "pacing": {
+    "minimum_24_divisions_minutes": 30.0,
+    "reference_24_divisions_minutes": 48.0,
+    "minimum_60_divisions_minutes": 75.0,
+    "reference_60_divisions_minutes": 120.0,
+    "max_points_per_100_divisions": 150.0
+  }
+}

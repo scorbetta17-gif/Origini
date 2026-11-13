@@ -1,0 +1,15 @@
+{
+  "name": "B - Specialisti ecologici",
+  "gains": {"motility":0.75,"attack":1.05,"defense":0.90,"vitality":0.80,"mutation":0.50,"metabolism":0.75,"uptake":0.85},
+  "caps": {"motility":1.65,"attack":1.90,"defense":1.80,"vitality":1.70,"mutation":1.50,"metabolism":1.65,"uptake":1.75},
+  "floors": {"motility":0.55,"attack":0.50,"defense":0.55,"vitality":0.65,"mutation":1.00,"metabolism":0.55,"uptake":0.50},
+  "tradeoffs": {
+    "motility":{"metabolism":0.30,"defense":0.12},
+    "attack":{"uptake":0.32,"metabolism":0.16},
+    "defense":{"motility":0.32,"uptake":0.10},
+    "vitality":{"metabolism":0.22,"motility":0.15},
+    "mutation":{"defense":0.20,"vitality":0.15,"uptake":0.15},
+    "metabolism":{"attack":0.24,"vitality":0.12},
+    "uptake":{"defense":0.28,"attack":0.12}
+  }
+}

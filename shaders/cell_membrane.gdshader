@@ -10,6 +10,7 @@ uniform float surface_phase = 0.0;
 uniform vec3 flow_axis = vec3(1.0,0.0,0.0);
 uniform float flow_strain = 0.0;
 uniform float flexibility = 1.0;
+uniform float division_progress : hint_range(0.0,1.0) = 0.0;
 varying vec3 sphere_p;
 
 float hash3(vec3 p) {
@@ -25,6 +26,12 @@ void vertex() {
     float organic = sin(azimuth*3.0+0.65)*0.11+cos(azimuth*5.0-0.7)*0.045;
     float pressure = -max(0.0,dot(normalize(VERTEX),flow_axis))*flow_strain*.22;
     VERTEX += NORMAL * (wave * membrane_motion+(lobes+organic)*equator*flexibility+pressure);
+    float division = clamp(division_progress,0.0,1.0);
+    float elongation = 1.0+0.48*smoothstep(0.0,0.7,division);
+    float cleavage = 0.82*smoothstep(0.30,1.0,division);
+    float waist = 1.0-cleavage*exp(-VERTEX.x*VERTEX.x*12.0);
+    VERTEX.x *= elongation;
+    VERTEX.yz *= waist;
 }
 void fragment() {
     vec3 n = normalize(NORMAL);

@@ -8,9 +8,9 @@ func _run() -> void:
     var traits: Dictionary = B.normalize({})
     for i in range(1000):
         traits = B.tree_effect(traits,"motility",true)
-    assert(float(traits.motility)<=1.6 and float(traits.metabolism)>=.65)
+    assert(float(traits.motility)<=B.CAPS.motility and float(traits.metabolism)>=B.FLOORS.metabolism)
     traits["flagella"]=1
-    assert(P.player_speed(traits)<=4.8961)
+    assert(P.player_speed(traits)<=P.PLAYER_BASE_SPEED*B.CAPS.motility+.0001)
     var base: Dictionary = B.normalize({})
     var spent: float = 66.0-float(P.energy_step(66,0,1,P.player_speed(base),base).atp)
     assert(spent>.52 and spent<.54)

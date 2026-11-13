@@ -1,0 +1,634 @@
+{
+  "seed": 20261113,
+  "model": "same resource-budget surrogate and paired allocations; not engine playtest",
+  "candidates": {
+    "a": {
+      "10": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 1,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.16101,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.56074,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 0.63064,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "metabolism+uptake",
+            "score": 0.42704,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "metabolism+uptake",
+            "score": 0.57741,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "30": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 2,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.6399,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.8176,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 0.93292,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "random_8657",
+            "score": 0.61536,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "metabolism+uptake",
+            "score": 0.78121,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "60": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 2.04707,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 1.01811,
+            "starved_fraction": 0.0001
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 1.17297,
+            "starved_fraction": 0.0002
+          },
+          "predatori": {
+            "winner": "random_5061",
+            "score": 0.82668,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "random_7728",
+            "score": 0.95781,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "120": {
+        "all_six_above_1_2": 65,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "random_233",
+            "score": 2.33634,
+            "starved_fraction": 0.0013
+          },
+          "povero": {
+            "winner": "random_233",
+            "score": 1.107,
+            "starved_fraction": 0.03998
+          },
+          "disperso": {
+            "winner": "random_233",
+            "score": 1.29376,
+            "starved_fraction": 0.0344
+          },
+          "predatori": {
+            "winner": "random_3853",
+            "score": 1.05372,
+            "starved_fraction": 0.00678
+          },
+          "prede": {
+            "winner": "random_2588",
+            "score": 1.08336,
+            "starved_fraction": 0.00419
+          }
+        }
+      },
+      "240": {
+        "all_six_above_1_2": 73,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "random_4429",
+            "score": 2.05479,
+            "starved_fraction": 0.18327
+          },
+          "povero": {
+            "winner": "random_4429",
+            "score": 0.77145,
+            "starved_fraction": 0.56805
+          },
+          "disperso": {
+            "winner": "random_4429",
+            "score": 0.9711,
+            "starved_fraction": 0.4838
+          },
+          "predatori": {
+            "winner": "random_1853",
+            "score": 0.86325,
+            "starved_fraction": 0.34859
+          },
+          "prede": {
+            "winner": "random_6352",
+            "score": 0.78189,
+            "starved_fraction": 0.3442
+          }
+        }
+      }
+    },
+    "b": {
+      "10": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 1,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.22015,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.59431,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 0.66891,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "metabolism+uptake",
+            "score": 0.44236,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "metabolism+uptake",
+            "score": 0.59993,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "30": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.78819,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.90018,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 1.02433,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "random_8657",
+            "score": 0.65983,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "random_150",
+            "score": 0.82256,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "60": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 2.22769,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 1.11508,
+            "starved_fraction": 0.0005
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 1.27174,
+            "starved_fraction": 0.0009
+          },
+          "predatori": {
+            "winner": "random_5061",
+            "score": 0.90026,
+            "starved_fraction": 0.0001
+          },
+          "prede": {
+            "winner": "random_7211",
+            "score": 1.03083,
+            "starved_fraction": 0.0001
+          }
+        }
+      },
+      "120": {
+        "all_six_above_1_2": 41,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "random_1146",
+            "score": 2.53949,
+            "starved_fraction": 0.01097
+          },
+          "povero": {
+            "winner": "random_1146",
+            "score": 1.22999,
+            "starved_fraction": 0.14259
+          },
+          "disperso": {
+            "winner": "random_1146",
+            "score": 1.43114,
+            "starved_fraction": 0.13012
+          },
+          "predatori": {
+            "winner": "random_3853",
+            "score": 1.11445,
+            "starved_fraction": 0.05245
+          },
+          "prede": {
+            "winner": "random_7027",
+            "score": 1.12392,
+            "starved_fraction": 0.03749
+          }
+        }
+      },
+      "240": {
+        "all_six_above_1_2": 2,
+        "unique_winners": 5,
+        "habitats": {
+          "ricco": {
+            "winner": "random_5572",
+            "score": 1.95756,
+            "starved_fraction": 0.43723
+          },
+          "povero": {
+            "winner": "random_7831",
+            "score": 0.71886,
+            "starved_fraction": 0.76179
+          },
+          "disperso": {
+            "winner": "random_9171",
+            "score": 0.89382,
+            "starved_fraction": 0.71144
+          },
+          "predatori": {
+            "winner": "random_6622",
+            "score": 0.72234,
+            "starved_fraction": 0.61661
+          },
+          "prede": {
+            "winner": "random_301",
+            "score": 0.63004,
+            "starved_fraction": 0.62579
+          }
+        }
+      }
+    },
+    "c": {
+      "10": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 1,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.15451,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.55697,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 0.62591,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "metabolism+uptake",
+            "score": 0.41448,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "metabolism+uptake",
+            "score": 0.56962,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "30": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.59816,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.79267,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 0.90123,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "random_8626",
+            "score": 0.57833,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "random_150",
+            "score": 0.73855,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "60": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 4,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.89205,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "random_4953",
+            "score": 0.92893,
+            "starved_fraction": 0.0003
+          },
+          "disperso": {
+            "winner": "random_4953",
+            "score": 1.0644,
+            "starved_fraction": 0.0004
+          },
+          "predatori": {
+            "winner": "random_5061",
+            "score": 0.73596,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "random_6818",
+            "score": 0.87917,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "120": {
+        "all_six_above_1_2": 4,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "random_1146",
+            "score": 2.05736,
+            "starved_fraction": 0.00528
+          },
+          "povero": {
+            "winner": "random_1146",
+            "score": 0.95976,
+            "starved_fraction": 0.17459
+          },
+          "disperso": {
+            "winner": "random_1146",
+            "score": 1.12058,
+            "starved_fraction": 0.16083
+          },
+          "predatori": {
+            "winner": "random_3853",
+            "score": 0.8184,
+            "starved_fraction": 0.04138
+          },
+          "prede": {
+            "winner": "random_7027",
+            "score": 0.89673,
+            "starved_fraction": 0.02403
+          }
+        }
+      },
+      "240": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "random_1853",
+            "score": 1.57903,
+            "starved_fraction": 0.46256
+          },
+          "povero": {
+            "winner": "random_1853",
+            "score": 0.5093,
+            "starved_fraction": 0.87277
+          },
+          "disperso": {
+            "winner": "random_1853",
+            "score": 0.65084,
+            "starved_fraction": 0.83039
+          },
+          "predatori": {
+            "winner": "random_3093",
+            "score": 0.39201,
+            "starved_fraction": 0.73656
+          },
+          "prede": {
+            "winner": "random_302",
+            "score": 0.38024,
+            "starved_fraction": 0.7918
+          }
+        }
+      }
+    },
+    "b_capacity": {
+      "10": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 1,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.22015,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.59431,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 0.66891,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "metabolism+uptake",
+            "score": 0.44236,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "metabolism+uptake",
+            "score": 0.59993,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "30": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "metabolism+uptake",
+            "score": 1.78819,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "metabolism+uptake",
+            "score": 0.90018,
+            "starved_fraction": 0.0
+          },
+          "disperso": {
+            "winner": "metabolism+uptake",
+            "score": 1.02433,
+            "starved_fraction": 0.0
+          },
+          "predatori": {
+            "winner": "random_8657",
+            "score": 0.65983,
+            "starved_fraction": 0.0
+          },
+          "prede": {
+            "winner": "random_150",
+            "score": 0.82256,
+            "starved_fraction": 0.0
+          }
+        }
+      },
+      "60": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "random_4953",
+            "score": 2.16891,
+            "starved_fraction": 0.0
+          },
+          "povero": {
+            "winner": "random_4953",
+            "score": 1.08464,
+            "starved_fraction": 0.0005
+          },
+          "disperso": {
+            "winner": "random_4953",
+            "score": 1.24269,
+            "starved_fraction": 0.0009
+          },
+          "predatori": {
+            "winner": "random_8050",
+            "score": 0.84916,
+            "starved_fraction": 0.0001
+          },
+          "prede": {
+            "winner": "random_7113",
+            "score": 1.01276,
+            "starved_fraction": 0.0001
+          }
+        }
+      },
+      "120": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 3,
+        "habitats": {
+          "ricco": {
+            "winner": "random_3151",
+            "score": 2.05117,
+            "starved_fraction": 0.01127
+          },
+          "povero": {
+            "winner": "random_3151",
+            "score": 0.96433,
+            "starved_fraction": 0.15066
+          },
+          "disperso": {
+            "winner": "random_3151",
+            "score": 1.1298,
+            "starved_fraction": 0.137
+          },
+          "predatori": {
+            "winner": "random_1676",
+            "score": 0.75414,
+            "starved_fraction": 0.05474
+          },
+          "prede": {
+            "winner": "random_1939",
+            "score": 0.8989,
+            "starved_fraction": 0.04417
+          }
+        }
+      },
+      "240": {
+        "all_six_above_1_2": 0,
+        "unique_winners": 4,
+        "habitats": {
+          "ricco": {
+            "winner": "random_8074",
+            "score": 1.66043,
+            "starved_fraction": 0.47273
+          },
+          "povero": {
+            "winner": "random_3950",
+            "score": 0.59042,
+            "starved_fraction": 0.78921
+          },
+          "disperso": {
+            "winner": "random_3950",
+            "score": 0.748,
+            "starved_fraction": 0.73287
+          },
+          "predatori": {
+            "winner": "random_3708",
+            "score": 0.54171,
+            "starved_fraction": 0.63416
+          },
+          "prede": {
+            "winner": "random_5543",
+            "score": 0.55253,
+            "starved_fraction": 0.65769
+          }
+        }
+      }
+    }
+  }
+}

@@ -14,8 +14,8 @@ func _run() -> void:
     var tree: MutationTree = game.tree_view
     assert(tree != null)
     assert(tree.zoom_level >= .8,"Initial view shows central cell and first clusters")
-    for a in range(288):
-        for b in range(a+1,288):
+    for a in range(tree.NODE_COUNT):
+        for b in range(a+1,tree.NODE_COUNT):
             assert(tree._pos(a).distance_to(tree._pos(b))>32,"Tree nodes must not overlap")
     assert(tree.major_locus(40) == "pili_twitch")
     assert(tree.major_locus(48+40) == "hydrolase_secretion")

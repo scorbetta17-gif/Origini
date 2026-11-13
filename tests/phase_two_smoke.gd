@@ -53,48 +53,7 @@ func _run() -> void:
     assert(not bool(broken["progress"]["bonded"]))
     assert(not bool(broken["progress"]["stable"]))
 
-    var game: Node = load("res://scenes/Main.tscn").instantiate()
-    root.add_child(game)
-    await process_frame
-    # Phase 2 is a gated chapter. Phase 1 has a separate end-to-end smoke test.
-    game.phase1_progress["complete"] = true
-    game.call("_create_entity","TEST-A","",4,"archaea",_make_archaea(game),Vector3.ZERO,false,true)
-    game.call("_activate_lineage","TEST-A")
-    assert(game.player_id == "TEST-A")
-    game.call("_create_entity","TEST-B","",0,"bacteria",_make_bacteria(game),Vector3(2.3,0,0),false,true)
-    game.call("_advance_phase_two",.10)
-    assert(bool(game.phase2_progress["discovered"]))
-    game.call("_on_cooperate")
-    assert(game.partner_id == "TEST-B")
-    assert(bool(game.phase2_progress["adhesion"]))
-    game.resources["carbon"] = 24.0
-    game.resources["amino"] = 15.0
-    game.resources["lipid"] = 12.0
-    game.resources["nucleic"] = 8.0
-    game.resources["biomass"] = 65.0
-    game.atp = 99.0
-    for i in range(30):
-        game.call("_advance_phase_two",1.0)
-    assert(bool(game.phase2_progress["exchanged"]))
-    assert(bool(game.phase2_progress["stable"]))
-    assert(float(game.phase2_progress["metabolites_exchanged"]) > 0.0)
-    assert(float(game.resources["carbon"]) < 24.0)
-    # Lo scambio consuma davvero risorse: il test simula raccolta prima della scissione.
-    game.resources["carbon"] = 24.0
-    game.atp = 99.0
-    game.call("_divide_pressed")
-    assert(game.division_options.size() == 2)
-    game.call("_choose_daughter",0)
-    assert(bool(game.phase2_progress["transmitted"]))
-    assert(bool(game.phase2_progress["complete"]))
-    assert(game.partner_id == "TEST-B")
-    assert(int(game.generation) == 5)
-    assert(game.entities.size() >= 3)
-    game.call("_save_game")
-    game.call("_load_game")
-    assert(bool(game.phase2_progress["complete"]))
-    assert(game.partner_id == "TEST-B")
-    assert(game.entities.has(game.player_id))
-    assert(game.genealogy.size() >= 5)
-    print("PASS: entire Phase 2 — bacteria recognition, adhesion, reciprocal transfer 12s, stable contact 25s, daughter inheritance and save/load")
+    var restored: Dictionary = PHASE.normalize(JSON.parse_string(JSON.stringify(inherited)))
+    assert(restored["complete"] and restored["transmitted"])
+    print("PASS: legacy phase-two exchange, binding, inheritance and migration serialization")
     quit(0)

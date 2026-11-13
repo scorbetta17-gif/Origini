@@ -51,18 +51,13 @@ func _run() -> void:
     for k in required:
         game.resources[k] = required[k]
     game.atp = 96.0
+    game.cycle_age = 75.0
+    game.set_process(false)
     game.call("_divide_pressed")
     assert(game.division_options.size() == 2)
-    assert(game.overlay.visible)
-    var candidate_cards: int = 0
-    for child in game.overlay_list.get_children():
-        if child is HBoxContainer and child.get_child_count() == 2:
-            candidate_cards += 1
-            for sibling in child.get_children():
-                assert(sibling is PanelContainer)
-                assert(sibling.get_child_count() >= 1)
-    assert(candidate_cards == 1, "Expected two visually distinct phenotype cards")
-    game.call("_choose_daughter",0)
+    assert(not game.overlay.visible,"Fission must not open random daughter cards")
+    await create_timer(2.7).timeout
+    assert(game.division_options.is_empty() and game.generation==1)
     assert(game.entities.has(game.player_id))
     game.call("_on_tree")
     assert(game.tree_view != null)
@@ -76,5 +71,5 @@ func _run() -> void:
     game.call("_close_overlay")
     game.call("_refresh_hud")
     assert(classic.state.has("carbon") and classic.state.has("fission"))
-    print("PASS: Classic portrait HUD with actual 3D phenotype in gameplay and close-up, tabs, resources, joystick/fission CTA, daughter phenotype cards, mutation zoom and genealogy")
+    print("PASS: Classic portrait HUD with actual 3D phenotype in gameplay and close-up, tabs, resources, joystick/fission CTA, automatic inherited daughter transition, mutation zoom and genealogy")
     quit(0)

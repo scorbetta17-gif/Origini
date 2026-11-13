@@ -1,250 +1,64 @@
-name: ORIGINI - test rimasterizzazione (senza release)
+name: ORIGINI - campagna unificata e rendering
 on:
   push:
-    branches: [work/remaster-068, work/volcano-reference, work/seabed-reference, work/cell-phenotypes, work/mutation-balance, work/phase-two-playable, work/cell-redesign, work/ocean-cell-tree]
+    branches: [work/unified-evolution]
   workflow_dispatch:
-
-concurrency:
-  group: phase2-android-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
-
+concurrency:
+  group: unified-qa-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   qa:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Installa Godot
-        uses: chickensoft-games/setup-godot@v2
+      - uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.7.2
           use-dotnet: false
           include-templates: false
-      - name: Verifica asset Blender GLB versionati
-        run: python3 tools/blender/validate_cell_assets.py
-      - name: Controlli statici
-        run: python3 tests/qa_static.py
-      - name: Parsing mirato UI biologica 2.5D
-        run: godot --headless --path . --check-only --script res://src/cell_world_glyphs.gd
-      - name: Import e parsing del progetto
-        shell: bash
+      - name: Asset e contratti statici
         run: |
-          set -o pipefail
-          godot --headless --path . --editor --quit 2>&1 | tee godot-import.log
-          if grep -E '(SCRIPT ERROR|Parse Error|Failed to load script)' godot-import.log; then
-            exit 1
-          fi
-      - name: Smoke test
-        run: timeout 90s godot --headless --path . --script res://tests/smoke.gd
-      - name: Genotipo, ereditarieta' e fenotipo
-        run: timeout 90s godot --headless --path . --script res://tests/genome_smoke.gd
-      - name: "Oceano isometrico - vulcani, bolle e nutrienti molecolari"
-        run: timeout 120s godot --headless --resolution 720x1280 --path . --script res://tests/ocean_isometric_smoke.gd
-      - name: Crateri aperti, budget geometrico e RNG grafico isolato
-        run: timeout 90s godot --headless --path . --script res://tests/volcano_visual_smoke.gd
-      - name: Fondale esteso, raccordi, esplorazione e salvataggi
-        run: timeout 90s godot --headless --path . --script res://tests/seabed_world_smoke.gd
-      - name: Membrane stabili e moto indipendente dagli FPS
-        run: timeout 90s godot --headless --path . --script res://tests/cell_fluid_smoke.gd
-      - name: Fenotipo per tutti i loci e livelli
-        run: timeout 90s godot --headless --path . --script res://tests/cell_phenotype_smoke.gd
-      - name: Galleria di genotipi reali
-        run: timeout 90s godot --headless --path . --script res://tests/gallery_genotype_smoke.gd
-      - name: Nutrienti indipendenti dal frame rate
-        run: timeout 90s godot --headless --path . --script res://tests/nutrient_timing_smoke.gd
-      - name: Bilanciamento fisica energetica e moto fluido NPC
-        run: timeout 120s godot --headless --path . --script res://tests/physiology_balance_smoke.gd
-      - name: Mutazioni, ATP, substrati e predazione
-        run: timeout 90s godot --headless --path . --script res://tests/mutation_balance_smoke.gd
-      - name: Fase 1 - missioni e censimento popolazioni
-        run: timeout 120s godot --headless --path . --script res://tests/phase_one_smoke.gd
-      - name: Risorse molecolari, bilayer e crescita
-        run: timeout 90s godot --headless --path . --script res://tests/revision_smoke.gd
-      - name: Albero maggiore, icone, geni e fenotipo
-        run: timeout 120s godot --headless --path . --script res://tests/skill_tree_major_smoke.gd
-      - name: Fase 2 completa - da riconoscimento a trasmissione
-        run: timeout 120s godot --headless --path . --script res://tests/phase_two_smoke.gd
-      - name: Fase 2 - regressioni e partita con raccolta reale
-        run: |
-          timeout 90s godot --headless --path . --script res://tests/phase_two_regression_smoke.gd
-          timeout 180s godot --headless --path . --script res://tests/phase_two_playthrough_smoke.gd
-      - name: Campagna completa dal protocellula alla Fase 2
-        run: timeout 120s godot --headless --path . --script res://tests/campaign_full_smoke.gd
-      - name: Campagna giocata - raccolta reale senza risorse regalate
-        run: timeout 180s godot --headless --path . --script res://tests/campaign_playthrough_smoke.gd
-      - name: Import effettivo Blender 3D e moduli per gene
-        run: timeout 90s godot --headless --path . --script res://tests/blender_asset_smoke.gd
-      - name: Interfaccia classica Android verticale, figlie e albero
-        run: timeout 45s godot --headless --resolution 720x1280 --path . --script res://tests/classic_ui_smoke.gd
-      - name: Driver per capture 3D
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers vulkan-tools
-      - name: Screenshot autentici (Godot con display virtuale)
-        run: |
-          mkdir -p build/previews
-          timeout 90s xvfb-run -a -s "-screen 0 900x1600x24" godot --resolution 720x1280 --path . --rendering-method gl_compatibility --script res://tests/capture_preview.gd
-          test -s build/previews/primordiale-godot.png
-          test -s build/previews/primordiale-macro-godot.png
-          test -s build/previews/fenotipo-macro-godot.png
-          test -s build/previews/cellula-evoluta-godot.png
-          test -s build/previews/bioma-idrotermale-godot.png
-          test -s build/previews/classic-main-godot.png
-          test -s build/previews/classic-daughters-godot.png
-          test -s build/previews/classic-evolution-godot.png
-          test -s build/previews/classic-lineage-godot.png
-      - name: Screenshot reali tramite renderer Mobile/Vulkan
+          python3 tools/blender/validate_cell_assets.py
+          python3 tests/qa_static.py
+      - name: Import
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p build/previews
-          export ORIGIN_REQUIRE_MOBILE=1
-          export ORIGIN_CAPTURE_PREFIX="mobile-"
-          if test -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json; then
-            export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
-          fi
-          timeout 180s xvfb-run -a -s "-screen 0 900x1600x24" godot --resolution 720x1280 --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_preview.gd 2>&1 | tee build/mobile-vulkan.log
-          grep -q 'ORIGIN_ACTUAL_RENDERER=mobile DRIVER=vulkan' build/mobile-vulkan.log
-          test -s build/previews/mobile-primordiale-macro-godot.png
-          test -s build/previews/mobile-fenotipo-macro-godot.png
-          test -s build/previews/mobile-classic-main-godot.png
-          test -s build/previews/mobile-classic-daughters-godot.png
-          test -s build/previews/mobile-classic-evolution-godot.png
-      - name: Vulcani - due angoli e gameplay reale
+          godot --headless --path . --editor --quit 2>&1 | tee import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|Failed to load script' import.log; then exit 1; fi
+      - name: Suite isolata con controlli errori e timeout
+        run: python3 tests/run_suite.py --godot godot --timeout 180
+      - name: Driver di rendering
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers
+      - name: Campagna e fenotipi OpenGL
+        shell: bash
         run: |
-          timeout 90s xvfb-run -a -s "-screen 0 1440x1600x24" godot --resolution 1280x720 --path . --rendering-method gl_compatibility --script res://tests/capture_volcano.gd
-          test -s build/previews/volcano-detail.png
-          test -s build/previews/volcano-reverse.png
-          test -s build/previews/volcano-gameplay.png
-      - name: Fondale reale - faglie, regione distante e gameplay
+          set -euo pipefail
+          timeout 180s xvfb-run -a -s "-screen 0 1000x1600x24" godot --path . --rendering-method gl_compatibility --script res://tests/capture_unified.gd 2>&1 | tee capture-gl.log
+          grep -q 'RENDERER=gl_compatibility' capture-gl.log
+          if grep -E 'SCRIPT ERROR|Shader compilation failed' capture-gl.log; then exit 1; fi
+          test -s build/previews/unified-capabilities.png
+          test -s build/previews/unified-fission.png
+          test -s build/previews/unified-eukaryote.png
+      - name: Campagna e fenotipi Mobile Vulkan
+        shell: bash
         run: |
-          timeout 120s xvfb-run -a -s "-screen 0 1440x1600x24" godot --resolution 1280x720 --path . --rendering-method gl_compatibility --script res://tests/capture_seabed.gd
-          test -s build/previews/seabed-start.png
-          test -s build/previews/seabed-fault.png
-          test -s build/previews/seabed-distant.png
-          test -s build/previews/seabed-gameplay.png
-      - name: Cellule 3D - RNA, DNA, fenotipo combinato e galleria
-        run: |
-          timeout 120s xvfb-run -a -s "-screen 0 1600x1600x24" godot --resolution 1000x800 --path . --rendering-method gl_compatibility --script res://tests/capture_cell_models.gd
-          timeout 90s xvfb-run -a -s "-screen 0 1600x1100x24" godot --resolution 1600x1000 --path . --rendering-method gl_compatibility --script res://tests/capture_cell_gallery.gd
-          test -s build/previews/cell-rna.png
-          test -s build/previews/cell-dna.png
-          test -s build/previews/cell-evolved.png
-          test -s build/previews/cell-gameplay-3d.png
-          test -s build/previews/cell-phenotypes-gallery.png
-      - name: Cellule tramite Mobile Vulkan
-        run: |
-          ORIGIN_CAPTURE_PREFIX=mobile- timeout 180s xvfb-run -a -s "-screen 0 1600x1600x24" godot --resolution 1000x800 --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_cell_models.gd 2>&1 | tee build/cell-mobile.log
-          grep -q 'CELL_RENDERER=mobile DRIVER=vulkan' build/cell-mobile.log
-          test -s build/previews/mobile-cell-evolved.png
-      - name: Mutazioni e substrati - screenshot reali
-        run: timeout 90s xvfb-run -a -s "-screen 0 900x1600x24" godot --path . --rendering-method gl_compatibility --script res://tests/capture_mutation_balance.gd
-      - name: Fase 2 - pannello missione e consorzio reale
-        run: timeout 90s xvfb-run -a -s "-screen 0 900x1600x24" godot --path . --rendering-method gl_compatibility --script res://tests/capture_phase_two.gd
-      - name: Salva screenshot 3D per la revisione
-        uses: actions/upload-artifact@v4
+          set -euo pipefail
+          ORIGIN_CAPTURE_PREFIX=mobile- timeout 180s xvfb-run -a -s "-screen 0 1000x1600x24" godot --path . --rendering-method mobile --rendering-driver vulkan --script res://tests/capture_unified.gd 2>&1 | tee capture-vulkan.log
+          grep -q 'RENDERER=mobile DRIVER=vulkan' capture-vulkan.log
+          if grep -E 'SCRIPT ERROR|Shader compilation failed' capture-vulkan.log; then exit 1; fi
+          test -s build/previews/mobile-unified-eukaryote.png
+      - name: Fondale e faglie
+        run: timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_seabed.gd
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: ORIGINI-Remaster-Screenshot-Reali
-          path: build/previews/*.png
-          if-no-files-found: error
-
-  android-preview:
-    # Art-review branches run QA and capture only; an APK was not requested.
-    if: github.ref == 'refs/heads/work/remaster-068'
-    # User explicitly requested one installable Android APK for this test build.
-    # No release or merge: artifact only after all QA succeeds.
-    needs: qa
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - name: Versione 0.76 Android Compatibility con pacchetto nuovo
-        run: |
-          set -euo pipefail
-          sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
-          sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
-          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.isometric76"@' export_presets.cfg
-          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI 0.76"@' export_presets.cfg
-          sed -i 's@version/name="0.67-demo"@version/name="0.76-isometrico"@' export_presets.cfg
-          sed -i 's@version/code=67@version/code=76@' export_presets.cfg
-          grep -q 'org.origini.mobile.isometric76' export_presets.cfg
-      - name: Installa Godot 4.7.2 + export templates corrispondenti
-        uses: chickensoft-games/setup-godot@v2
-        with:
-          version: 4.7.2
-          use-dotnet: false
-          include-templates: true
-      - name: Importa progetto e verifica renderer Compatibility
-        run: |
-          godot --headless --path . --editor --quit
-          grep -q 'renderer/rendering_method="gl_compatibility"' project.godot
-      - name: Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Android SDK e strumenti nativi
-        uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
-      - name: SDK + build tools per zipalign/apksigner
-        run: sdkmanager --install 'platform-tools' 'build-tools;35.0.1' 'platforms;android-35'
-      - name: Prepara firma debug pulita
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.config/godot build/android
-          cat > ~/.config/godot/editor_settings-4.7.tres <<EOF
-          [gd_resource type="EditorSettings" format=3]
-          [resource]
-          export/android/android_sdk_path = "${ANDROID_HOME}"
-          export/android/java_sdk_path = "${JAVA_HOME}"
-          EOF
-          keytool -genkeypair -keystore "${RUNNER_TEMP}/origini-native-fix.keystore" \
-            -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
-            -dname "CN=ORIGINI 076 Preview,O=Game,C=IT" -noprompt
-          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/origini-native-fix.keystore" >> "${GITHUB_ENV}"
-          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "${GITHUB_ENV}"
-          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "${GITHUB_ENV}"
-      - name: Crea APK Android Compatibility
-        run: godot --headless --path . --export-debug Android build/android/ORIGINI-base.apk
-      - name: Ricompone librerie native Godot senza compressione
-        run: |
-          set -euo pipefail
-          python3 tools/android/harden_apk_native.py build/android/ORIGINI-base.apk build/android/ORIGINI-native-unsigned.apk
-      - name: Allinea librerie native a 16 KiB
-        shell: bash
-        run: |
-          set -euo pipefail
-          "${ANDROID_HOME}/build-tools/35.0.1/zipalign" -P 16 -f -v 4 \
-            build/android/ORIGINI-native-unsigned.apk build/android/ORIGINI-native-aligned.apk
-      - name: Firma nuovamente APK con v1 v2 v3
-        shell: bash
-        run: |
-          set -euo pipefail
-          "${ANDROID_HOME}/build-tools/35.0.1/apksigner" sign \
-            --ks "${RUNNER_TEMP}/origini-native-fix.keystore" \
-            --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey \
-            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
-            --out build/android/ORIGINI-0.76-ISOMETRICO.apk \
-            build/android/ORIGINI-native-aligned.apk
-      - name: Verifica APK finale, caricamento ABI e firma
-        shell: bash
-        run: |
-          set -euo pipefail
-          apk=build/android/ORIGINI-0.76-ISOMETRICO.apk
-          test -s "${apk}"
-          unzip -t "${apk}" >/dev/null
-          "${ANDROID_HOME}/build-tools/35.0.1/zipalign" -c -P 16 -v 4 "${apk}"
-          "${ANDROID_HOME}/build-tools/35.0.1/apksigner" verify --verbose --print-certs "${apk}"
-          python3 tools/android/verify_apk_native.py "${apk}"
-          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging "${apk}" | grep -q "org.origini.mobile.isometric76"
-          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump xmltree "${apk}" AndroidManifest.xml | grep -q 'extractNativeLibs'
-      - name: Unico APK installabile da smartphone (no release automatica)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ORIGINI-076-ISOMETRICO-APK
-          path: build/android/ORIGINI-0.76-ISOMETRICO.apk
-          if-no-files-found: error
+          name: ORIGINI-Unified-QA
+          path: |
+            build/previews/*.png
+            *.log
+            ../.tools/test_runs/**/summary.json
+            ../.tools/test_runs/**/output.log

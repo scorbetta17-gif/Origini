@@ -44,32 +44,7 @@ func _run() -> void:
     assert(incomplete["observation_start"].is_empty())
     assert(not bool(incomplete["complete"]))
 
-    # Real Godot mission transition, not only an isolated pure-state test.
-    var game: Node = load("res://scenes/Main.tscn").instantiate()
-    root.add_child(game)
-    await process_frame
-    assert(game.overlay.visible,"Initial Phase 1 intro must open")
-    assert(str(game.phase1_progress.get("intro_seen",false)) == "true")
-    game.call("_close_overlay")
-    game.phase1_progress["player_divisions"] = 6
-    game.phase1_progress["autonomous_divisions"] = 3
-    game.generation = 6
-    for i in range(9):
-        game.call("_create_entity","TEST-C%d" % i,"C-000",i%8,"pre_luca",
-            game.call("_base_traits"),Vector3(float(i%5)*2.0,0,float(i/5)*2.0),false,false)
-    assert(game.entities.size() == 10)
-    game.t = 200.0
-    game.call("_advance_phase_one",74.9)
-    assert(not bool(game.phase1_progress["complete"]))
-    game.call("_advance_phase_one",.2)
-    assert(bool(game.phase1_progress["complete"]))
-    assert(game.overlay.visible,"Phase 2 intro MUST open after ecological victory")
-    assert(bool(game.phase1_progress["phase_two_intro_seen"]))
-    assert(int(game.phase1_progress["final_report"]["totale"]) == 10)
-    game.call("_close_overlay")
-    game.call("_save_game")
-    game.call("_load_game")
-    assert(bool(game.phase1_progress["complete"]))
-    assert(int(game.phase1_progress["final_report"]["totale"]) == 10)
-    print("PASS: Phase 1 intro, five missions, 75s competition gate, live cohort percentages, Phase 2 unlock and save/load")
+    var restored: Dictionary = PHASE.normalize(JSON.parse_string(JSON.stringify(mission)))
+    assert(restored["complete"] and restored["final_report"]["totale"]==10)
+    print("PASS: legacy phase-one mission state, census, competition boundaries and migration serialization")
     quit(0)
