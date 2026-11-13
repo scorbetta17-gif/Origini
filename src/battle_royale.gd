@@ -42,7 +42,7 @@ func profile(index: int) -> Dictionary:
 
 func start(index: int) -> void:
     if not active(): game._save_game()
-    game._new_game()
+    game._new_game(true)
     game._close_overlay()
     state = rules.origin()
     state.profile = clampi(index,0,3)

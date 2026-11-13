@@ -149,6 +149,8 @@ var lineage_view: LineageView
 var world_root: Node3D
 var nutrient_root: Node3D
 var cells_root: Node3D
+var journey: Node
+var habitats: Node
 var battle: Node
 
 func _ready() -> void:
@@ -159,10 +161,16 @@ func _ready() -> void:
     battle = preload("res://src/battle_royale.gd").new()
     battle.game = self
     add_child(battle)
+    journey = preload("res://src/campaign_journey.gd").new()
+    journey.game = self
+    add_child(journey)
+    habitats = preload("res://src/campaign_habitats.gd").new()
+    habitats.game = self
+    add_child(habitats)
     _new_game()
     get_viewport().size_changed.connect(_layout_ui)
 
-func _new_game() -> void:
+func _new_game(arena: bool = false) -> void:
     if is_instance_valid(battle): battle.reset()
     world_radius = preload("res://src/seabed_palette.gd").WORLD_RADIUS
     for child in cells_root.get_children():
@@ -241,8 +249,11 @@ func _new_game() -> void:
             z = rng.randf_range(-20.0,20.0)
         _create_nutrient(Balance.NUTRIENT_CYCLE[i % Balance.NUTRIENT_CYCLE.size()], Vector3(x,.19,z))
     _reset_substrates()
+    journey.reset(arena)
+    habitats.rebuild(not arena)
+    if not arena: habitats.seed_world()
+    _close_overlay()
     _refresh_hud()
-    _open_phase_intro(1)
 
 func _base_traits() -> Dictionary:
     var starter: Dictionary = {"motility": 1.0, "attack": 1.0, "defense": 1.0, "mutation": 0.0,
@@ -829,6 +840,7 @@ func _digest_substrate(patch: Node3D) -> bool:
     atp -= Balance.ENZYME_COST
     _award_bundle(patch.reward(),true)
     statistics.substrates += 1
+    journey.digested()
     skill_cooldown = 2.0
     patch.set_portions(patch.portions-1)
     _notice("%s: fino a 5 molecole recuperate (limite delle riserve)" % patch.LABELS[patch.kind])
@@ -870,6 +882,8 @@ func _respawn_nutrients(delta: float) -> void:
 
 func _nearby_nutrient_position() -> Vector3:
     var center: Vector3 = player.position if is_instance_valid(player) else Vector3.ZERO
+    if is_instance_valid(habitats) and center.length()<34 and rng.randf()<.55:
+        return habitats.food_position()
     var angle: float = rng.randf()*TAU
     var distance: float = rng.randf_range(5.0,20.0)
     return Vector3(clampf(center.x+cos(angle)*distance,-world_radius+1,world_radius-1),
@@ -1320,6 +1334,7 @@ func _choose_daughter(choice: int) -> void:
     phase1_progress["player_divisions"] = int(phase1_progress.get("player_divisions",0))+1
     _activate_lineage(chosen_id)
     _close_overlay()
+    journey.after_division()
     _save_game()
     _notice("Scissione completata · %s · +%.2f PM" % [chosen_id,credit])
 
@@ -1344,6 +1359,7 @@ func _on_regen() -> void:
     _notice("+30 HP · consumato il 10% delle riserve")
 
 func _on_skill(mode: String) -> void:
+    if mode == "enzyme" and journey.enzyme_action(): return
     cooperation_target = ""
     if atp <= 0.0:
         _notice("ATP esaurito: nessuna capacità attivabile")
@@ -1365,8 +1381,8 @@ func _on_skill(mode: String) -> void:
     selected_substrate = null
     if mode=="enzyme":
         for patch in substrates:
-            if is_instance_valid(patch) and patch.position.distance_to(player.position)<10.0:
-                if selected_substrate==null or patch.position.distance_to(player.position)<selected_substrate.position.distance_to(player.position):
+            if is_instance_valid(patch) and Vector2(patch.position.x-player.position.x,patch.position.z-player.position.z).length()<10.0:
+                if selected_substrate==null or Vector2(patch.position.x-player.position.x,patch.position.z-player.position.z).length()<Vector2(selected_substrate.position.x-player.position.x,selected_substrate.position.z-player.position.z).length():
                     selected_substrate = patch
         if selected_substrate!=null:
             selected_target_id = ""
@@ -1522,6 +1538,7 @@ func _on_resources() -> void:
     _add_overlay_button("COME GIOCARE",_on_guide)
 
 func _on_tree() -> void:
+    journey.explain()
     _open_overlay("SPECIALIZZAZIONI", "Bonus e costi · punti guadagnati per scissione")
     overlay_scroll.visible = false
     tree_view = TreeScript.new()
@@ -1561,6 +1578,7 @@ func _on_tree_mutation(id: int,stat: String,_value: float,cost: int) -> void:
     if not valid:
         return
     var traits: Dictionary = entities[player_id]["traits"]
+    var before_traits: Dictionary = traits.duplicate(true)
     var branch: String = str(entities[player_id]["branch"])
     if id % 48 >= 40:
         var locus: String = tree_view.major_locus(id)
@@ -1588,6 +1606,7 @@ func _on_tree_mutation(id: int,stat: String,_value: float,cost: int) -> void:
     _differentiate_lineage()
     _cache_current()
     tree_view.configure(purchased,int(floor(mutation_points)),traits,generation)
+    if id == 88: journey.purchased_enzyme(before_traits)
     _refresh_hud()
 
 func _on_genome() -> void:
@@ -1641,6 +1660,7 @@ func _open_main_menu() -> void:
     _add_overlay_button("Consorzi metabolici",_on_phase_two)
     _add_overlay_button("Capacità evolutive",_on_evolution)
     _add_overlay_button("Come giocare",_on_guide)
+    if journey.active(): _add_overlay_button("Salta guida iniziale",journey.skip)
     _add_overlay_button("Salva partita",_save_game)
     _add_overlay_button("Carica partita",_load_game.bind(battle.PATH if battle.active() else SAVE_PATH))
     if FileAccess.file_exists(PHASE_TWO_CHECKPOINT):
@@ -1847,7 +1867,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
         "last_external_arrival":last_external_arrival,"world_age":world_age,
-        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state}
+        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state,"journey":journey.state}
     var file: FileAccess = FileAccess.open(path,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
@@ -2012,6 +2032,9 @@ func _load_game(path: String = SAVE_PATH) -> void:
     is_paused = false
     _close_overlay()
     _refresh_hud()
+    journey.restore(loaded.get("journey",null))
+    habitats.rebuild(not battle.active())
+    _refresh_hud()
     battle.rebuild()
     if battle.active() and not str(battle.state.result).is_empty():
         battle.finish(str(battle.state.result))
@@ -2076,6 +2099,10 @@ func _refresh_hud() -> void:
         var simple_objective: String = objective_label.text
         if simple_objective.length() > 68:
             simple_objective = simple_objective.substr(0,65)+"..."
+        if is_instance_valid(journey) and journey.active():
+            simple_objective = journey.objective()
+        if is_instance_valid(habitats) and not battle.active():
+            chapter_detail = habitats.description(player.position)
         if battle.active():
             chapter_title = "BATTLE ROYALE · SOPRAVVIVENZA"
             chapter_detail = battle.hud_text()
@@ -2106,6 +2133,9 @@ func _refresh_hud() -> void:
         buttons["regen"].text = "✚ RIGENERA\n30 HP"
         buttons["menu"].text = "☰ MENU\nOPZIONI"
         scission_button.text = "◌  ◌\nDIVIDI"
+    if is_instance_valid(journey):
+        if journey.active(): objective_label.text = journey.objective()
+        journey.update_ui()
 
 func _style(color: Color, outline: Color) -> StyleBoxFlat:
     var s := StyleBoxFlat.new()
