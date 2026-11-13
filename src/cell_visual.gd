@@ -4,6 +4,7 @@ class_name CellVisual
 ## All'inizio: una membrana, un filamento di ssRNA, pochi complessi autocatalitici.
 const Genome = preload("res://src/cell_genome.gd")
 const RNA_COLOR := Color(1.0,.48,.12)
+const DNA_COLOR := Color(.69,.35,.95)
 const CATALYST_COLOR := Color(1.0,.68,.23)
 const MEMBRANE_SHADER = preload("res://shaders/cell_membrane.gdshader")
 const CONTENTS_SHADER = preload("res://shaders/cell_contents.gdshader")
@@ -173,6 +174,14 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
         core.queue_free()
         return false
     membrane = shell as MeshInstance3D
+    # The shared imported interior remains, but the outline is a true ovoid.
+    var smooth_shell := SphereMesh.new()
+    smooth_shell.radius = 1.0
+    smooth_shell.height = 2.0
+    smooth_shell.radial_segments = 48
+    smooth_shell.rings = 28
+    membrane.mesh = smooth_shell
+    membrane.transform = Transform3D.IDENTITY
     var shell_mat := ShaderMaterial.new()
     shell_mat.shader = MEMBRANE_SHADER
     shell_mat.set_shader_parameter("membrane_tint",tint.lerp(Color(.62,.69,.61),clampf(thermal*.06,0,.35)))
@@ -182,7 +191,7 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
     shell_mat.set_shader_parameter("internal_scattering",.28 if primitive else .36)
     membrane.material_override = shell_mat
     membrane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    # GlTF source keeps geometric form; Godot controls all gameplay optical values.
+    # Imported internal complexes remain; the shell uses the common ovoid profile.
     # Overriding imported opaque materials ensures the RNA remains legible.
     var cytosol_mesh: MeshInstance3D = core.find_child("Cytosol",true,false) as MeshInstance3D
     if cytosol_mesh != null:
@@ -240,11 +249,15 @@ func _build_imported_dna(host: Node3D) -> void:
     dna_root.set_meta("display","compact coiled genetic material; unconfined in cytoplasm")
     host.add_child(dna_root)
     var points := PackedVector3Array()
-    for i in range(241):
-        var u: float = float(i)/240.0*TAU
-        var r: float = .25+.07*cos(u*7.0)
-        points.append(Vector3(cos(u*3.0)*r,.15+sin(u*7.0)*.15,sin(u*3.0)*r*.8))
-    _tube(dna_root,points,.017,Color(1.0,.60,.22))
+    # One continuous purple polymer wound over a compact three-dimensional
+    # ball. This is a readable nucleoid symbol, not a literal molecular scale.
+    for i in range(721):
+        var u: float = float(i)/720.0*TAU*23.5
+        var latitude: float = sin(u*.381966)*1.42
+        var radius: float = .25*(.82+.18*sin(u*.271))
+        points.append(Vector3(cos(u)*cos(latitude)*radius,
+            .12+sin(latitude)*radius,sin(u)*cos(latitude)*radius))
+    _tube(dna_root,points,.017,DNA_COLOR)
 
 func _bilayer() -> void:
     # Two leaflets of ONE amphiphile bilayer, not two independent membranes.
@@ -294,14 +307,14 @@ func _blender_module(id: String, at: Vector3, normal: Vector3, size: float = 1.0
 func _build() -> void:
     var primitive: bool = branch == "pre_luca"
     # Solo un locus morfogenetico MAGGIORE modifica la forma.
-    var shape: float = clampf(float(traits.get("elongation",0.0))*.48,0.0,.40)
-    var elongated: bool = shape > .24
-    body_radii = Vector3(.87+shape,.56,.79-shape*.24)
+    var shape: float = clampf(float(traits.get("elongation",0.0))*.38,0.0,.24)
+    var elongated: bool = shape > .18
+    body_radii = Vector3(1.03+shape,.56,.69-shape*.16)
     if primitive:
         body_radii *= .90
     if elongated:
-        body_radii.x += .16
-        body_radii.z -= .085
+        body_radii.x += .04
+        body_radii.z -= .015
     var tint: Color = _color()
     var globe := SphereMesh.new()
     globe.radius = 1.0
@@ -437,19 +450,33 @@ func _build() -> void:
     feature_start = get_child_count()
     var motors: int = int(traits.get("archaella",0)) if branch == "archaea" else int(traits.get("flagella",0)) if branch == "bacteria" else 0
     for i in range(mini(4,motors)):
-        var root := Node3D.new()
-        root.name = "Archaellum_RotaryFilament" if branch == "archaea" else "Flagellum_RotaryFilament"
-        root.position = Vector3(-body_radii.x,.81,float(i)*.12-.12)
-        add_child(root)
-        filament_roots.append(root)
+        var archaeal: bool = branch == "archaea"
+        var assembly := Node3D.new()
+        assembly.name = "GeneModule_Archaellum" if archaeal else "GeneModule_Flagellum"
+        var polar: float = (float(i)-float(mini(4,motors)-1)*.5)*.16
+        assembly.position = Vector3(-body_radii.x*sqrt(1.0-polar*polar),.81,body_radii.z*polar)
+        add_child(assembly)
+        var motor_tint: Color = Color(.51,.80,.87) if archaeal else Color(.78,.69,.48)
+        _ellipsoid(assembly,Vector3.ZERO,Vector3(.035,.049,.049),motor_tint.darkened(.15)).name = "BasalMotor"
+        var hook := PackedVector3Array()
+        for j in range(13):
+            var u: float = float(j)/12.0
+            hook.append(Vector3(-.22*u,.06*sin(u*PI*.5),.025*sin(u*PI)))
+        _tube(assembly,hook,.016 if archaeal else .021,motor_tint)
+        assembly.get_child(1).name = "BasalConnector" if archaeal else "FlexibleHook"
+        var rotor := Node3D.new()
+        rotor.name = "Archaellum_RotaryFilament" if archaeal else "Flagellum_RotaryFilament"
+        rotor.position = hook[hook.size()-1]
+        assembly.add_child(rotor)
+        filament_roots.append(rotor)
         var path := PackedVector3Array()
-        for j in range(23):
-            var u: float = float(j)/22.0
-            var turns: float = 3.6 if branch == "archaea" else 2.6
-            var amplitude: float = .065 if branch == "archaea" else .105
-            path.append(Vector3(-u*(1.65 if branch == "archaea" else 2.05),sin(u*TAU*turns+float(i))*amplitude,cos(u*TAU*turns+float(i))*amplitude))
-        _tube(root,path,.023 if branch == "archaea" else .029,Color(.48,.78,.84) if branch == "archaea" else Color(.89,.68,.40))
-        _ellipsoid(root,Vector3.ZERO,Vector3(.055,.065,.065),Color(.55,.79,.84) if branch == "archaea" else Color(.83,.59,.27))
+        var turns: float = 1.8 if archaeal else 1.55
+        var length: float = 2.65 if archaeal else 3.1
+        for j in range(65):
+            var u: float = float(j)/64.0
+            var amplitude: float = (.13 if archaeal else .18)*smoothstep(0.0,.16,u)
+            path.append(Vector3(-u*length,sin(u*TAU*turns)*amplitude,cos(u*TAU*turns)*amplitude))
+        _tube(rotor,path,.013 if archaeal else .017,motor_tint)
     _record_children("archaellar_motor" if branch == "archaea" else "flagellar_motor",feature_start)
 
     _record_genetic_core()
