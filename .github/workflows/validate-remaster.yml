@@ -1,7 +1,7 @@
 name: ORIGINI - campagna unificata e rendering
 on:
   push:
-    branches: [work/unified-evolution]
+    branches: [work/cell-stats-081]
   workflow_dispatch:
 permissions:
   contents: read
@@ -51,6 +51,15 @@ jobs:
           grep -q 'RENDERER=mobile DRIVER=vulkan' capture-vulkan.log
           if grep -E 'SCRIPT ERROR|Shader compilation failed' capture-vulkan.log; then exit 1; fi
           test -s build/previews/mobile-unified-eukaryote.png
+      - name: Cellule e statistiche 0.81
+        shell: bash
+        run: |
+          set -euo pipefail
+          ORIGIN_CAPTURE_PREFIX=081- timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_cell_models.gd 2>&1 | tee cells081.log
+          timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_statistics.gd 2>&1 | tee statistics081.log
+          if grep -E 'SCRIPT ERROR|Shader compilation failed' cells081.log statistics081.log; then exit 1; fi
+          test -s build/previews/081-cell-dna.png
+          test -s build/previews/081-statistics-local.png
       - name: Fondale e faglie
         run: timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_seabed.gd
       - name: Raccogli soltanto i log di verifica

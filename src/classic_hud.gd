@@ -123,12 +123,12 @@ func _draw() -> void:
     var fission_x: float = 183.0
     var fission_width: float = maxf(158.0,w-363.0)
     _box(fission_x,bottom,fission_width,144.0,progress_card)
-    _tx(Vector2(fission_x+13,bottom+25),"SCISSIONE  ·  %d%%" % int(round(float(state.get("fission",0))*100.0)),17,PAPER,fission_width-23)
+    _tx(Vector2(fission_x+13,bottom+25),"SCISSIONE  ·  %d%%" % int(floor(float(state.get("fission",0))*100.0)),17,PAPER,fission_width-23)
     _fillbar(fission_x+13,bottom+34,fission_width-26,10,float(state.get("fission",0)),LAVENDER)
     _tx(Vector2(fission_x+13,bottom+68),str(state.get("requirements_1","C 0/24 · A 0/15")),13,MUTED,fission_width-25)
     _tx(Vector2(fission_x+13,bottom+91),str(state.get("requirements_2","L 0/12 · N 0/8")),13,MUTED,fission_width-25)
     _tx(Vector2(fission_x+13,bottom+114),str(state.get("requirements_3","BIO 0/65 · ATP 0/30")),13,MUTED,fission_width-25)
-    _tx(Vector2(fission_x+13,bottom+136),"PRONTA" if bool(state.get("can_divide",false)) else "RACCOGLI RISORSE",11,MINT if bool(state.get("can_divide",false)) else GOLD,fission_width-25)
+    _tx(Vector2(fission_x+13,bottom+136),"PRONTA" if bool(state.get("can_divide",false)) else str(state.get("division_status","RACCOGLI RISORSE")),11,MINT if bool(state.get("can_divide",false)) else GOLD,fission_width-25)
 
 func panel_height() -> float:
     return (412.0 if size.y/ui_scale >= 1120 else 386.0)*ui_scale

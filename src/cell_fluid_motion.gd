@@ -35,7 +35,7 @@ func setup(host: Node3D) -> void:
     if is_instance_valid(cell.membrane):
         shell_material = cell.membrane.material_override as ShaderMaterial
         if shell_material != null:
-            shell_material.set_shader_parameter("membrane_motion",.035*flexibility)
+            shell_material.set_shader_parameter("membrane_motion",.018*flexibility)
     advance_motion(Vector3.ZERO,0.0)
 
 func _process(delta: float) -> void:
@@ -74,10 +74,10 @@ func advance_motion(velocity: Vector3, delta: float) -> void:
         var unit: Vector3 = (rest-center)/cell.body_radii
         var azimuth: float = atan2(unit.z,unit.x)
         var wave: float = sin(unit.x*3.1+phase*.72)*sin(unit.z*2.4-phase*.53)
-        var lobes: float = sin(azimuth*3.0+phase*.31)*.050+cos(azimuth*2.0-phase*.23)*.035
-        var organic: float = sin(azimuth*3.0+.65)*.11+cos(azimuth*5.0-.7)*.045
+        var lobes: float = sin(azimuth*3.0+phase*.31)*.009+cos(azimuth*2.0-phase*.23)*.006
+        var organic: float = sin(azimuth*3.0+.65)*.012+cos(azimuth*5.0-.7)*.006
         var pressure: float = -maxf(0.0,unit.normalized().dot(axis))*strain*.22
-        var displacement: float = (wave*.035+(lobes+organic)*clampf(Vector2(unit.x,unit.z).length(),0,1))*flexibility+pressure
+        var displacement: float = (wave*.018+(lobes+organic)*clampf(Vector2(unit.x,unit.z).length(),0,1))*flexibility+pressure
         anchor["node"].position = rest+unit.normalized()*cell.body_radii*displacement
     surface_phase = fmod(surface_phase+dt*(.10+minf(filtered_velocity.length(),3.0)*.19)*3.0,TAU)
     if shell_material != null:

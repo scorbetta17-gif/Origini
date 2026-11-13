@@ -21,9 +21,9 @@ void vertex() {
     // Low-order smooth undulations, bounded amplitude; no particle/explosion mode.
     float wave = sin(VERTEX.x*3.1+membrane_time*.72)*sin(VERTEX.z*2.4-membrane_time*.53);
     float azimuth=atan(VERTEX.z,VERTEX.x);
-    float lobes=sin(azimuth*3.0+membrane_time*.31)*.050+cos(azimuth*2.0-membrane_time*.23)*.035;
+    float lobes=sin(azimuth*3.0+membrane_time*.31)*.009+cos(azimuth*2.0-membrane_time*.23)*.006;
     float equator=clamp(length(VERTEX.xz),0.0,1.0);
-    float organic = sin(azimuth*3.0+0.65)*0.11+cos(azimuth*5.0-0.7)*0.045;
+    float organic = sin(azimuth*3.0+0.65)*0.012+cos(azimuth*5.0-0.7)*0.006;
     float pressure = -max(0.0,dot(normalize(VERTEX),flow_axis))*flow_strain*.22;
     VERTEX += NORMAL * (wave * membrane_motion+(lobes+organic)*equator*flexibility+pressure);
     float division = clamp(division_progress,0.0,1.0);

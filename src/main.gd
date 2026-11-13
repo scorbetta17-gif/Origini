@@ -3,6 +3,7 @@ extends Node3D
 ## Scene 3D reali, camera isometrica, fenotipi procedurali, UI mobile.
 
 const Evolution = preload("res://src/evolution_progress.gd")
+const Statistics = preload("res://src/game_statistics.gd")
 const Ecology = preload("res://src/niche_ecology.gd")
 const Balance = preload("res://src/mutation_balance.gd")
 const SubstrateScript = preload("res://src/substrate_patch.gd")
@@ -88,6 +89,7 @@ var mutation_points: float = 0.0
 var evolution: Dictionary = {}
 var ecology: Dictionary = {}
 var ecological_profiles: Dictionary = {}
+var statistics: Dictionary = Statistics.origin()
 var cycle_age: float = 0.0
 var division_active: bool = false
 var ecology_syncing: bool = false
@@ -171,6 +173,7 @@ func _new_game() -> void:
     atp = 66.0
     hp = 100.0
     mutation_points = 0
+    statistics = Statistics.origin()
     evolution = Evolution.origin()
     ecology = Ecology.origin()
     ecological_profiles.clear()
@@ -478,6 +481,7 @@ func _register_death(id: String, reason: String = "morte") -> void:
     _remove_entity(id,reason)
 
 func _process(delta: float) -> void:
+    _expire_notice()
     if is_instance_valid(player):
         world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso").update_focus(player.position)
     if division_active or is_paused or not is_instance_valid(player) or not entities.has(player_id):
@@ -485,10 +489,6 @@ func _process(delta: float) -> void:
     delta = minf(delta,.07)
     t += delta
     cycle_age += delta
-    if is_instance_valid(tips_label) and notice_expires >= 0 and t > notice_expires:
-        tips_label.visible = false
-        if is_instance_valid(toast_back):
-            toast_back.visible = false
     regeneration_cooldown = maxf(0.0,regeneration_cooldown-delta)
     skill_cooldown = maxf(0.0,skill_cooldown-delta)
     autosave_timer += delta
@@ -709,6 +709,7 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
     var n: Dictionary = nutrients[index]
     var kind: String = str(n["kind"])
     if controlled:
+        var previous_stock: Dictionary = resources.duplicate(true)
         var uptake: float = float(entities[player_id]["traits"].get("uptake",1.0))
         if kind == "detritus":
             resources["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(resources["carbon"])+2.0*uptake)
@@ -719,6 +720,8 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
         atp = minf(100.0,atp+(6.0 if kind=="carbon" else (3.0 if kind=="detritus" else .75))*sqrt(float(entities[player_id]["traits"].get("metabolism",1.0)))*Physiology.energy_yield_multiplier(entities[player_id]["traits"]))
         if atp > 0.0:
             zero_atp_seconds = 0.0
+        Statistics.record_intake(statistics,previous_stock,resources)
+        statistics.particles += 1
     elif entities.has(cell_id):
         var e: Dictionary = entities[cell_id]
         var uptake_npc: float = float(e["traits"].get("uptake",1.0))
@@ -742,6 +745,7 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
 func _award_bundle(bundle: Dictionary, controlled: bool, cell_id: String = "") -> void:
     if not controlled and not entities.has(cell_id):
         return
+    var before_stock: Dictionary = resources.duplicate(true) if controlled else {}
     var stock: Dictionary = resources if controlled else entities[cell_id]["resources"]
     var traits: Dictionary = entities[player_id if controlled else cell_id]["traits"]
     var uptake: float = clampf(float(traits.get("uptake",1.0)),.50,1.80)
@@ -749,6 +753,7 @@ func _award_bundle(bundle: Dictionary, controlled: bool, cell_id: String = "") -
         stock[key] = minf(Physiology.reserve_cap(float(NEED[key])),float(stock.get(key,0))+float(bundle.get(key,0))*uptake)
     if controlled:
         resources = stock
+        Statistics.record_intake(statistics,before_stock,resources)
         atp = minf(100.0,atp+float(bundle.get("atp",0))*Physiology.energy_yield_multiplier(traits))
         if atp>0:
             zero_atp_seconds = 0.0
@@ -807,6 +812,7 @@ func _digest_substrate(patch: Node3D) -> bool:
         return false
     atp -= Balance.ENZYME_COST
     _award_bundle(patch.reward(),true)
+    statistics.substrates += 1
     skill_cooldown = 2.0
     patch.set_portions(patch.portions-1)
     _notice("%s: fino a 5 molecole recuperate (limite delle riserve)" % patch.LABELS[patch.kind])
@@ -1207,8 +1213,11 @@ func _can_divide() -> bool:
     return atp >= 30.0
 
 func _divide_pressed() -> void:
-    if division_active or not _can_divide():
-        _notice("Completa nutrienti, ATP e maturazione del ciclo prima della scissione")
+    if division_active or hp<=0.0:
+        return
+    var reason: String = _division_block_reason()
+    if reason != "":
+        _notice(reason)
         return
     _close_overlay()
     _cache_current()
@@ -1287,6 +1296,7 @@ func _choose_daughter(choice: int) -> void:
         if i == choice:
             chosen_id = id
     division_options.clear()
+    statistics.divisions += 1
     phase1_progress["player_divisions"] = int(phase1_progress.get("player_divisions",0))+1
     _activate_lineage(chosen_id)
     _close_overlay()
@@ -1420,6 +1430,7 @@ func _follow_attack(delta: float) -> void:
         var prey_id: String = selected_target_id
         _remove_entity(prey_id,"predazione")
         _award_bundle(Balance.KILL_REWARD,true)
+        statistics.kills += 1
         selected_target_id = ""
         attack_mode = ""
         _notice("Predazione completata · detriti rilasciati")
@@ -1592,6 +1603,7 @@ func _open_main_menu() -> void:
     _add_overlay_button("Albero mutazioni",_on_tree)
     _add_overlay_button("Linee genealogiche",_on_genealogy)
     _add_overlay_button("Genoma e fenotipo",_on_genome)
+    _add_overlay_button("Statistiche e popolazioni",_on_statistics)
     _add_overlay_button("Obiettivi",_on_goals)
     _add_overlay_button("Consorzi metabolici",_on_phase_two)
     _add_overlay_button("Capacità evolutive",_on_evolution)
@@ -1622,6 +1634,7 @@ func _on_goals() -> void:
                 occupied += 1
             _add_overlay_label("%d:%d · %.1f cell/km² · %s" % [x,z,float(info.get("density",0)),_niche_label(str(info.get("status","")))])
     _add_overlay_label("Nicchie consolidate: %d/25 · Divisioni della linea: %d · PM %.2f" % [occupied,int(evolution.get("divisions",0)),mutation_points])
+    _add_overlay_button("STATISTICHE · RNA, DNA E POPOLAZIONI",_on_statistics)
     _add_overlay_button("CAPACITÀ EVOLUTIVE",_on_evolution)
     _add_overlay_button("ALBERO DELLE SPECIALIZZAZIONI",_on_tree)
 
@@ -1794,14 +1807,14 @@ func _save_game(path: String = SAVE_PATH) -> void:
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
         "last_external_arrival":last_external_arrival,"world_age":world_age,
-        "ecology":ecology,"ecological_profiles":ecological_profiles}
+        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics}
     var file: FileAccess = FileAccess.open(path,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
         file.close()
 
 func _valid_save(data: Dictionary) -> bool:
-    for key in ["ecology","ecological_profiles"]:
+    for key in ["ecology","ecological_profiles","statistics"]:
         if data.has(key) and not data[key] is Dictionary:
             return false
     for key in ["entities","genealogy","nutrients","substrates"]:
@@ -1901,6 +1914,7 @@ func _load_game(path: String = SAVE_PATH) -> void:
     _reset_substrates(loaded.get("substrates",[]),loaded.has("substrates"))
     substrate_respawn = clampf(float(loaded.get("substrate_respawn",0)),0,20)
     t = maxf(0.0,float(loaded.get("elapsed",0.0)))
+    statistics = Statistics.normalize(loaded.get("statistics",{}),t)
     next_id = maxi(1,int(loaded.get("next_id",1)))
     for rec in genealogy+cell_list:
         if rec is Dictionary:
@@ -1963,7 +1977,7 @@ func _notice(message: String) -> void:
         if is_instance_valid(toast_back):
             toast_back.visible = true
         tips_label.add_theme_color_override("font_color",Color(.95,.90,.71))
-        notice_expires = t+5.0
+        notice_expires = float(Time.get_ticks_msec())/1000.0+3.5
 
 func _refresh_hud() -> void:
     if not is_instance_valid(player) or not entities.has(player_id):
@@ -1976,6 +1990,9 @@ func _refresh_hud() -> void:
     for k in NEED:
         minimum = minf(minimum,float(resources[k])/float(NEED[k]))
     minimum = minf(minimum,atp/30.0)
+    minimum = minf(minimum,cycle_age/(35.0 if generation==0 else 75.0))
+    if not _can_divide():
+        minimum = minf(minimum,.99)
     scission_bar.value = clampf(minimum * 100.0,0.0,100.0)
     hp_bar.value = clampf(hp,0.0,100.0)
     atp_bar.value = clampf(atp,0.0,100.0)
@@ -2020,7 +2037,7 @@ func _refresh_hud() -> void:
             "chapter":chapter_title,"chapter_detail":chapter_detail,
             "objective":simple_objective,"chapter_progress":chapter_fraction,
             "fission":clampf(scission_bar.value/100.0,0.0,1.0),
-            "can_divide":_can_divide(),
+            "can_divide":_can_divide(),"division_status":_division_block_reason(),
             "requirements_1":"C %d/24    A %d/15" % [int(resources["carbon"]),int(resources["amino"])],
             "requirements_2":"L %d/12    N %d/8" % [int(resources["lipid"]),int(resources["nucleic"])],
             "requirements_3":"BIO %d/65   ATP %d/30" % [int(resources["biomass"]),int(atp)]
@@ -2229,8 +2246,8 @@ func _layout_ui() -> void:
         partner_compass_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
         partner_compass_label.add_theme_color_override("font_color",Color(.67,.94,.85))
         partner_compass_label.add_theme_font_size_override("font_size",14)
-        toast_back.position = Vector2(173,bh*.48)*ui
-        toast_back.size = Vector2(maxf(173,bw-346),78)*ui
+        toast_back.position = Vector2(48,bh-465)*ui
+        toast_back.size = Vector2(bw-96,58)*ui
         tips_label.position = toast_back.position+Vector2(12,12)*ui
         tips_label.size = toast_back.size-Vector2(24,22)*ui
         tips_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -2264,8 +2281,8 @@ func _layout_ui() -> void:
         joystick.position = Vector2(18,wh.y-140)
         partner_compass_label.position = Vector2(24,148)
         partner_compass_label.size = Vector2(wh.x-48,25)
-        toast_back.position = Vector2(wh.x*.32,wh.y*.48)
-        toast_back.size = Vector2(wh.x*.36,62)
+        toast_back.position = Vector2(wh.x*.25,wh.y-165)
+        toast_back.size = Vector2(wh.x*.50,58)
         tips_label.position = toast_back.position+Vector2(12,8)
         tips_label.size = toast_back.size-Vector2(24,16)
 
@@ -2524,3 +2541,70 @@ func _legacy_evolution(e: Dictionary) -> Dictionary:
 
 func _niche_label(value: String) -> String:
     return {"dominant":"dominante","coexistence":"coesistenza","sparse":"da consolidare"}.get(value,value)
+
+func _expire_notice() -> void:
+    if notice_expires>=0 and float(Time.get_ticks_msec())/1000.0>=notice_expires:
+        tips_label.visible = false
+        toast_back.visible = false
+        notice_expires = -1.0
+
+func _division_block_reason() -> String:
+    for key in NEED:
+        if float(resources.get(key,0))<float(NEED[key])-.001:
+            return "Raccogli tutti i nutrienti necessari"
+    if atp<30.0:
+        return "Servono almeno 30 ATP per dividerti"
+    var remaining: float = (35.0 if generation==0 else 75.0)-cycle_age
+    if remaining>0.0:
+        return "Divisione pronta tra %d s" % int(ceil(remaining))
+    return ""
+
+func _on_statistics(scope: int = 0, filter: int = 0) -> void:
+    if not entities.has(player_id): return
+    _open_overlay("STATISTICHE", "Popolazioni delle nicchie e attività della partita")
+    var selector := OptionButton.new()
+    selector.add_item("Nicchia attuale")
+    selector.add_item("Intera mappa · 25 nicchie")
+    selector.selected = scope
+    selector.custom_minimum_size.y = 48
+    selector.item_selected.connect(func(index: int): _on_statistics(index,filter))
+    overlay_list.add_child(selector)
+    var data: Dictionary = Statistics.census(ecology,ecological_profiles,player.position,scope==1)
+    _add_overlay_label("%d cellule · %.4f km² · occupazione %.1f%%" % [data.total,data.area,data.occupied_percent])
+    _add_overlay_label("Occupazione = cellule / capacità (%d). Composizione = quota delle cellule presenti. Due cellule su 48 occupano il 4,2%%, ma possono essere il 100%% della popolazione." % data.capacity)
+    for group in data.groups:
+        var count: int = int(data.groups[group])
+        if count==0 and group=="Non classificate": continue
+        _add_overlay_label("%s · %d
+%.1f%% della popolazione · %.1f%% della capacità" % [group,count,100.0*count/maxi(1,int(data.total)),100.0*count/int(data.capacity)])
+    _add_overlay_label("Spazio libero: %.1f%%. Dominanza e coesistenza restano basate su densità e rapporto con la rivale maggiore." % data.free_percent)
+    var filter_select := OptionButton.new()
+    for label in ["Tutte le linee","Solo cellule RNA","Solo cellule DNA"]: filter_select.add_item(label)
+    filter_select.selected = filter
+    filter_select.custom_minimum_size.y = 48
+    filter_select.item_selected.connect(func(index: int): _on_statistics(scope,index))
+    overlay_list.add_child(filter_select)
+    for line in data.lines:
+        if filter==1 and line.group!="Cellule RNA" or filter==2 and line.group!="Cellule DNA": continue
+        var fold := Button.new()
+        fold.toggle_mode = true
+        fold.text = "%s%s · %d · %.1f%%  ▾" % ["★ " if line.id==entities[player_id].get("ecotype",player_id) else "",line.id,line.count,line.population_percent]
+        fold.custom_minimum_size.y = 48
+        overlay_list.add_child(fold)
+        var details := _label("%s · %.1f cellule/km²
+Mobilità %.0f%% · Attacco %.0f%% · Difesa %.0f%%
+%s" % [line.group,line.density,100.0*float(line.traits.get("motility",1)),100.0*float(line.traits.get("attack",1)),100.0*float(line.traits.get("defense",1)),"; ".join(GenomeScript.describe(line.traits))],14)
+        details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        details.visible = false
+        overlay_list.add_child(details)
+        fold.toggled.connect(func(open: bool): details.visible = open)
+    _add_overlay_label("ATTIVITÀ DEL GIOCATORE · tutte le linee controllate")
+    _add_overlay_label("Divisioni effettuate: %d · Generazione attuale: %d
+Nutrienti raccolti: %d particelle
+Porzioni digerite: %d · Prede eliminate: %d" % [statistics.divisions,generation,statistics.particles,statistics.substrates,statistics.kills])
+    var names: Dictionary = {"carbon":"Carbonio","amino":"Amminoacidi","lipid":"Lipidi","nucleic":"Nucleotidi"}
+    for key in names:
+        _add_overlay_label("%s assorbiti: %.1f" % [names[key],statistics.collected[key]])
+    _add_overlay_label("Le quantità contano solo ciò che entra nelle riserve, anche da digestione e prede; non il materiale perso a riserve piene.")
+    if float(statistics.started_at)>0:
+        _add_overlay_label("Conteggi raccolta e divisioni registrati da %.0f minuti di questa partita; il salvataggio precedente non conservava lo storico." % (float(statistics.started_at)/60.0))
