@@ -1821,8 +1821,7 @@ func _on_phase_two() -> void:
 
 func _game_over() -> void:
     if battle.active():
-        battle.scoring.death(battle.state,player_id)
-        battle.finish("sconfitta")
+        battle.player_death()
         return
     is_paused = true
     selected_target_id = ""

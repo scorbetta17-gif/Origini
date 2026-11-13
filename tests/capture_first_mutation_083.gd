@@ -23,6 +23,7 @@ func run() -> void:
     game.battle.start(2)
     game.battle.state.elapsed = 180
     game.battle.advance(.01)
+    game._update_nutrient_markers()
     game._refresh_hud()
     game._layout_ui()
     await frame("front")

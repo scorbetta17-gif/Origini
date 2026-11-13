@@ -239,8 +239,7 @@ func advance(dt: float) -> void:
         if health<=0:
             if controlled:
                 scoring.death(state,id)
-                finish("sconfitta")
-                return
+                continue
             game._remove_entity(id,"fronte ambientale")
             continue
         if float(state.elapsed)-float(state.harvest.get(id,-4.0))>=4.0 and needs_supply(id):
@@ -258,7 +257,7 @@ func advance(dt: float) -> void:
     update_front_objectives(z)
     update_visuals()
     if game.hp<=0:
-        finish("sconfitta")
+        player_death()
         return
     var opponents: int = 0
     for id in game.entities:
@@ -439,3 +438,10 @@ func objective_text() -> String:
     if int(z.stage)>0 and not completed and float(state.elapsed)-int(z.stage)*rules.PHASE_LENGTH<=45:
         return "Fronte %d: assorbi da un nuovo deposito · +5 punti" % int(z.stage)
     return "Raccogli, sopravvivi e prepara il prossimo fronte"
+
+func player_death() -> void:
+    scoring.death(state,game.player_id)
+    var groups: Array = ranking()
+    # Simultaneous final elimination still shares victory with the last allied cell.
+    var shared: bool = groups.size()==1 and friendly(str(groups[0].id),game.player_id)
+    finish("vittoria" if shared else "sconfitta")

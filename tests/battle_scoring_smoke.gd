@@ -113,6 +113,7 @@ func run() -> void:
     assert(game.battle.ranking().size()==1 and game.battle.ranking()[0].points==44)
     game.hp = 40
     assert(game.battle.ranking()[0].id=="BR-001" and game.battle.ranking()[0].points==40)
+    game.hp = 0 # The only remaining contestant is our ally: shared victory.
     game.battle.advance(0)
     assert(game.battle.state.result=="vittoria")
     print("PASS: intake caps, particles/deposits parity, recent multiple attackers, deterministic tie, environment, one front award, reload, no-kill win, kill swing and best-member alliance")
