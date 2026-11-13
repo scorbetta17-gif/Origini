@@ -149,16 +149,22 @@ var lineage_view: LineageView
 var world_root: Node3D
 var nutrient_root: Node3D
 var cells_root: Node3D
+var battle: Node
 
 func _ready() -> void:
     rng.randomize()
     _make_3d_scene()
     _build_ui()
     _setup_metabolic_visuals()
+    battle = preload("res://src/battle_royale.gd").new()
+    battle.game = self
+    add_child(battle)
     _new_game()
     get_viewport().size_changed.connect(_layout_ui)
 
 func _new_game() -> void:
+    if is_instance_valid(battle): battle.reset()
+    world_radius = preload("res://src/seabed_palette.gd").WORLD_RADIUS
     for child in cells_root.get_children():
         cells_root.remove_child(child)
         child.queue_free()
@@ -386,6 +392,8 @@ func _create_entity(id: String, parent: String, gen: int, branch: String, traits
         Ecology.register_birth(ecology,ecotype,at)
         ecological_profiles[ecotype] = inherited.duplicate(true)
         ecological_profiles[ecotype]["ecological_branch"] = branch
+    if is_instance_valid(battle) and battle.active() and not ecology_syncing:
+        battle.state.teams[id] = battle.team(parent) if parent!="" else id
     genealogy.append({"id":id,"parent":parent,"generation":gen,"branch":branch,
         "name":("Origine" if id == "C-000" else ("Estranea " + id if external and parent == "" else id)),
         "alive":true,"status":"viva","cause":"","traits":inherited.duplicate(true),"external":external})
@@ -525,7 +533,7 @@ func _process(delta: float) -> void:
         hp = 0.0
     var player_temperature: float = _temperature_at(player.position)
     var tolerance: float = 43.0+18.0*float(entities[player_id]["traits"].get("thermotolerance",0.0))
-    if player_temperature > tolerance:
+    if not battle.active() and player_temperature > tolerance:
         hp = maxf(0.0,hp-delta*(player_temperature-tolerance)*.075/maxf(.65,float(entities[player_id]["traits"].get("vitality",1.0))))
     # Nutrizione consentita entro il 12% oltre la soglia di divisione.
     # La cellula non supera mai il 120% della dimensione alla nascita.
@@ -548,8 +556,12 @@ func _process(delta: float) -> void:
     if hp<=0.0:
         _game_over()
         return
-    _advance_phase_two(delta)
-    _advance_niches(delta)
+    if battle.active():
+        battle.advance(delta)
+        if not str(battle.state.result).is_empty(): return
+    else:
+        _advance_phase_two(delta)
+        _advance_niches(delta)
     _update_metabolic_visuals()
     _cache_current()
     if hp <= 0:
@@ -664,6 +676,7 @@ func _advance_phase_two(delta: float) -> void:
         _notice("Consorzio stabile! Trasmettilo a una figlia tramite scissione")
 
 func _temperature_at(where: Vector3) -> float:
+    if is_instance_valid(battle) and battle.active(): return float(battle.rules.environment(battle.state.elapsed,where).temperature)
     # Modello locale e ludico del gradiente, non ricostruzione di un oceano storico.
     var result: float = 29.0
     for i in range(THERMAL_SOURCES.size()):
@@ -707,6 +720,9 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
     if index < 0 or index >= nutrients.size():
         return
     var n: Dictionary = nutrients[index]
+    if battle.active():
+        var intake_team: String = battle.team(player_id if controlled else cell_id)
+        battle.state.packets[intake_team] = int(battle.state.packets.get(intake_team,0))+1
     var kind: String = str(n["kind"])
     if controlled:
         var previous_stock: Dictionary = resources.duplicate(true)
@@ -837,6 +853,7 @@ func _collect_nearby() -> void:
             continue
         _consume_nutrient(i,true)
 func _respawn_nutrients(delta: float) -> void:
+    if battle.active(): return
     _maintain_substrates(delta)
     _recycle_distant_nutrients()
     # Accumulate elapsed simulation time exactly once, independent of FPS.
@@ -990,7 +1007,7 @@ func _update_ecosystem(dt: float) -> void:
         e["age"] = float(e["age"])+dt
         var local_temperature: float = _temperature_at(c.position)
         var limit_temperature: float = 43.0+18.0*float(e["traits"].get("thermotolerance",0.0))
-        if local_temperature > limit_temperature:
+        if not battle.active() and local_temperature > limit_temperature:
             e["hp"] = float(e["hp"])-dt*(local_temperature-limit_temperature)*.075
             if float(e["hp"]) <= 0.0:
                 _remove_entity(str(id),"stress termico")
@@ -1019,7 +1036,7 @@ func _update_ecosystem(dt: float) -> void:
             var closest_prey: String = ""
             var prey_distance: float = 4.1
             for other_id in entities:
-                if other_id == id or (str(id)==partner_id and str(other_id)==player_id):
+                if other_id == id or (battle.active() and battle.friendly(str(id),str(other_id))) or (str(id)==partner_id and str(other_id)==player_id):
                     continue
                 var other: Dictionary = entities[other_id]
                 if not is_instance_valid(other["node"]):
@@ -1042,6 +1059,9 @@ func _update_ecosystem(dt: float) -> void:
             elif target_idx >= 0:
                 dir = nutrients[target_idx]["node"].position-c.position
                 dir.y = 0.0
+        if battle.active():
+            dir = battle.npc_goal(str(id),dir)
+            speed = Physiology.player_speed(e.traits)*.85
         if dir.length() > .02 and float(e["energy"]) > .001:
             e["intent_velocity"] = dir.normalized()*speed
         else:
@@ -1057,7 +1077,7 @@ func _update_ecosystem(dt: float) -> void:
             and float(e["energy"]) >= 23.0 and float(e["age"]) >= 18.0
             and int(e["generation"]) < 16
             and entities.size() < npc_population_cap)
-        if can_replicate:
+        if can_replicate and not battle.active():
             _divide_npc(str(id))
             continue
         # Real ecological competition among predators and prey.
@@ -1065,7 +1085,7 @@ func _update_ecosystem(dt: float) -> void:
             var nearest_id: String = ""
             var best: float = 1.12
             for other_id in entities:
-                if other_id == id or (str(id)==partner_id and str(other_id)==player_id):
+                if other_id == id or (battle.active() and battle.friendly(str(id),str(other_id))) or (str(id)==partner_id and str(other_id)==player_id):
                     continue
                 var other: Dictionary = entities[other_id]
                 var dist: float = c.position.distance_to(other["node"].position)
@@ -1085,7 +1105,7 @@ func _update_ecosystem(dt: float) -> void:
                         _remove_entity(nearest_id,"predazione")
                         _award_bundle(Balance.KILL_REWARD,false,str(id))
     # The Phase 2 bacterial partner arises from an independent lineage.
-    if generation >= 3 and entities[player_id]["branch"] == "archaea" and _compatible_partner(24.0)=="" and entities.size()<npc_population_cap and t-last_external_arrival >= 20.0:
+    if not battle.active() and generation >= 3 and entities[player_id]["branch"] == "archaea" and _compatible_partner(24.0)=="" and entities.size()<npc_population_cap and t-last_external_arrival >= 20.0:
         _create_external_bacterium()
 
 func _has_external_bacteria() -> bool:
@@ -1402,6 +1422,10 @@ func _follow_attack(delta: float) -> void:
         selected_target_id = ""
         attack_mode = ""
         return
+    if battle.active() and battle.friendly(player_id,selected_target_id):
+        selected_target_id = ""
+        _notice("Cellula alleata: sciogli prima il patto")
+        return
     var target: Dictionary = entities[selected_target_id]
     var prey_node: CellVisual = target["node"]
     if not is_instance_valid(prey_node):
@@ -1438,6 +1462,9 @@ func _follow_attack(delta: float) -> void:
         _notice("Danno %.0f · HP preda %.0f" % [damage,maxf(0.0,float(target["hp"]))])
 
 func _on_cooperate() -> void:
+    if battle.active():
+        battle.cooperate()
+        return
     if atp <= 0.0:
         _notice("ATP esaurito: non puoi instaurare un nuovo legame")
         return
@@ -1585,6 +1612,9 @@ func _on_genealogy() -> void:
     _layout_ui()
 
 func _switch_lineage(id: String) -> void:
+    if battle.active():
+        _notice("Battle Royale: controlli solo la tua cellula")
+        return
     if id == player_id or not entities.has(id) or float(entities[id].get("hp",0))<=0.0:
         _notice("Linea non viva oppure gia' controllata")
         return
@@ -1604,12 +1634,15 @@ func _open_main_menu() -> void:
     _add_overlay_button("Linee genealogiche",_on_genealogy)
     _add_overlay_button("Genoma e fenotipo",_on_genome)
     _add_overlay_button("Statistiche e popolazioni",_on_statistics)
+    _add_overlay_button("Battle Royale",battle.choose)
+    if battle.active():
+        _add_overlay_button("Torna alla campagna",_load_game.bind(SAVE_PATH))
     _add_overlay_button("Obiettivi",_on_goals)
     _add_overlay_button("Consorzi metabolici",_on_phase_two)
     _add_overlay_button("Capacità evolutive",_on_evolution)
     _add_overlay_button("Come giocare",_on_guide)
     _add_overlay_button("Salva partita",_save_game)
-    _add_overlay_button("Carica partita",_load_game)
+    _add_overlay_button("Carica partita",_load_game.bind(battle.PATH if battle.active() else SAVE_PATH))
     if FileAccess.file_exists(PHASE_TWO_CHECKPOINT):
         _add_overlay_button("Carica archivio storico",_load_game.bind(PHASE_TWO_CHECKPOINT))
 
@@ -1617,6 +1650,9 @@ func _on_guide() -> void:
     _open_phase_intro(1)
 
 func _on_goals() -> void:
+    if battle.active():
+        battle.dashboard()
+        return
     if not entities.has(player_id):
         return
     _open_overlay("NICCHIE E LINEA EVOLUTIVA", "25 nicchie · 5,29 km² cartografici · densità, coesistenza e dominanza")
@@ -1753,6 +1789,9 @@ func _on_phase_two() -> void:
     _add_overlay_label("Il consorzio resta esterno. Internalizzazione e mitocondrio richiedono capacità separate nell’albero.")
 
 func _game_over() -> void:
+    if battle.active():
+        battle.finish("sconfitta")
+        return
     is_paused = true
     selected_target_id = ""
     selected_nutrient = null
@@ -1777,6 +1816,7 @@ func _on_joystick_changed(v: Vector2) -> void:
         attack_mode = ""
 
 func _save_game(path: String = SAVE_PATH) -> void:
+    if battle.active() and path==SAVE_PATH: path = battle.PATH
     if division_active:
         return
     _cache_current()
@@ -1807,13 +1847,14 @@ func _save_game(path: String = SAVE_PATH) -> void:
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
         "last_external_arrival":last_external_arrival,"world_age":world_age,
-        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics}
+        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state}
     var file: FileAccess = FileAccess.open(path,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
         file.close()
 
 func _valid_save(data: Dictionary) -> bool:
+    if data.has("battle") and not battle.rules.valid(data.battle): return false
     for key in ["ecology","ecological_profiles","statistics"]:
         if data.has(key) and not data[key] is Dictionary:
             return false
@@ -1867,6 +1908,11 @@ func _load_game(path: String = SAVE_PATH) -> void:
     if not _valid_save(loaded):
         _notice("Salvataggio non valido: la partita attuale e stata conservata")
         return
+    var loading_battle: bool = bool(loaded.get("battle",{}).get("enabled",false))
+    if loading_battle != battle.active(): _save_game()
+    battle.reset()
+    battle.state = loaded.get("battle",{}).duplicate(true)
+    world_radius = 40.0 if battle.active() else preload("res://src/seabed_palette.gd").WORLD_RADIUS
     var cell_list: Array = loaded["entities"]
     var controlled: String = str(loaded["player_id"])
     for child in cells_root.get_children():
@@ -1966,7 +2012,11 @@ func _load_game(path: String = SAVE_PATH) -> void:
     is_paused = false
     _close_overlay()
     _refresh_hud()
-    if bool(phase1_progress.get("complete",false)) and not FileAccess.file_exists(PHASE_TWO_CHECKPOINT):
+    battle.rebuild()
+    if battle.active() and not str(battle.state.result).is_empty():
+        battle.finish(str(battle.state.result))
+        return
+    if not battle.active() and bool(phase1_progress.get("complete",false)) and not FileAccess.file_exists(PHASE_TWO_CHECKPOINT):
         _save_game(PHASE_TWO_CHECKPOINT)
     _notice("Partita caricata · fasi, genoma, energia e genealogia ripristinati")
 
@@ -2026,6 +2076,12 @@ func _refresh_hud() -> void:
         var simple_objective: String = objective_label.text
         if simple_objective.length() > 68:
             simple_objective = simple_objective.substr(0,65)+"..."
+        if battle.active():
+            chapter_title = "BATTLE ROYALE · SOPRAVVIVENZA"
+            chapter_detail = battle.hud_text()
+            simple_objective = "Rifugio verde · depositi arancioni · COOPERA per allearti"
+            phase_label = "ARENA ECOLOGICA"
+            chapter_fraction = float(battle.state.elapsed)/battle.rules.DURATION
         classic_hud.configure({
             "gen":generation,"branch":stage,"phase_title":phase_label,
             "zero_atp":zero_atp_seconds,
@@ -2045,6 +2101,8 @@ func _refresh_hud() -> void:
         buttons["enzymes"].text = "✦ ENZIMI\n6 ATP · PRONTI" if GenomeScript.has(traits,"hydrolase_secretion") else ("✦ ENZIMI\nACQUISTA · 2 P" if generation>=1 else "✦ ENZIMI\nDALLA GEN 1")
         buttons["lysis"].text = "✷ LISI\n10 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"
         buttons["cooperate"].text = ("∞ CONSORZIO\nGESTISCI" if partner_id!="" else "∞ COOPERA\nPARTNER") if str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nBLOCCATA"
+        if battle.active():
+            buttons["cooperate"].text = "COOPERA\nALLEATI / SEPARATI"
         buttons["regen"].text = "✚ RIGENERA\n30 HP"
         buttons["menu"].text = "☰ MENU\nOPZIONI"
         scission_button.text = "◌  ◌\nDIVIDI"
@@ -2378,6 +2436,9 @@ func _add_overlay_button(text: String, action: Callable) -> void:
     overlay_list.add_child(b)
 
 func _close_overlay() -> void:
+    if battle.active() and not str(battle.state.result).is_empty():
+        battle.finish(str(battle.state.result))
+        return
     if hp<=0.0:
         _game_over()
         return
