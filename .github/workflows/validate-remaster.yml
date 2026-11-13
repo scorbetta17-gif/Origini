@@ -53,6 +53,19 @@ jobs:
           test -s build/previews/mobile-unified-eukaryote.png
       - name: Fondale e faglie
         run: timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_seabed.gd
+      - name: Raccogli soltanto i log di verifica
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          source = (Path.cwd().parent / '.tools/test_runs').resolve()
+          for pattern in ('summary.json', 'output.log'):
+              for path in source.rglob(pattern):
+                  target = Path('build/test-logs') / path.relative_to(source)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(path, target)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -60,5 +73,4 @@ jobs:
           path: |
             build/previews/*.png
             *.log
-            ../.tools/test_runs/**/summary.json
-            ../.tools/test_runs/**/output.log
+            build/test-logs/**
