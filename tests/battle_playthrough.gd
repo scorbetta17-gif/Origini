@@ -53,7 +53,17 @@ func run() -> void:
         results.append({"profile":profile,"seed":scenario_seed,"result":game.battle.state.result,"elapsed":game.battle.state.elapsed,"survivors":game.entities.size(),"initial":initial,"hp":game.hp,"atp":game.atp,"invalid":boundary_errors})
         assert(boundary_errors==0)
         assert(not str(game.battle.state.result).is_empty())
-    var file := FileAccess.open("res://build/battle-playthrough.json",FileAccess.WRITE)
+    var report_path: String = ProjectSettings.globalize_path("res://build/battle-playthrough.json")
+    var directory_error: Error = DirAccess.make_dir_recursive_absolute(report_path.get_base_dir())
+    if directory_error!=OK:
+        push_error("Cannot create playthrough report directory: %s" % error_string(directory_error))
+        quit(1)
+        return
+    var file := FileAccess.open(report_path,FileAccess.WRITE)
+    if file==null:
+        push_error("Cannot open playthrough report: %s" % error_string(FileAccess.get_open_error()))
+        quit(1)
+        return
     file.store_string(JSON.stringify(results,"  "))
     file.close()
     print("BATTLE_PLAYTHROUGH=",JSON.stringify(results))
