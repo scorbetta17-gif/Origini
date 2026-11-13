@@ -1,5 +1,7 @@
 # ORIGINI — dalla Cellula Zero al grado LECA
 
+Revisione 0.82: **MENU / Battle Royale**, arena solo contro 12 IA, fronti ambientali, depositi finiti e alleanze. Salvataggio separato dalla campagna. [Regole e limiti delle verifiche](docs/BATTLE_ROYALE_082.md).
+
 Revisione 0.81: cellule ovoidali, DNA viola a gomitolo, flagelli elicoidali e statistiche delle popolazioni. [Dettagli e verifiche](docs/CELL_STATS_081.md).
 
 Prototipo Godot 4.7.2 per desktop e Android ARM64. La versione 0.80 introduce una campagna continua: scissione animata, punti mutazione, specializzazioni con bonus e malus, nicchie persistenti e capacità cellulari fino al grado LECA.

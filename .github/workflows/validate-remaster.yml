@@ -1,7 +1,7 @@
 name: ORIGINI - campagna unificata e rendering
 on:
   push:
-    branches: [work/cell-stats-081]
+    branches: [work/battle-royale-082]
   workflow_dispatch:
 permissions:
   contents: read
@@ -33,6 +33,15 @@ jobs:
         run: python3 tests/run_suite.py --godot godot --timeout 180
       - name: Driver di rendering
         run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers
+      - name: Battle Royale simulato e schermate
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 360s godot --headless --path . --script res://tests/battle_playthrough.gd 2>&1 | tee battle-playthrough.log
+          grep -q 'BATTLE PLAYTHROUGH PASS' battle-playthrough.log
+          timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_battle.gd 2>&1 | tee battle-capture.log
+          if grep -E 'SCRIPT ERROR|Assertion failed|Shader compilation failed' battle-playthrough.log battle-capture.log; then exit 1; fi
+          test -s build/previews/082-battle-arena.png
       - name: Campagna e fenotipi OpenGL
         shell: bash
         run: |
@@ -83,3 +92,4 @@ jobs:
             build/previews/*.png
             *.log
             build/test-logs/**
+            build/battle-playthrough.json
