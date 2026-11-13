@@ -1,7 +1,7 @@
 name: ORIGINI - APK campagna unificata scaricabile
 on:
   push:
-    branches: [work/battle-royale-082]
+    branches: [work/battle-royale-082, work/first-mutation-arena-083]
   workflow_dispatch:
 permissions:
   contents: read
@@ -42,16 +42,16 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Versione 0.82 Android Compatibility con pacchetto nuovo
+      - name: Versione 0.83 Android Compatibility con pacchetto nuovo
         run: |
           set -euo pipefail
           sed -i 's@renderer/rendering_method="mobile"@renderer/rendering_method="gl_compatibility"@' project.godot
           sed -i 's@renderer/rendering_method.mobile="mobile"@renderer/rendering_method.mobile="gl_compatibility"@' project.godot
-          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.unified082"@' export_presets.cfg
-          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI 0.82"@' export_presets.cfg
-          sed -i 's@version/name="0.67-demo"@version/name="0.82-evoluzione"@' export_presets.cfg
-          sed -i 's@version/code=67@version/code=82@' export_presets.cfg
-          grep -q 'org.origini.mobile.unified082' export_presets.cfg
+          sed -i 's@package/unique_name="org.origini.mobile"@package/unique_name="org.origini.mobile.unified083"@' export_presets.cfg
+          sed -i 's@package/name="ORIGINI"@package/name="ORIGINI 0.83"@' export_presets.cfg
+          sed -i 's@version/name="0.67-demo"@version/name="0.83-evoluzione"@' export_presets.cfg
+          sed -i 's@version/code=67@version/code=83@' export_presets.cfg
+          grep -q 'org.origini.mobile.unified083' export_presets.cfg
       - name: Installa Godot 4.7.2 + export templates corrispondenti
         uses: chickensoft-games/setup-godot@v2
         with:
@@ -119,38 +119,38 @@ jobs:
             --ks "${RUNNER_TEMP}/origini-native-fix.keystore" \
             --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey \
             --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
-            --out build/android/ORIGINI-0.82-EVOLUZIONE.apk \
+            --out build/android/ORIGINI-0.83-EVOLUZIONE.apk \
             build/android/ORIGINI-native-aligned.apk
       - name: Verifica APK finale, caricamento ABI e firma
         shell: bash
         run: |
           set -euo pipefail
-          apk=build/android/ORIGINI-0.82-EVOLUZIONE.apk
+          apk=build/android/ORIGINI-0.83-EVOLUZIONE.apk
           test -s "${apk}"
           unzip -t "${apk}" >/dev/null
           "${ANDROID_HOME}/build-tools/35.0.1/zipalign" -c -P 16 -v 4 "${apk}"
           "${ANDROID_HOME}/build-tools/35.0.1/apksigner" verify --verbose --print-certs "${apk}"
           python3 tools/android/verify_apk_native.py "${apk}"
-          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging "${apk}" | grep -q "org.origini.mobile.unified082"
+          "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump badging "${apk}" | grep -q "org.origini.mobile.unified083"
           "${ANDROID_HOME}/build-tools/35.0.1/aapt" dump xmltree "${apk}" AndroidManifest.xml | grep -q 'extractNativeLibs'
       - name: APK installabile da smartphone
         uses: actions/upload-artifact@v4
         with:
-          name: ORIGINI-082-EVOLUZIONE-APK
-          path: build/android/ORIGINI-0.82-EVOLUZIONE.apk
+          name: ORIGINI-083-EVOLUZIONE-APK
+          path: build/android/ORIGINI-0.83-EVOLUZIONE.apk
           if-no-files-found: error
       - name: Pubblica APK di prova scaricabile direttamente
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          apk=build/android/ORIGINI-0.82-EVOLUZIONE.apk
-          tag="preview-unified-0.82-${GITHUB_SHA:0:8}"
+          apk=build/android/ORIGINI-0.83-EVOLUZIONE.apk
+          tag="preview-unified-0.83-${GITHUB_SHA:0:8}"
           sha256sum "$apk" > build/android/SHA256SUMS.txt
           cat > build/android/NOTE.md <<EOF
           APK Android ARM64 di prova, renderer Compatibility/OpenGL.
           Sorgenti: ${GITHUB_SHA}. Battle Royale separato: fronti ambientali, depositi contesi, 12 avversari IA, alleanze, quattro specializzazioni e salvataggio dedicato.
-          Pacchetto separato org.origini.mobile.unified082: si installa accanto alle vecchie demo.
+          Pacchetto separato org.origini.mobile.unified083: si installa accanto alle vecchie demo.
           Firma debug; verificati firma, librerie ARM64 e allineamento 16 KiB. Non ancora provato su telefono fisico.
           PM, soglie demografiche e ordine delle acquisizioni sono astrazioni di gioco. Percorso accelerato testato; durata naturale completa e prestazioni fisiche Android da verificare.
           EOF
@@ -159,5 +159,5 @@ jobs:
           else
             gh release create "$tag" "$apk" build/android/SHA256SUMS.txt \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-              --title "ORIGINI 0.82 - Campagna unificata (APK di prova)" --notes-file build/android/NOTE.md
+              --title "ORIGINI 0.83 - Campagna unificata (APK di prova)" --notes-file build/android/NOTE.md
           fi

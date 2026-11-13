@@ -22,7 +22,7 @@ func _run() -> void:
     var carbon: int = 0
     for n in game.nutrients:
         if n.kind=="carbon": carbon+=1
-    assert(carbon==36)
+    assert(carbon>=36,"Safe starter carbon retained alongside habitat food")
     assert(game.substrates.size()==6)
     var patch: Node3D = game.substrates[0]
     game.player.position.x=patch.position.x

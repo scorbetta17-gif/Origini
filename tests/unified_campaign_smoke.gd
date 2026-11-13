@@ -59,7 +59,7 @@ func _run() -> void:
     await create_timer(2.7).timeout
     check(game.generation==1,"Real division tween automatically activates daughter")
     check(is_equal_approx(game.mutation_points,2.375),"Baseline division grants 2 PM and preserves fraction")
-    check(game.division_options.is_empty() and not game.overlay.visible,"No random daughter choice overlay")
+    check(game.division_options.is_empty() and game.journey.state.step=="offer","First division offers enzymes, never random daughter choices")
     fill_cycle()
     game.cycle_age = 74.99
     check(not game.call("_can_divide"),"Later cycle guard before 75 seconds")

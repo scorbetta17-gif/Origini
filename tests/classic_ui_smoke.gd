@@ -21,7 +21,10 @@ func _run() -> void:
     assert(classic.size.x > 0 and classic.size.y > 0)
     for key in ["nutrients","tree","goals","genealogy","divide","regen","cooperate","focus","enzymes","lysis","menu"]:
         assert(game.buttons.has(key),"Missing classic action "+str(key))
-        assert(game.buttons[key].visible,"Classic button hidden: "+str(key))
+        if key not in ["regen","cooperate","enzymes","lysis"]:
+            assert(game.buttons[key].visible,"Classic button hidden: "+str(key))
+        else:
+            assert(not game.buttons[key].visible,"New campaign must introduce actions progressively")
         assert(game.buttons[key].size.x >= 80,"Classic action too small: "+str(key))
     var divide_rect: Rect2 = game.buttons["divide"].get_rect()
     var joystick_rect: Rect2 = game.joystick.get_rect()

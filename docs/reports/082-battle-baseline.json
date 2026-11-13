@@ -1,0 +1,134 @@
+[
+  {
+    "atp": 95.1742971314786,
+    "elapsed": 1200.0,
+    "hp": 94.7058823529412,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 0,
+    "result": "vittoria",
+    "seed": 8200,
+    "survivors": 6
+  },
+  {
+    "atp": 98.3949790542722,
+    "elapsed": 1200.0,
+    "hp": 91.1111111111112,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 1,
+    "result": "vittoria",
+    "seed": 8200,
+    "survivors": 8
+  },
+  {
+    "atp": 97.8664459682385,
+    "elapsed": 1200.0,
+    "hp": 97.0588235294118,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 2,
+    "result": "vittoria",
+    "seed": 8200,
+    "survivors": 7
+  },
+  {
+    "atp": 98.3466293785572,
+    "elapsed": 1200.0,
+    "hp": 99.0163636363641,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 3,
+    "result": "vittoria",
+    "seed": 8200,
+    "survivors": 10
+  },
+  {
+    "atp": 98.2818492764234,
+    "elapsed": 1200.0,
+    "hp": 91.764705882353,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 0,
+    "result": "sconfitta",
+    "seed": 8201,
+    "survivors": 7
+  },
+  {
+    "atp": 99.5656479473114,
+    "elapsed": 1200.0,
+    "hp": 85.1851851851852,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 1,
+    "result": "vittoria",
+    "seed": 8201,
+    "survivors": 8
+  },
+  {
+    "atp": 90.4400632278481,
+    "elapsed": 1200.0,
+    "hp": 97.0588235294118,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 2,
+    "result": "sconfitta",
+    "seed": 8201,
+    "survivors": 9
+  },
+  {
+    "atp": 97.3965588640828,
+    "elapsed": 1200.0,
+    "hp": 93.6618181818182,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 3,
+    "result": "vittoria",
+    "seed": 8201,
+    "survivors": 8
+  },
+  {
+    "atp": 95.2718653430939,
+    "elapsed": 1200.0,
+    "hp": 65.2941176470589,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 0,
+    "result": "sconfitta",
+    "seed": 8202,
+    "survivors": 7
+  },
+  {
+    "atp": 96.9935207901001,
+    "elapsed": 1200.0,
+    "hp": 83.3333333333334,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 1,
+    "result": "sconfitta",
+    "seed": 8202,
+    "survivors": 9
+  },
+  {
+    "atp": 95.5695714250372,
+    "elapsed": 1200.0,
+    "hp": 100.0,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 2,
+    "result": "vittoria",
+    "seed": 8202,
+    "survivors": 9
+  },
+  {
+    "atp": 95.8917423608296,
+    "elapsed": 1200.0,
+    "hp": 100.0,
+    "initial": 13,
+    "invalid": 0,
+    "profile": 3,
+    "result": "vittoria",
+    "seed": 8202,
+    "survivors": 9
+  }
+]
