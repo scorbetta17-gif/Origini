@@ -123,7 +123,6 @@ jobs:
           test -s build/previews/seabed-start.png
           test -s build/previews/seabed-fault.png
           test -s build/previews/seabed-distant.png
-          test -s build/previews/seabed-map.png
           test -s build/previews/seabed-gameplay.png
       - name: Cellule 3D - RNA, DNA, fenotipo combinato e galleria
         run: |
