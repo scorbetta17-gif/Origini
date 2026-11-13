@@ -33,5 +33,10 @@ func _run() -> void:
             if other!=key: assert(is_zero_approx(game.resources[other]))
         assert(patch.portions==2)
         assert(not patch.fragments[2].visible)
+    game.is_paused=true
+    game.player.position=Vector3(1000,0,1000)
+    for i in range(25): game._process(.016)
+    var terrain: Node = game.world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso")
+    assert(terrain.pending.is_empty() and terrain.sectors.has(Vector2i(992,992)),"Saved distant terrain must load behind a paused overlay")
     print("PASS: bilayer, enzyme-gated inclusions, 20 percent growth and three distinct digestible resources")
     quit(0)

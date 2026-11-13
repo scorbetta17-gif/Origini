@@ -451,10 +451,11 @@ func _register_death(id: String, reason: String = "morte") -> void:
     _remove_entity(id,reason)
 
 func _process(delta: float) -> void:
+    if is_instance_valid(player):
+        world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso").update_focus(player.position)
     if is_paused or not is_instance_valid(player) or not entities.has(player_id):
         return
     delta = minf(delta,.07)
-    world_root.get_node("Fondale_minimale/Fondo_sabbioso_roccioso").update_focus(player.position)
     t += delta
     if is_instance_valid(tips_label) and notice_expires >= 0 and t > notice_expires:
         tips_label.visible = false
