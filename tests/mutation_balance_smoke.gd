@@ -44,7 +44,7 @@ func _run() -> void:
     assert(patch.portions==2 and is_equal_approx(game.atp,32))
     assert(not game.call("_digest_substrate",patch),"Cooldown blocks repeated digestion")
     var resource_key: String = "nucleic" if patch.kind=="rna" else ("amino" if patch.kind=="peptide" else "lipid")
-    var expected: float = minf(P.reserve_cap(game.NEED[resource_key]),10.75*float(game.entities[game.player_id].traits.uptake))
+    var expected: float = minf(P.reserve_cap(game.RESERVE_BASE[resource_key]),10.75*float(game.entities[game.player_id].traits.uptake))
     assert(is_equal_approx(game.resources[resource_key],expected))
     for i in range(2):
         game.skill_cooldown=0

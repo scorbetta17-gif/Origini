@@ -1,0 +1,26 @@
+extends SceneTree
+const Symbols = preload("res://src/biological_symbols.gd")
+const Balance = preload("res://src/mutation_balance.gd")
+const Genome = preload("res://src/cell_genome.gd")
+const Evolution = preload("res://src/evolution_progress.gd")
+const Visual = preload("res://src/cell_visual.gd")
+func _initialize() -> void: call_deferred("run")
+func run() -> void:
+    for id in Genome.GENE_INFO: assert(id in Symbols.IDS,"Missing locus symbol: "+id)
+    for entry in Evolution.catalogue(): assert(entry.id in Symbols.IDS,"Missing capability symbol: "+entry.id)
+    assert(Symbols.IDS.size()==40)
+    for key in Balance.DIVISION_NEEDS:
+        assert(is_equal_approx(Balance.DIVISION_NEEDS[key],Balance.RESERVE_BASE[key]*.9))
+    var v=Visual.new();root.add_child(v)
+    var tr: Dictionary=Genome.normalize({"genome":Genome.origin()})
+    v.setup(tr,"pre_luca")
+    assert(v.find_child("Catalytic_RNA_Folds",true,false)!=null)
+    assert(not v.feature_nodes.has("translation"))
+    tr.evolution_capabilities={"translation":true,"cytoskeleton":true,"internal_symbiont":true,"membrane_traffic":true}
+    v.setup(tr,"archaea")
+    for id in tr.evolution_capabilities: assert(v.feature_nodes.has(id))
+    assert(not v.feature_nodes.has("mitochondrion"))
+    assert(not v.feature_nodes.has("er_golgi"))
+    v.queue_free()
+    print("PASS: all 40 biological symbols, reduced division costs, catalytic RNA and capability-gated organelles")
+    quit()

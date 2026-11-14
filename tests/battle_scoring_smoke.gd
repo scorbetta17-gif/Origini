@@ -31,7 +31,7 @@ func run() -> void:
     game.set_process(false)
     game.battle.start(2)
     var id: String = game.player_id
-    for key in game.NEED: game.resources[key] = game.Physiology.reserve_cap(game.NEED[key])
+    for key in game.NEED: game.resources[key] = game.Physiology.reserve_cap(game.RESERVE_BASE[key])
     game._award_bundle({"carbon":200,"amino":100,"atp":30,"biomass":100},true)
     assert(Score.account(game.battle.state,id).absorbed==0)
     game.resources.carbon -= 1.0
@@ -41,7 +41,7 @@ func run() -> void:
     game._consume_nutrient(game.nutrients.size()-1,true)
     assert(is_equal_approx(Score.account(game.battle.state,id).absorbed,1.0))
     var npc: String = "BR-001"
-    for key in game.NEED: game.entities[npc].resources[key] = game.Physiology.reserve_cap(game.NEED[key])
+    for key in game.NEED: game.entities[npc].resources[key] = game.Physiology.reserve_cap(game.RESERVE_BASE[key])
     game._award_bundle({"carbon":99,"atp":100},false,npc)
     assert(Score.account(game.battle.state,npc).absorbed==0)
     game.entities[npc].resources.carbon -= 1.0

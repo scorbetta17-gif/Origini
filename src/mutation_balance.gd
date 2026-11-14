@@ -1,5 +1,8 @@
 extends RefCounted
 ## Gameplay balance, not a claim that molecular point mutations are always small.
+const BASE_DIVISION_POINTS: float = 4.0
+const DIVISION_NEEDS := {"carbon":21.6,"amino":13.5,"lipid":10.8,"nucleic":7.2,"biomass":58.5}
+const RESERVE_BASE := {"carbon":24.0,"amino":15.0,"lipid":12.0,"nucleic":8.0,"biomass":65.0}
 const CAPS := {"motility":1.65,"attack":1.90,"defense":1.80,"vitality":1.70,"mutation":.50,"metabolism":1.65,"uptake":1.75}
 const FLOORS := {"motility":.55,"attack":.50,"defense":.55,"vitality":.65,"mutation":0.0,"metabolism":.55,"uptake":.50}
 const GAINS := {"motility":.75,"attack":1.05,"defense":.90,"vitality":.80,"mutation":.50,"metabolism":.75,"uptake":.85}
@@ -91,6 +94,6 @@ static func points_multiplier(traits: Dictionary) -> float:
 
 static func division_credit(traits: Dictionary, remainder: float = 0.0) -> Dictionary:
     # Fractional carry avoids rounding a small upgrade to either zero or +1.
-    var total: float = 2.0*points_multiplier(traits)+clampf(remainder,0.0,.999999)
+    var total: float = BASE_DIVISION_POINTS*points_multiplier(traits)+clampf(remainder,0.0,.999999)
     var whole: int = int(floor(total+0.0000001))
     return {"points":whole,"remainder":maxf(0.0,total-float(whole))}

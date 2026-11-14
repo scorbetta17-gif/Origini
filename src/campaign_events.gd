@@ -62,7 +62,7 @@ func npc_target(id: String, fallback: Vector3) -> Vector3:
     if dormant(id): return Vector3.ZERO
     var e: Dictionary=game.entities[id]
     if not Genome.has(e.traits,"hydrolase_secretion"): return fallback
-    if float(e.energy)<8 or float(e.biomass)>=57: return fallback
+    if float(e.energy)<8 or float(e.biomass)>=51.3: return fallback
     var closest: Node3D
     var distance: float=12
     for patch in game.substrates:

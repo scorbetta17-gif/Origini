@@ -89,57 +89,7 @@ func major_locus(node_id: int) -> String:
     return MAJOR_LOCUS_BY_BRANCH[branch][lane]
 
 func _draw_major_icon(center: Vector2, radius: float, locus: String, tint: Color) -> void:
-    # Shared vector style: pale ink, rounded arcs, phenotype-specific pictograms.
-    var r: float = maxf(6.0,radius*.72)
-    var ink: Color = tint.lightened(.48)
-    var width: float = maxf(1.5,r*.15)
-    match locus:
-        "pili_twitch":
-            draw_arc(center,r*.35,0,TAU,20,ink,width,true)
-            for i in range(5):
-                var n := Vector2.from_angle(TAU*i/5.0)
-                draw_line(center+n*r*.4,center+n*r,ink,width,true)
-        "cell_elongation":
-            draw_arc(center-Vector2(r*.38,0),r*.44,PI*.5,PI*1.5,16,ink,width,true)
-            draw_arc(center+Vector2(r*.38,0),r*.44,-PI*.5,PI*.5,16,ink,width,true)
-            for sign_value in [-1,1]:
-                draw_line(center+Vector2(-r*.38,r*.44*sign_value),center+Vector2(r*.38,r*.44*sign_value),ink,width,true)
-        "surface_recognition":
-            draw_line(center+Vector2(0,r*.8),center,ink,width,true)
-            draw_line(center,center+Vector2(-r*.65,-r*.65),ink,width,true)
-            draw_line(center,center+Vector2(r*.65,-r*.65),ink,width,true)
-            draw_circle(center+Vector2(0,-r*.8),r*.16,ink)
-        "membrane_transport":
-            for x in [-.55,.55]:
-                draw_line(center+Vector2(r*x,-r*.7),center+Vector2(r*x,r*.7),ink,width,true)
-            draw_line(center+Vector2(-r*.25,0),center+Vector2(r*.25,0),ink,width,true)
-            draw_circle(center+Vector2(0,-r*.7),r*.19,ink)
-            draw_circle(center+Vector2(0,r*.7),r*.13,ink)
-        "hydrolase_secretion":
-            var contour := PackedVector2Array()
-            for i in range(7):
-                contour.append(center+Vector2.from_angle(TAU*i/6.0)*r*.75)
-            draw_polyline(contour,ink,width,true)
-            draw_line(center+Vector2(-r*.35,r*.15),center,ink,width,true)
-            draw_line(center,center+Vector2(r*.35,-r*.15),ink,width,true)
-        "vesicle_pathway":
-            draw_arc(center-Vector2(r*.23,r*.08),r*.58,0,TAU,24,ink,width,true)
-            draw_arc(center+Vector2(r*.62,-r*.50),r*.26,0,TAU,16,ink,width,true)
-        "eps_biosynthesis":
-            draw_arc(center,r*.40,0,TAU,20,ink,width,true)
-            for i in range(10):
-                draw_circle(center+Vector2.from_angle(TAU*i/10.0)*r*.82,r*.105,ink)
-        "thermal_membrane":
-            for y in [-.5,0,.5]:
-                var line := PackedVector2Array()
-                for i in range(17):
-                    var u: float = float(i)/16.0
-                    line.append(center+Vector2((u-.5)*r*1.6,r*y+sin(u*TAU)*r*.14))
-                draw_polyline(line,ink,width,true)
-        "chaperone_complex":
-            for i in range(6):
-                draw_circle(center+Vector2.from_angle(TAU*i/6.0)*r*.56,r*.23,ink)
-            draw_circle(center,r*.23,tint.darkened(.4))
+    preload("res://src/biological_symbols.gd").draw(self,locus,center,maxf(6.0,radius*.72),tint.lightened(.48))
 
 func _cost(node_id: int) -> int:
     return 2 if _type(node_id)==2 else 1

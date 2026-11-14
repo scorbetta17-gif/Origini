@@ -38,15 +38,15 @@ func _initialize() -> void:
         assert(float(forward[stat])>=float(B.FLOORS[stat])-.00001)
     assert(B.points_multiplier({"mutation":-100})==1.0)
     assert(B.points_multiplier({"mutation":100})==1.5)
-    assert(B.division_credit({}).points==2)
-    assert(B.division_credit({"mutation":.5}).points==3)
+    assert(B.division_credit({}).points==4)
+    assert(B.division_credit({"mutation":.5}).points==6)
     var carry: float = 0.0
     var earned: int = 0
     for i in range(10):
         var credit: Dictionary = B.division_credit({"mutation":.125},carry)
         earned+=int(credit.points)
         carry=float(credit.remainder)
-    assert(earned==22 and is_equal_approx(carry,.5))
+    assert(earned==45 and is_equal_approx(carry,0))
     var rng := RandomNumberGenerator.new()
     rng.seed=20261113
     for budget in [10,30,60,120,240,1000]:
