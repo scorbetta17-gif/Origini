@@ -149,6 +149,7 @@ var lineage_view: LineageView
 var world_root: Node3D
 var nutrient_root: Node3D
 var cells_root: Node3D
+var collectives: Node
 var events: Node
 var next_particle_uid: int = 1
 var campaign: Node
@@ -179,6 +180,11 @@ func _ready() -> void:
         events.game = self
         add_child(events)
     events.reset()
+    if collectives == null:
+        collectives = preload("res://src/campaign_collectives.gd").new()
+        collectives.game = self
+        add_child(collectives)
+    collectives.reset()
     _new_game()
     get_viewport().size_changed.connect(_layout_ui)
 
@@ -267,9 +273,16 @@ func _new_game(arena: bool = false) -> void:
         events.game = self
         add_child(events)
     events.reset()
+    if collectives == null:
+        collectives = preload("res://src/campaign_collectives.gd").new()
+        collectives.game = self
+        add_child(collectives)
+    collectives.reset()
     journey.reset(arena)
     habitats.rebuild(not arena)
-    if not arena: habitats.seed_world()
+    if not arena:
+        habitats.seed_world()
+        collectives.seed_donors()
     _close_overlay()
     _refresh_hud()
 
@@ -597,6 +610,7 @@ func _process(delta: float) -> void:
         _advance_niches(delta)
         campaign.advance(delta)
         events.advance(delta)
+        collectives.advance(delta)
     _update_metabolic_visuals()
     _cache_current()
     if hp <= 0:
@@ -738,7 +752,7 @@ func _move_player(direction: Vector2, delta: float) -> void:
         entities[player_id]["velocity"] = Vector3.ZERO
         return
     var traits: Dictionary = entities[player_id]["traits"]
-    var speed: float = Physiology.player_speed(traits,partner_id != "" and bool(phase2_progress.get("bonded",false)))
+    var speed: float = Physiology.player_speed(traits,partner_id != "" and bool(phase2_progress.get("bonded",false)))*collectives.speed(player_id)
     # Short overdamped input filter: exact integration, no overshoot or long glide.
     var velocity: Vector3 = entities[player_id].get("velocity",Vector3.ZERO)
     var target := Vector3(direction.x,0,direction.y)*speed
@@ -766,7 +780,7 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
     var kind: String = str(n["kind"])
     if controlled:
         var previous_stock: Dictionary = resources.duplicate(true)
-        var uptake: float = float(entities[player_id]["traits"].get("uptake",1.0))
+        var uptake: float = float(entities[player_id]["traits"].get("uptake",1.0))*collectives.intake(player_id)
         if kind == "detritus":
             resources["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(resources["carbon"])+2.0*uptake)
             resources["amino"] = minf(Physiology.reserve_cap(float(NEED["amino"])),float(resources["amino"])+1.5*uptake)
@@ -780,7 +794,7 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
         statistics.particles += 1
     elif entities.has(cell_id):
         var e: Dictionary = entities[cell_id]
-        var uptake_npc: float = float(e["traits"].get("uptake",1.0))
+        var uptake_npc: float = float(e["traits"].get("uptake",1.0))*collectives.intake(cell_id)
         e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(e["biomass"])+2.3*uptake_npc)
         var stock: Dictionary = e["resources"]
         if kind == "detritus":
@@ -1120,7 +1134,9 @@ func _update_ecosystem(dt: float) -> void:
             elif target_idx >= 0:
                 dir = nutrients[target_idx]["node"].position-c.position
                 dir.y = 0.0
-        if not battle.active(): dir = events.npc_target(str(id),dir)
+        if not battle.active():
+            dir = events.npc_target(str(id),dir)
+            speed *= collectives.speed(str(id))
         if battle.active():
             dir = battle.npc_goal(str(id),dir)
             speed = Physiology.player_speed(e.traits)*.85
@@ -1172,7 +1188,7 @@ func _update_ecosystem(dt: float) -> void:
                         _award_bundle(Balance.KILL_REWARD,false,str(id))
     # The Phase 2 bacterial partner arises from an independent lineage.
     if not battle.active() and generation >= 3 and entities[player_id]["branch"] == "archaea" and _compatible_partner(24.0)=="" and entities.size()<npc_population_cap and t-last_external_arrival >= 20.0:
-        _create_external_bacterium()
+        last_external_arrival = t
 
 func _has_external_bacteria() -> bool:
     for id in entities:
@@ -1263,6 +1279,10 @@ func _divide_npc(id: String) -> void:
         child["phase2_progress"] = inherited_phase.duplicate(true)
         if i == 0:
             first_id = new_id
+    var children: Array=[]
+    for child_id in entities:
+        if entities[child_id].parent==id: children.append(child_id)
+    collectives.division(id,children)
     if was_partner and first_id != "":
         partner_id = first_id
         phase2_progress = player_bond_before
@@ -1389,6 +1409,7 @@ func _choose_daughter(choice: int) -> void:
     for child_id in entities:
         if entities[child_id].parent==old_id: daughters.append(child_id)
     campaign.after_division(old_id,daughters)
+    collectives.division(old_id,daughters)
     division_options.clear()
     statistics.divisions += 1
     phase1_progress["player_divisions"] = int(phase1_progress.get("player_divisions",0))+1
@@ -1723,6 +1744,7 @@ func _open_main_menu() -> void:
     if not battle.active():
         _add_overlay_button("Mappa e primo insediamento",campaign.open_map)
         _add_overlay_button("Dormienza / risveglio · minimo 12 s",events.toggle_rest)
+        _add_overlay_button("Frammenta filamento",collectives.fragment)
     _add_overlay_button("Obiettivi",_on_goals)
     _add_overlay_button("Consorzi metabolici",_on_phase_two)
     _add_overlay_button("Capacità evolutive",_on_evolution)
@@ -1783,11 +1805,9 @@ func _seek_partner() -> void:
     if str(entities[player_id]["branch"])!="archaea":
         return
     cooperation_target = _compatible_partner(24.0)
-    if cooperation_target=="" and entities.size()<npc_population_cap and t-last_external_arrival>=20.0:
-        _create_external_bacterium()
-        cooperation_target = _compatible_partner(24.0)
+    if cooperation_target=="": cooperation_target = collectives.nearest_donor()
     if cooperation_target=="":
-        _notice("Esplora la zona: attendi l'arrivo di una Bacteria compatibile")
+        _notice("Popolazione locale assente: cerca altre linee batteriche sulla mappa")
         _close_overlay()
         return
     selected_target_id = ""
@@ -1936,7 +1956,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
         "last_external_arrival":last_external_arrival,"world_age":world_age,
-        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state,"journey":journey.state,"campaign_world":campaign.state,"campaign_events":events.state,"next_particle_uid":next_particle_uid}
+        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state,"journey":journey.state,"campaign_world":campaign.state,"campaign_events":events.state,"next_particle_uid":next_particle_uid,"collectives":collectives.state}
     var file: FileAccess = FileAccess.open(path,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
@@ -2114,6 +2134,7 @@ func _load_game(path: String = SAVE_PATH) -> void:
     campaign.restore(loaded.get("campaign_world",{}))
     next_particle_uid = maxi(next_particle_uid,int(loaded.get("next_particle_uid",1)))
     events.restore(loaded.get("campaign_events",{}))
+    collectives.restore(loaded.get("collectives",{"seeded":true}))
     journey.restore(loaded.get("journey",null))
     habitats.rebuild(not battle.active())
     _refresh_hud()
@@ -2574,7 +2595,7 @@ func _advance_niches(delta: float) -> void:
             Ecology.register_death(ecology,lineage,previous)
             Ecology.register_birth(ecology,lineage,at)
         e["census_position"] = at
-        if id != player_id and id != partner_id and not events.dormant(str(id)) and player.position.distance_to(at)>42.0:
+        if id != player_id and id != partner_id and not events.dormant(str(id)) and not collectives.linked(str(id)) and player.position.distance_to(at)>42.0:
             # Demotion retains population and genealogy. It is not a death.
             campaign.archive(str(id))
             e["node"].queue_free()

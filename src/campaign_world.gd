@@ -131,4 +131,5 @@ func open_map() -> void:
             var count: int=game.ecology.niches["site"+str(i)].populations[other]
             game._add_overlay_label("  %s: %d · Δ %d"%[other,count,int(state.settlements.get(str(i)+"|"+str(other),{}).get("trend",0))])
         game._add_overlay_button("Segna "+game.habitats.TITLES[i],travel.bind(i))
+    game.collectives.map_info()
     game._add_overlay_button("Segui una linea nella genealogia",game._on_genealogy)

@@ -129,7 +129,7 @@ func advance(dt: float) -> void:
         for id in game.entities:
             var e: Dictionary=game.entities[id]
             if absf(e.node.position.z-float(c.start[1]))<3 and e.node.position.x>float(c.start[0])-2 and e.node.position.x<float(c.end[0])+2:
-                var anchored: bool=bool(e.traits.get("adhesion",false)) or bool(e.traits.get("eps",false))
+                var anchored: bool=bool(e.traits.get("adhesion",false)) or bool(e.traits.get("eps",false)) or (game.collectives.linked(str(id)) and E.niche_id(e.node.position)=="site2")
                 e.node.position.x+=dt*(.08 if anchored else .48)
     if c.elapsed>c.duration+15:
         state.current={}
