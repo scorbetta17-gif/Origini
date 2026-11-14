@@ -254,8 +254,9 @@ func advance(dt: float) -> void:
                     var before: float = float(scoring.account(state,id).absorbed)
                     var richness: float = [1.0,.45,.7][i]
                     game._award_bundle({"carbon":4*richness,"amino":3*richness,"lipid":3*richness,"nucleic":2*richness,"biomass":4*richness,"atp":6*richness},controlled,id)
-                    if int(z.stage)>0 and float(state.elapsed)-int(z.stage)*rules.PHASE_LENGTH<=45 and float(scoring.account(state,id).absorbed)>before and (int(state.get("front_version",1))<2 or i==0):
-                        scoring.front(state,id,int(z.stage),"deposito appena attivato")
+                    if int(z.stage)>0 and float(state.elapsed)-int(z.stage)*rules.PHASE_LENGTH<=45 and float(scoring.account(state,id).absorbed)>before:
+                        scoring.account(state,id).fronts083[str(z.stage)]="deposito appena attivato"
+                        if int(state.get("front_version",1))<2 or i==0: scoring.front(state,id,int(z.stage),"deposito appena attivato")
                     state.stocks[i] -= 1
                     state.harvest[id] = state.elapsed
                     state.packets[team(id)] = int(state.packets.get(team(id),0))+1
@@ -404,7 +405,7 @@ func ranking(legacy: bool = false) -> Array:
         keys.sort()
         var group: String = "|".join(keys)
         var parts: Dictionary = scoring.breakdown(state,id,health,energy)
-        var points: float = rules.score(health,energy,int(state.packets.get(team(id),0))) if legacy else float(parts.total)
+        var points: float = float(parts.vitality)+float(parts.nutrition)+float(parts.eliminations)+5.0*scoring.account(state,id).fronts083.size() if legacy else float(parts.total)
         if not groups.has(group) or points>float(groups[group].points) or (points==float(groups[group].points) and str(id)<str(groups[group].id)):
             groups[group] = {"id":id,"alliance":group,"points":points,"breakdown":parts}
     var result: Array = groups.values()

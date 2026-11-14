@@ -5,6 +5,7 @@ var game: Node
 var state: Dictionary = {}
 var marker: MeshInstance3D
 func reset() -> void:
+    if is_instance_valid(marker): marker.queue_free()
     state = {"archive":{},"settlements":{},"verify_seconds":20.0,"destination":-1,"sisters_seen":false}
 func restore(raw: Dictionary) -> void:
     reset()
@@ -126,10 +127,20 @@ func open_map() -> void:
         var summary: Dictionary=E.summary(game.ecology,lineage,E.LOCAL_CENTERS[i])
         var key: String=str(i)+"|"+lineage
         var held: float=float(state.settlements.get(key,{}).get("held",0))
-        game._add_overlay_label("%s · %s\nTuoi: %d · totale: %d · %s · persistenza %.0f/%ds"%[game.habitats.TITLES[i],["carbonio disperso · rischio basso","nucleotidi/lipidi · rischio termico","amminoacidi · concorrenti"][i],summary.population,summary.total_population,game._niche_label(summary.status),minf(held,state.verify_seconds),int(state.verify_seconds)])
+        game._add_overlay_label("%s · %s\nTuoi: %d · totale: %d · %s · persistenza %.0f/%ds"%[game.habitats.TITLES[i],resource_summary(i)+" · "+["rischio basso","rischio termico","concorrenti"][i],summary.population,summary.total_population,game._niche_label(summary.status),minf(held,state.verify_seconds),int(state.verify_seconds)])
         for other in game.ecology.niches["site"+str(i)].populations:
             var count: int=game.ecology.niches["site"+str(i)].populations[other]
             game._add_overlay_label("  %s: %d · Δ %d"%[other,count,int(state.settlements.get(str(i)+"|"+str(other),{}).get("trend",0))])
         game._add_overlay_button("Segna "+game.habitats.TITLES[i],travel.bind(i))
     game.collectives.map_info()
     game._add_overlay_button("Segui una linea nella genealogia",game._on_genealogy)
+
+func resource_summary(index: int) -> String:
+    var counts: Dictionary={"carbon":0,"amino":0,"lipid":0,"nucleic":0}
+    for n in game.nutrients:
+        if counts.has(n.kind) and Vector2(n.node.position.x-E.LOCAL_CENTERS[index].x,n.node.position.z-E.LOCAL_CENTERS[index].z).length()<=E.LOCAL_RADIUS:
+            counts[n.kind]+=1
+    var order: Array=counts.keys()
+    order.sort_custom(func(a: String,b: String)->bool:return int(counts[a])>int(counts[b]) if counts[a]!=counts[b] else a<b)
+    var labels: Dictionary={"carbon":"carbonio","amino":"amminoacidi","lipid":"lipidi","nucleic":"nucleotidi"}
+    return "%s %d · %s %d"%[labels[order[0]],counts[order[0]],labels[order[1]],counts[order[1]]]

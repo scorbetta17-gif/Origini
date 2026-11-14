@@ -13,7 +13,7 @@ static func account(state: Dictionary, id: String) -> Dictionary:
     initialize(state)
     if not state.scores.has(id): state.scores[id] = {"absorbed":0.0,"kills":[],"fronts":{}}
     var cell: Dictionary=state.scores[id]
-    for key in ["early","active"]:
+    for key in ["early","active","fronts083"]:
         if not cell.has(key): cell[key]={}
     return cell
 
@@ -59,6 +59,7 @@ static func front(state: Dictionary, id: String, stage: int, objective: String) 
     if stage<1 or stage>4: return false
     var cell: Dictionary = account(state,id)
     var key: String=str(stage)
+    cell.fronts083[key]=objective
     if int(state.get("front_version",1))<2:
         if cell.fronts.has(key): return false
         cell.fronts[key]=objective

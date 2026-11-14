@@ -509,7 +509,7 @@ func _remove_entity(id: String, cause: String) -> void:
     if is_instance_valid(rec["node"]):
         rec["node"].queue_free()
     if not ecology_syncing:
-        Ecology.register_death(ecology,str(rec.get("ecotype",id)),at)
+        Ecology.register_death(ecology,str(rec.get("ecotype",id)),rec.get("census_position",at))
     entities.erase(id)
     for entry in genealogy:
         if str(entry["id"]) == id:
@@ -585,8 +585,8 @@ func _process(delta: float) -> void:
     # La cellula non supera mai il 120% della dimensione alla nascita.
     player.set_growth(Physiology.growth_scale(float(resources["biomass"]),23.0,
         float(NEED["biomass"])))
-    camera.position = camera.position.lerp(player.position+camera_offset,minf(1.0,delta*3.2))
-    camera.look_at(player.position+Vector3(0,.55,0))
+    camera.position = camera.position.lerp(collectives.focus_position()+camera_offset,minf(1.0,delta*3.2))
+    camera.look_at(collectives.focus_position()+Vector3(0,.55,0))
     for n in nutrients:
         if is_instance_valid(n["node"]):
             n["node"].position.y = float(n["origin_y"]) + sin(t*1.8+float(n["bob"]))*0.04
@@ -1458,6 +1458,7 @@ func _on_regen() -> void:
 
 func _on_skill(mode: String) -> void:
     if mode == "enzyme" and journey.enzyme_action(): return
+    if battle.active(): mode="lysis"
     cooperation_target = ""
     if atp <= 0.0:
         _notice("ATP esaurito: nessuna capacità attivabile")
@@ -2251,6 +2252,7 @@ func _refresh_hud() -> void:
         buttons["lysis"].text = "✷ LISI\n10 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"
         buttons["cooperate"].text = ("∞ CONSORZIO\nGESTISCI" if partner_id!="" else "∞ COOPERA\nPARTNER") if str(entities[player_id]["branch"]) == "archaea" else "∞ COOPERA\nBLOCCATA"
         if battle.active():
+            buttons["enzymes"].text="▷ ATTACCA\n10 ATP"
             buttons["cooperate"].text = "COOPERA\nALLEATI / SEPARATI"
         buttons["regen"].text = "✚ RIGENERA\n30 HP"
         buttons["menu"].text = "☰ MENU\nOPZIONI"

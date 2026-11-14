@@ -96,6 +96,11 @@ func rebuild_route() -> void:
         label.billboard=BaseMaterial3D.BILLBOARD_ENABLED
         label.position=Vector3(lerpf(c.start[0],c.end[0],i/7.0),.1,c.start[1])
         route.add_child(label)
+    for i in range(3):
+        var rock:=MeshInstance3D.new();var shape:=SphereMesh.new()
+        shape.radius=.75;shape.height=.65;shape.radial_segments=7;shape.rings=3
+        rock.mesh=shape;rock.material_override=game._solid(Color(.15,.29,.32))
+        rock.position=Vector3(c.end[0]+1.7,-.3,c.end[1]+(i-1)*1.1);route.add_child(rock)
     var label:=Label3D.new();label.text="RIPARO · DEPOSIZIONE";label.font_size=34;label.pixel_size=.012
     label.billboard=BaseMaterial3D.BILLBOARD_ENABLED;label.position=Vector3(c.end[0],.8,c.end[1]);route.add_child(label)
 func advance(dt: float) -> void:
@@ -130,7 +135,8 @@ func advance(dt: float) -> void:
             var e: Dictionary=game.entities[id]
             if absf(e.node.position.z-float(c.start[1]))<3 and e.node.position.x>float(c.start[0])-2 and e.node.position.x<float(c.end[0])+2:
                 var anchored: bool=bool(e.traits.get("adhesion",false)) or bool(e.traits.get("eps",false)) or (game.collectives.linked(str(id)) and E.niche_id(e.node.position)=="site2")
-                e.node.position.x+=dt*(.08 if anchored else .48)
+                var sheltered: bool=Vector2(e.node.position.x-float(c.end[0]),e.node.position.z-float(c.end[1])).length()<2.0
+                e.node.position.x+=dt*(.08 if anchored or sheltered else .48)
     if c.elapsed>c.duration+15:
         state.current={}
         if is_instance_valid(route): route.queue_free()

@@ -1,6 +1,8 @@
 # ORIGINI — dalla Cellula Zero al grado LECA
 
-Revisione 0.83: guida nel mondo fino alla prima digestione, tre habitat vicini e punteggio arena su100. [Campagna](docs/CAMPAIGN_FIRST_MUTATION_083.md) · [Arena, risultati e limiti](docs/BATTLE_ROYALE_083.md) · [Protocollo playtest10–15min](docs/PLAYTEST_083.md).
+Revisione 0.84: insediamenti, linee sorelle, dormienza, correnti, filamenti e fronti attivi. [Espansione e verifiche](docs/EXPANSION_084.md).
+
+Base 0.83: guida nel mondo fino alla prima digestione, tre habitat vicini e punteggio arena su100. [Campagna](docs/CAMPAIGN_FIRST_MUTATION_083.md) · [Arena, risultati e limiti](docs/BATTLE_ROYALE_083.md) · [Protocollo playtest10–15min](docs/PLAYTEST_083.md).
 
 Revisione storica 0.82: **MENU / Battle Royale**, arena solo contro 12 IA, fronti ambientali, depositi finiti e alleanze. Salvataggio separato dalla campagna. [Regole e limiti delle verifiche](docs/BATTLE_ROYALE_082.md).
 

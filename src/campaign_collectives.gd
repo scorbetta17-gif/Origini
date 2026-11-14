@@ -124,14 +124,23 @@ func advance(_dt: float) -> void:
                 var desired: Vector3=anchor+Vector3(step*1.65,0,0)
                 e.node.position=e.node.position.lerp(desired,1.0-exp(-_dt*5))
             if not role(id).is_empty():
-                var label:=Label3D.new();label.text="⊥" if role(id)=="ADESIONE" else "⋮";label.font_size=48;label.pixel_size=.018
+                var label:=Label3D.new();label.text="⊥" if role(id)=="ADESIONE" else "⋮";label.font_size=32;label.pixel_size=.012
                 label.billboard=BaseMaterial3D.BILLBOARD_ENABLED;label.position=e.node.position+Vector3(0,1.3,0);joints.add_child(label)
         for i in range(1,living.size()):
             var a: Vector3=game.entities[living[i-1]].node.position
             var b: Vector3=game.entities[living[i]].node.position
             if a.distance_to(b)<.01: continue
             var mesh:=MeshInstance3D.new();var cylinder:=CylinderMesh.new()
-            cylinder.top_radius=.11;cylinder.bottom_radius=.11;cylinder.height=a.distance_to(b)
+            cylinder.top_radius=.06;cylinder.bottom_radius=.06;cylinder.height=a.distance_to(b)
             mesh.mesh=cylinder;mesh.material_override=game._solid(Color(.35,.85,.72));joints.add_child(mesh)
             mesh.position=(a+b)*.5
             mesh.quaternion=Quaternion(Vector3.UP,(b-a).normalized())
+
+func focus_position() -> Vector3:
+    var key: String=group_of(game.player_id)
+    if key.is_empty(): return game.player.position
+    var center:=Vector3.ZERO
+    var count: int=0
+    for id in state.groups[key]:
+        if game.entities.has(id): center+=game.entities[id].node.position;count+=1
+    return center/maxi(1,count)
