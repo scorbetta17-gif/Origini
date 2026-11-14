@@ -149,6 +149,8 @@ var lineage_view: LineageView
 var world_root: Node3D
 var nutrient_root: Node3D
 var cells_root: Node3D
+var events: Node
+var next_particle_uid: int = 1
 var campaign: Node
 var journey: Node
 var habitats: Node
@@ -172,6 +174,11 @@ func _ready() -> void:
     campaign.game = self
     add_child(campaign)
     campaign.reset()
+    if events == null:
+        events = preload("res://src/campaign_events.gd").new()
+        events.game = self
+        add_child(events)
+    events.reset()
     _new_game()
     get_viewport().size_changed.connect(_layout_ui)
 
@@ -255,6 +262,11 @@ func _new_game(arena: bool = false) -> void:
         _create_nutrient(Balance.NUTRIENT_CYCLE[i % Balance.NUTRIENT_CYCLE.size()], Vector3(x,.19,z))
     _reset_substrates()
     campaign.reset()
+    if events == null:
+        events = preload("res://src/campaign_events.gd").new()
+        events.game = self
+        add_child(events)
+    events.reset()
     journey.reset(arena)
     habitats.rebuild(not arena)
     if not arena: habitats.seed_world()
@@ -381,7 +393,8 @@ func _create_nutrient(kind: String, at: Vector3) -> void:
     # Portrait classic mode shows the chemically meaningful projected icon
     # instead of duplicating it with an overlapping generic 3D sphere.
     node.visible = not (is_instance_valid(nutrient_markers) and nutrient_markers.visible)
-    nutrients.append({"kind": kind, "node": node, "origin_y": at.y, "bob": rng.randf_range(0,TAU)})
+    nutrients.append({"uid":next_particle_uid,"kind": kind, "node": node, "origin_y": at.y, "bob": rng.randf_range(0,TAU)})
+    next_particle_uid += 1
 
 func _create_entity(id: String, parent: String, gen: int, branch: String, traits: Dictionary, at: Vector3, controlled: bool = false, external: bool = false) -> void:
     if entities.has(id):
@@ -516,7 +529,7 @@ func _process(delta: float) -> void:
         return
     delta = minf(delta,.07)
     t += delta
-    cycle_age += delta
+    if not events.dormant(player_id): cycle_age += delta
     regeneration_cooldown = maxf(0.0,regeneration_cooldown-delta)
     skill_cooldown = maxf(0.0,skill_cooldown-delta)
     autosave_timer += delta
@@ -546,7 +559,7 @@ func _process(delta: float) -> void:
         _move_player(Vector2.ZERO,delta)
     var travelled: float = player.position.distance_to(position_before_movement)
     var physiology_state: Dictionary = Physiology.energy_step(atp,zero_atp_seconds,delta,
-        travelled,entities[player_id]["traits"])
+        travelled,events.resting_traits(player_id))
     atp = float(physiology_state["atp"])
     zero_atp_seconds = float(physiology_state["zero_seconds"])
     if bool(physiology_state["dead"]):
@@ -583,6 +596,7 @@ func _process(delta: float) -> void:
         _advance_phase_two(delta)
         _advance_niches(delta)
         campaign.advance(delta)
+        events.advance(delta)
     _update_metabolic_visuals()
     _cache_current()
     if hp <= 0:
@@ -720,6 +734,9 @@ func _toggle_focus() -> void:
     buttons["focus"].text = "MONDO" if camera_focus else "CELLULA"
 
 func _move_player(direction: Vector2, delta: float) -> void:
+    if events.dormant(player_id):
+        entities[player_id]["velocity"] = Vector3.ZERO
+        return
     var traits: Dictionary = entities[player_id]["traits"]
     var speed: float = Physiology.player_speed(traits,partner_id != "" and bool(phase2_progress.get("bonded",false)))
     # Short overdamped input filter: exact integration, no overshoot or long glide.
@@ -843,26 +860,35 @@ func _maintain_substrates(delta: float) -> void:
             patch.position = Vector3(at.x,terrain.surface_height(Vector2(at.x,at.z))+.04,at.z)
 
 func _digest_substrate(patch: Node3D) -> bool:
-    if not is_instance_valid(patch) or not substrates.has(patch) or skill_cooldown>0:
-        return false
-    if not GenomeScript.has(entities[player_id]["traits"],"hydrolase_secretion") or atp<Balance.ENZYME_COST:
-        return false
-    var offset: Vector3 = patch.position-player.position
+    return _digest_for(patch,player_id)
+
+func _digest_for(patch: Node3D, id: String) -> bool:
+    if not entities.has(id) or events.dormant(id) or not is_instance_valid(patch) or not substrates.has(patch): return false
+    var controlled: bool = id == player_id
+    if (controlled and skill_cooldown>0) or (not controlled and t<float(events.state.npc_cooldown.get(id,0))): return false
+    var e: Dictionary = entities[id]
+    var energy: float = atp if controlled else float(e.energy)
+    if not GenomeScript.has(e.traits,"hydrolase_secretion") or energy<Balance.ENZYME_COST: return false
+    var offset: Vector3 = patch.position-e.node.position
     offset.y = 0
-    if offset.length()>1.55:
-        return false
-    atp -= Balance.ENZYME_COST
-    _award_bundle(patch.reward(),true)
-    statistics.substrates += 1
-    journey.digested()
-    skill_cooldown = 2.0
+    if offset.length()>1.55: return false
+    if controlled: atp -= Balance.ENZYME_COST
+    else: e.energy -= Balance.ENZYME_COST
+    _award_bundle(patch.reward(),controlled,id)
+    if controlled:
+        statistics.substrates += 1
+        journey.digested()
+        events.on_digest(patch)
+        skill_cooldown = 2.0
+        _notice("%s: fino a 5 molecole recuperate (limite delle riserve)" % patch.LABELS[patch.kind])
+    else: events.state.npc_cooldown[id] = t+2.0
     patch.set_portions(patch.portions-1)
-    _notice("%s: fino a 5 molecole recuperate (limite delle riserve)" % patch.LABELS[patch.kind])
     if patch.portions<=0:
         substrates.erase(patch)
         patch.queue_free()
-        selected_substrate = null
-        attack_mode = ""
+        if selected_substrate == patch:
+            selected_substrate = null
+            attack_mode = ""
         substrate_respawn = 0.0
     return true
 
@@ -908,6 +934,7 @@ func _recycle_distant_nutrients() -> void:
         return
     # Preserve biological remains and resources close to autonomous cells.
     for nutrient in nutrients:
+        if events.carried(int(nutrient.get("uid",-1))): continue
         if str(nutrient["kind"]) == "detritus" or not is_instance_valid(nutrient["node"]):
             continue
         var node: Node3D = nutrient["node"]
@@ -1003,7 +1030,8 @@ func _update_npc_motion(delta: float) -> void:
             continue
         var current: Vector3 = e.get("velocity",Vector3.ZERO)
         var desired: Vector3 = e.get("intent_velocity",Vector3.ZERO)
-        if float(e.get("energy",0.0)) <= 0.0:
+        if float(e.get("energy",0.0)) <= 0.0 or events.dormant(str(id)):
+            current = Vector3.ZERO
             desired = Vector3.ZERO
         var next: Vector3 = current.move_toward(desired,Physiology.NPC_ACCELERATION*delta)
         var before: Vector3 = c.position
@@ -1012,7 +1040,7 @@ func _update_npc_motion(delta: float) -> void:
         c.position.z = clampf(c.position.z,-world_radius+1,world_radius-1)
         var actual_distance: float = before.distance_to(c.position)
         e["velocity"] = next
-        e["energy"] = Physiology.npc_energy_step(float(e["energy"]),delta,actual_distance,e["traits"])
+        e["energy"] = Physiology.npc_energy_step(float(e["energy"]),delta,actual_distance,events.resting_traits(str(id)))
         e["atp"] = e["energy"]
         if actual_distance > .0001:
             c.rotation.y = lerp_angle(c.rotation.y,atan2(-next.z,next.x),delta*4.0)
@@ -1032,8 +1060,9 @@ func _update_ecosystem(dt: float) -> void:
         var c: CellVisual = e["node"]
         if not is_instance_valid(c):
             continue
-        e["age"] = float(e["age"])+dt
-        e["cycle_age"] = float(e.get("cycle_age",0))+dt
+        if not events.dormant(str(id)):
+            e["age"] = float(e["age"])+dt
+            e["cycle_age"] = float(e.get("cycle_age",0))+dt
         var local_temperature: float = _temperature_at(c.position)
         var limit_temperature: float = 43.0+18.0*float(e["traits"].get("thermotolerance",0.0))
         if not battle.active() and local_temperature > limit_temperature:
@@ -1041,6 +1070,9 @@ func _update_ecosystem(dt: float) -> void:
             if float(e["hp"]) <= 0.0:
                 _remove_entity(str(id),"stress termico")
                 continue
+        if events.dormant(str(id)):
+            e["intent_velocity"] = Vector3.ZERO
+            continue
         var role: String = Physiology.strategy(e["traits"])
         e["strategy"] = role
         var target_idx: int = _nearest_nutrient(c.position,7.5)
@@ -1088,6 +1120,7 @@ func _update_ecosystem(dt: float) -> void:
             elif target_idx >= 0:
                 dir = nutrients[target_idx]["node"].position-c.position
                 dir.y = 0.0
+        if not battle.active(): dir = events.npc_target(str(id),dir)
         if battle.active():
             dir = battle.npc_goal(str(id),dir)
             speed = Physiology.player_speed(e.traits)*.85
@@ -1207,11 +1240,13 @@ func _divide_npc(id: String) -> void:
                 mutated["attack"] = maxf(1.16,float(mutated.get("attack",1.0)))
                 mutated["motility"] = minf(.83,float(mutated.get("motility",1.0)))
             mutated = GenomeScript.express(mutated,daughter_branch)
+        mutated = events.variation(parent,mutated,pos,gen,i)
+        var local_variant: bool = GenomeScript.has(mutated,"hydrolase_secretion") and not GenomeScript.has(traits,"hydrolase_secretion")
         _create_entity(new_id,id,gen,daughter_branch,mutated,pos+Vector3(-.70 if i == 0 else .70,0,.45 if i == 0 else -.45),false,external)
         var child: Dictionary = entities[new_id]
         Ecology.register_death(ecology,str(child["ecotype"]),child["node"].position)
-        child["ecotype"] = parent_ecotype
-        Ecology.register_birth(ecology,parent_ecotype,child["node"].position)
+        child["ecotype"] = new_id if local_variant else parent_ecotype
+        Ecology.register_birth(ecology,str(child["ecotype"]),child["node"].position)
         child["evolution"] = parent.get("evolution",Evolution.origin()).duplicate(true)
         child["biomass"] = 24.0
         child["energy"] = float(parent["energy"])*.45
@@ -1259,6 +1294,7 @@ func _mutated_traits(source: Dictionary, child_generation: int, branch: String) 
     return GenomeScript.express(traits,branch)
 
 func _can_divide() -> bool:
+    if events.dormant(player_id): return false
     if hp<=0.0 or division_active or cycle_age < (35.0 if generation == 0 else 75.0):
         return false
     for key in NEED:
@@ -1436,6 +1472,7 @@ func _on_skill(mode: String) -> void:
     _notice("Bersaglio: %s · %s" % [best,mode.to_upper()])
 
 func _follow_attack(delta: float) -> void:
+    if events.dormant(player_id): return
     if is_instance_valid(selected_substrate):
         var offset: Vector3 = selected_substrate.position-player.position
         offset.y = 0
@@ -1683,7 +1720,9 @@ func _open_main_menu() -> void:
     _add_overlay_button("Battle Royale",battle.choose)
     if battle.active():
         _add_overlay_button("Torna alla campagna",_load_game.bind(SAVE_PATH))
-    if not battle.active(): _add_overlay_button("Mappa e primo insediamento",campaign.open_map)
+    if not battle.active():
+        _add_overlay_button("Mappa e primo insediamento",campaign.open_map)
+        _add_overlay_button("Dormienza / risveglio · minimo 12 s",events.toggle_rest)
     _add_overlay_button("Obiettivi",_on_goals)
     _add_overlay_button("Consorzi metabolici",_on_phase_two)
     _add_overlay_button("Capacità evolutive",_on_evolution)
@@ -1879,7 +1918,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
             "energy":e["energy"],"biomass":e["biomass"],"resources":e["resources"],
             "points":e["points"],"purchased":e["purchased"],"age":e["age"],
             "evolution":e.get("evolution",{}),"ecotype":e.get("ecotype",id),"cycle_age":e.get("cycle_age",0.0),
-            "sister_ids":e.get("sister_ids",[]),
+            "sister_ids":e.get("sister_ids",[]),"rest":e.get("rest",{}),
             "phase2_progress":e.get("phase2_progress",PhaseScript.empty()),
             "zero_atp_seconds":e.get("zero_atp_seconds",0.0),
             "zero_energy_seconds":e.get("zero_energy_seconds",0.0)})
@@ -1887,7 +1926,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
     for n in nutrients:
         if is_instance_valid(n["node"]):
             var position: Vector3 = n["node"].position
-            particle_data.append({"kind":n["kind"],"pos":[position.x,position.y,position.z]})
+            particle_data.append({"uid":n.get("uid",0),"kind":n["kind"],"pos":[position.x,position.y,position.z]})
     var substrate_data: Array = []
     for patch in substrates:
         if is_instance_valid(patch):
@@ -1897,7 +1936,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
         "last_external_arrival":last_external_arrival,"world_age":world_age,
-        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state,"journey":journey.state,"campaign_world":campaign.state}
+        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state,"journey":journey.state,"campaign_world":campaign.state,"campaign_events":events.state,"next_particle_uid":next_particle_uid}
     var file: FileAccess = FileAccess.open(path,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
@@ -1984,7 +2023,7 @@ func _load_game(path: String = SAVE_PATH) -> void:
         var id: String = str(record["id"])
         _create_entity(id,str(record.get("parent","")),int(record.get("generation",0)),str(record.get("branch","pre_luca")),record.get("traits",_base_traits()),Vector3(float(xyz[0]),float(xyz[1]),float(xyz[2])),false,bool(record.get("external",false)))
         var target: Dictionary = entities[id]
-        for key in ["hp","atp","energy","biomass","resources","points","purchased","age","phase2_progress","zero_atp_seconds","zero_energy_seconds","evolution","ecotype","cycle_age","sister_ids"]:
+        for key in ["hp","atp","energy","biomass","resources","points","purchased","age","phase2_progress","zero_atp_seconds","zero_energy_seconds","evolution","ecotype","cycle_age","sister_ids","rest"]:
             if record.has(key):
                 target[key] = record[key]
         target["phase2_progress"] = PhaseScript.normalize(target.get("phase2_progress",{}))
@@ -2015,6 +2054,7 @@ func _load_game(path: String = SAVE_PATH) -> void:
         var pos: Array = p.get("pos",[0,.29,0])
         if pos.size() == 3:
             _create_nutrient(str(p["kind"]),Vector3(float(pos[0]),float(pos[1]),float(pos[2])))
+            if p.has("uid"): nutrients[-1]["uid"] = int(p.uid)
     _activate_lineage(controlled)
     _reset_substrates(loaded.get("substrates",[]),loaded.has("substrates"))
     substrate_respawn = clampf(float(loaded.get("substrate_respawn",0)),0,20)
@@ -2072,6 +2112,8 @@ func _load_game(path: String = SAVE_PATH) -> void:
     _close_overlay()
     _refresh_hud()
     campaign.restore(loaded.get("campaign_world",{}))
+    next_particle_uid = maxi(next_particle_uid,int(loaded.get("next_particle_uid",1)))
+    events.restore(loaded.get("campaign_events",{}))
     journey.restore(loaded.get("journey",null))
     habitats.rebuild(not battle.active())
     _refresh_hud()
@@ -2532,7 +2574,7 @@ func _advance_niches(delta: float) -> void:
             Ecology.register_death(ecology,lineage,previous)
             Ecology.register_birth(ecology,lineage,at)
         e["census_position"] = at
-        if id != player_id and id != partner_id and player.position.distance_to(at)>42.0:
+        if id != player_id and id != partner_id and not events.dormant(str(id)) and player.position.distance_to(at)>42.0:
             # Demotion retains population and genealogy. It is not a death.
             campaign.archive(str(id))
             e["node"].queue_free()
@@ -2684,6 +2726,7 @@ func _expire_notice() -> void:
         notice_expires = -1.0
 
 func _division_block_reason() -> String:
+    if events.dormant(player_id): return "Risvegliati prima della scissione"
     for key in NEED:
         if float(resources.get(key,0))<float(NEED[key])-.001:
             return "Raccogli tutti i nutrienti necessari"

@@ -8,6 +8,7 @@ static func catalogue() -> Array[Dictionary]:
     return [
         _entry("cell_zero","Cellula Zero",0,[],"GAMEPLAY","Protocellula narrativa con compartimento e RNA.",0),
         _entry("rna_inheritance","Ereditarieta RNA",2,["cell_zero"],"PLAUSIBLE","Copia e trasmissione di RNA; ordine storico aperto.",2),
+        _entry("dormancy","Dormienza reversibile",2,["rna_inheritance"],"GAMEPLAY","Riposo minimo 12 s; risparmio ATP, nessuna immunità termica.",2),
         _entry("translation","Traduzione",3,["rna_inheritance"],"CONSENSUS","Capacita di traduzione, precedente alla divergenza dei domini.",5),
         _entry("dna_archive","Archivio DNA",3,["translation"],"PLAUSIBLE","Deposito, copia e segregazione del genoma distinti.",8),
         _entry("bioenergetics","Bioenergetica di membrana",3,["translation"],"CONSENSUS","Trasporto e gradienti energetici integrati.",10),

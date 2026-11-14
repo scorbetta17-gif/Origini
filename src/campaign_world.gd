@@ -9,7 +9,7 @@ func reset() -> void:
 func restore(raw: Dictionary) -> void:
     reset()
     for key in state:
-        if raw.has(key) and typeof(raw[key])==typeof(state[key]): state[key]=raw[key]
+        if raw.has(key) and (typeof(raw[key])==typeof(state[key]) or (raw[key] is float and state[key] is int)): state[key]=raw[key]
 func snapshot(id: String) -> Dictionary:
     var e: Dictionary = game.entities[id]
     var record: Dictionary = {}
