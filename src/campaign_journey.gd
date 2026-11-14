@@ -44,7 +44,7 @@ func objective() -> String:
         "offer": return "Prima mutazione: ENZIMI · 2 PM, oppure conserva i punti"
         "comparison": return "Apri ENZIMI per vedere il confronto prima / dopo"
         "digest": return "Raggiungi il detrito illuminato e premi ENZIMI · 6 ATP"
-        "explain": return "Mutazione provata! EVOLUZIONE: specializzazioni e capacità"
+        "explain": return "Facoltativo: META → MAPPA · Fonda la tua prima popolazione"
     return ""
 
 func after_division() -> void:
@@ -108,7 +108,7 @@ func ensure_detritus() -> void:
 func digested() -> void:
     if not active() or state.step != "digest": return
     state.step = "explain"
-    game.call_deferred("_notice","Digestione riuscita! EVOLUZIONE: piccoli nodi specializzano, grandi nodi aggiungono capacità.")
+    game.call_deferred("_notice","Digestione riuscita! META → MAPPA: fonda la tua prima popolazione.")
 
 func explain() -> void:
     if active() and state.step == "explain":

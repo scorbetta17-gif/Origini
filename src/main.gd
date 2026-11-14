@@ -149,6 +149,7 @@ var lineage_view: LineageView
 var world_root: Node3D
 var nutrient_root: Node3D
 var cells_root: Node3D
+var campaign: Node
 var journey: Node
 var habitats: Node
 var battle: Node
@@ -167,6 +168,10 @@ func _ready() -> void:
     habitats = preload("res://src/campaign_habitats.gd").new()
     habitats.game = self
     add_child(habitats)
+    campaign = preload("res://src/campaign_world.gd").new()
+    campaign.game = self
+    add_child(campaign)
+    campaign.reset()
     _new_game()
     get_viewport().size_changed.connect(_layout_ui)
 
@@ -249,6 +254,7 @@ func _new_game(arena: bool = false) -> void:
             z = rng.randf_range(-20.0,20.0)
         _create_nutrient(Balance.NUTRIENT_CYCLE[i % Balance.NUTRIENT_CYCLE.size()], Vector3(x,.19,z))
     _reset_substrates()
+    campaign.reset()
     journey.reset(arena)
     habitats.rebuild(not arena)
     if not arena: habitats.seed_world()
@@ -396,13 +402,15 @@ func _create_entity(id: String, parent: String, gen: int, branch: String, traits
         "strategy":Physiology.strategy(inherited),
         "resources":inventory,"points":0,"purchased":{},"fission_count":0,
         "phase2_progress":PhaseScript.empty(), "evolution":Evolution.origin(),
-        "ecotype":id, "cycle_age":0.0}
+        "ecotype":id, "cycle_age":0.0,"census_position":at}
     if not ecology_syncing:
         var ecotype: String = str(entities[parent].get("ecotype",parent)) if entities.has(parent) else id
         entities[id]["ecotype"] = ecotype
         Ecology.register_birth(ecology,ecotype,at)
         ecological_profiles[ecotype] = inherited.duplicate(true)
         ecological_profiles[ecotype]["ecological_branch"] = branch
+        ecological_profiles[ecotype]["ecological_generation"] = gen
+        ecological_profiles[ecotype]["founder_id"] = id
     if is_instance_valid(battle) and battle.active() and not ecology_syncing:
         battle.state.teams[id] = battle.team(parent) if parent!="" else id
     genealogy.append({"id":id,"parent":parent,"generation":gen,"branch":branch,
@@ -574,6 +582,7 @@ func _process(delta: float) -> void:
     else:
         _advance_phase_two(delta)
         _advance_niches(delta)
+        campaign.advance(delta)
     _update_metabolic_visuals()
     _cache_current()
     if hp <= 0:
@@ -1024,6 +1033,7 @@ func _update_ecosystem(dt: float) -> void:
         if not is_instance_valid(c):
             continue
         e["age"] = float(e["age"])+dt
+        e["cycle_age"] = float(e.get("cycle_age",0))+dt
         var local_temperature: float = _temperature_at(c.position)
         var limit_temperature: float = 43.0+18.0*float(e["traits"].get("thermotolerance",0.0))
         if not battle.active() and local_temperature > limit_temperature:
@@ -1179,7 +1189,8 @@ func _divide_npc(id: String) -> void:
             daughter_branch = "luca"
         elif branch == "luca" and gen >= 3 and rng.randf() < .46:
             daughter_branch = "bacteria" if i == 0 else "archaea"
-        var mutated: Dictionary = _mutated_traits(traits,gen,daughter_branch)
+        if not external: daughter_branch = branch
+        var mutated: Dictionary = _mutated_traits(traits,gen,daughter_branch) if external else traits.duplicate(true)
         if daughter_branch == "luca" and branch == "pre_luca":
             mutated = GenomeScript.grant(mutated,"dna_stabilization",gen,"ramificazione_autonoma","luca")
         elif daughter_branch != branch and branch == "luca":
@@ -1187,7 +1198,7 @@ func _divide_npc(id: String) -> void:
             mutated = GenomeScript.grant(mutated,envelope_gene,gen,"ramificazione_autonoma",daughter_branch)
         # Occasional heritable ecological specialization. Runner: fast escape,
         # predator: hydrolase and high attack but significantly slower.
-        if gen >= 3 and rng.randf() < .52:
+        if external and gen >= 3 and rng.randf() < .52:
             if i == 0:
                 mutated = GenomeScript.grant(mutated,"pili_twitch",gen,"specializzazione",daughter_branch)
                 mutated["motility"] = maxf(1.20,float(mutated.get("motility",1.0)))
@@ -1338,6 +1349,10 @@ func _choose_daughter(choice: int) -> void:
             new_cell["phase2_progress"] = descendant_phase
         if i == choice:
             chosen_id = id
+    var daughters: Array = []
+    for child_id in entities:
+        if entities[child_id].parent==old_id: daughters.append(child_id)
+    campaign.after_division(old_id,daughters)
     division_options.clear()
     statistics.divisions += 1
     phase1_progress["player_divisions"] = int(phase1_progress.get("player_divisions",0))+1
@@ -1645,6 +1660,7 @@ func _switch_lineage(id: String) -> void:
     if battle.active():
         _notice("Battle Royale: controlli solo la tua cellula")
         return
+    id = campaign.follow(id)
     if id == player_id or not entities.has(id) or float(entities[id].get("hp",0))<=0.0:
         _notice("Linea non viva oppure gia' controllata")
         return
@@ -1667,6 +1683,7 @@ func _open_main_menu() -> void:
     _add_overlay_button("Battle Royale",battle.choose)
     if battle.active():
         _add_overlay_button("Torna alla campagna",_load_game.bind(SAVE_PATH))
+    if not battle.active(): _add_overlay_button("Mappa e primo insediamento",campaign.open_map)
     _add_overlay_button("Obiettivi",_on_goals)
     _add_overlay_button("Consorzi metabolici",_on_phase_two)
     _add_overlay_button("Capacità evolutive",_on_evolution)
@@ -1701,6 +1718,7 @@ func _on_goals() -> void:
                 occupied += 1
             _add_overlay_label("%d:%d · %.1f cell/km² · %s" % [x,z,float(info.get("density",0)),_niche_label(str(info.get("status","")))])
     _add_overlay_label("Nicchie consolidate: %d/25 · Divisioni della linea: %d · PM %.2f" % [occupied,int(evolution.get("divisions",0)),mutation_points])
+    _add_overlay_button("FONDA LA TUA PRIMA POPOLAZIONE · MAPPA",campaign.open_map)
     _add_overlay_button("STATISTICHE · RNA, DNA E POPOLAZIONI",_on_statistics)
     _add_overlay_button("CAPACITÀ EVOLUTIVE",_on_evolution)
     _add_overlay_button("ALBERO DELLE SPECIALIZZAZIONI",_on_tree)
@@ -1861,6 +1879,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
             "energy":e["energy"],"biomass":e["biomass"],"resources":e["resources"],
             "points":e["points"],"purchased":e["purchased"],"age":e["age"],
             "evolution":e.get("evolution",{}),"ecotype":e.get("ecotype",id),"cycle_age":e.get("cycle_age",0.0),
+            "sister_ids":e.get("sister_ids",[]),
             "phase2_progress":e.get("phase2_progress",PhaseScript.empty()),
             "zero_atp_seconds":e.get("zero_atp_seconds",0.0),
             "zero_energy_seconds":e.get("zero_energy_seconds",0.0)})
@@ -1878,7 +1897,7 @@ func _save_game(path: String = SAVE_PATH) -> void:
         "partner":partner_id,"phase_two":phase_two,"phase2_progress":phase2_progress,
         "phase1_progress":phase1_progress,"zero_atp_seconds":zero_atp_seconds,
         "last_external_arrival":last_external_arrival,"world_age":world_age,
-        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state,"journey":journey.state}
+        "ecology":ecology,"ecological_profiles":ecological_profiles,"statistics":statistics,"battle":battle.state,"journey":journey.state,"campaign_world":campaign.state}
     var file: FileAccess = FileAccess.open(path,FileAccess.WRITE)
     if file != null:
         file.store_string(JSON.stringify(data))
@@ -1965,7 +1984,7 @@ func _load_game(path: String = SAVE_PATH) -> void:
         var id: String = str(record["id"])
         _create_entity(id,str(record.get("parent","")),int(record.get("generation",0)),str(record.get("branch","pre_luca")),record.get("traits",_base_traits()),Vector3(float(xyz[0]),float(xyz[1]),float(xyz[2])),false,bool(record.get("external",false)))
         var target: Dictionary = entities[id]
-        for key in ["hp","atp","energy","biomass","resources","points","purchased","age","phase2_progress","zero_atp_seconds","zero_energy_seconds","evolution","ecotype","cycle_age"]:
+        for key in ["hp","atp","energy","biomass","resources","points","purchased","age","phase2_progress","zero_atp_seconds","zero_energy_seconds","evolution","ecotype","cycle_age","sister_ids"]:
             if record.has(key):
                 target[key] = record[key]
         target["phase2_progress"] = PhaseScript.normalize(target.get("phase2_progress",{}))
@@ -1980,6 +1999,15 @@ func _load_game(path: String = SAVE_PATH) -> void:
         ecological_profiles[lineage] = e["traits"].duplicate(true)
         if not loaded.has("ecology"):
             Ecology.register_birth(ecology,lineage,e["node"].position)
+    if int(loaded.get("ecology",{}).get("version",1))<2 and loaded.has("ecology"):
+        for e in entities.values():
+            var old_key: String = Ecology.grid_id(e.node.position)
+            var new_key: String = Ecology.niche_id(e.node.position)
+            var pops: Dictionary = ecology.niches[old_key].populations
+            if old_key!=new_key and int(pops.get(e.ecotype,0))>0:
+                pops[e.ecotype]=int(pops[e.ecotype])-1
+                if int(pops[e.ecotype])==0: pops.erase(e.ecotype)
+                Ecology.register_birth(ecology,e.ecotype,e.node.position)
     genealogy = saved_history
     for p in loaded.get("nutrients",[]):
         if not(p is Dictionary) or not (TYPES.has(str(p.get("kind",""))) or str(p.get("kind",""))=="detritus"):
@@ -2043,6 +2071,7 @@ func _load_game(path: String = SAVE_PATH) -> void:
     is_paused = false
     _close_overlay()
     _refresh_hud()
+    campaign.restore(loaded.get("campaign_world",{}))
     journey.restore(loaded.get("journey",null))
     habitats.rebuild(not battle.active())
     _refresh_hud()
@@ -2505,6 +2534,7 @@ func _advance_niches(delta: float) -> void:
         e["census_position"] = at
         if id != player_id and id != partner_id and player.position.distance_to(at)>42.0:
             # Demotion retains population and genealogy. It is not a death.
+            campaign.archive(str(id))
             e["node"].queue_free()
             entities.erase(id)
     for id in entities:
@@ -2520,6 +2550,7 @@ func _advance_niches(delta: float) -> void:
         _materialize_cohorts()
 
 func _materialize_cohorts() -> void:
+    campaign.materialize(Ecology.niche_id(player.position))
     var niche: Dictionary = ecology.niches[Ecology.niche_id(player.position)]
     var represented: Dictionary = {}
     for id in entities:
@@ -2541,7 +2572,7 @@ func _materialize_cohorts() -> void:
         if Ecology.niche_id(at) != Ecology.niche_id(player.position):
             at = player.position
         ecology_syncing = true
-        _create_entity(id,"",generation,branch,traits,at,false,true)
+        _create_entity(id,str(traits.get("founder_id",lineage)),int(traits.get("ecological_generation",0))+1,branch,traits,at,false,true)
         ecology_syncing = false
         entities[id]["ecotype"] = lineage
         entities[id]["evolution"] = traits.get("ecological_evolution",Evolution.origin()).duplicate(true)
@@ -2557,6 +2588,8 @@ func _differentiate_lineage() -> void:
     e["ecotype"] = descendant
     ecological_profiles[descendant] = e["traits"].duplicate(true)
     ecological_profiles[descendant]["ecological_branch"] = e.branch
+    ecological_profiles[descendant]["ecological_generation"] = generation
+    ecological_profiles[descendant]["founder_id"] = player_id
     ecological_profiles[descendant]["ecological_evolution"] = evolution.duplicate(true)
 
 func _evolution_context() -> Dictionary:

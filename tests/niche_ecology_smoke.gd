@@ -4,7 +4,7 @@ const E = preload("res://src/niche_ecology.gd")
 func _initialize() -> void:
     var s: Dictionary = E.origin()
     var pos: Vector3 = Vector3(-1100,0,-1100)
-    assert(s.niches.size()==25)
+    assert(s.niches.size()==28)
     assert(E.niche_id(Vector3(1150,0,1150))=="24")
     E.register_birth(s,"a",pos,6)
     assert(not E.summary(s,"a",pos).dominant)

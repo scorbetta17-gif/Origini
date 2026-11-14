@@ -1,6 +1,9 @@
 extends RefCounted
 ## Persistent aggregate census. Rendered entities are representatives, never extra counts.
-const VERSION: int = 1
+const VERSION: int = 2
+const LOCAL_CENTERS := [Vector3(0,0,5),Vector3(16,0,-14),Vector3(-15,0,-9)]
+const LOCAL_RADIUS: float = 7.0
+const CONSOLIDATION_COUNT: int = 7
 const AREA_KM2: float = 0.2116
 const WORLD_MIN: float = -1150.0
 const NICHE_WIDTH: float = 460.0
@@ -21,6 +24,8 @@ static func origin() -> Dictionary:
     for index in range(25):
         niches[str(index)] = {"habitat":HABITATS[(index + index / 5) % 5],
             "populations":{}, "birth_credit":{}, "death_credit":{}, "resources":48.0}
+    for i in range(3):
+        niches["site"+str(i)] = {"habitat":["fragmented_patches","thermal_fault","nutrient_mat"][i],"populations":{},"birth_credit":{},"death_credit":{},"resources":48.0}
     return {"version":VERSION, "elapsed":0.0, "niches":niches}
 
 static func normalize(raw: Dictionary) -> Dictionary:
@@ -41,6 +46,16 @@ static func normalize(raw: Dictionary) -> Dictionary:
     return state
 
 static func niche_id(position: Vector3) -> String:
+    for i in range(3):
+        if Vector2(position.x-LOCAL_CENTERS[i].x,position.z-LOCAL_CENTERS[i].z).length()<=LOCAL_RADIUS:
+            return "site"+str(i)
+    return grid_id(position)
+
+static func area(id: String) -> float:
+    var local_area: float = PI*LOCAL_RADIUS*LOCAL_RADIUS/1000000.0
+    return local_area if id.begins_with("site") else AREA_KM2-3*local_area if id=="12" else AREA_KM2
+
+static func grid_id(position: Vector3) -> String:
     var column: int = clampi(int(floor((position.x-WORLD_MIN)/NICHE_WIDTH)),0,4)
     var row: int = clampi(int(floor((position.z-WORLD_MIN)/NICHE_WIDTH)),0,4)
     return str(row*5+column)
@@ -75,6 +90,7 @@ static func differentiate(state: Dictionary, previous: String, descendant: Strin
     return state
 
 static func climate_fit(traits: Dictionary, habitat: String) -> float:
+    if habitat=="thermal_fault": return clampf(.35+float(traits.get("thermotolerance",0))*.65,.35,1.5)
     var index: int = HABITATS.find(habitat)
     if index < 0:
         index = 0
@@ -146,9 +162,9 @@ static func summary(state: Dictionary, lineage: String, position: Vector3) -> Di
         total += int(populations[other])
         if str(other) != lineage:
             strongest = maxi(strongest,int(populations[other]))
-    var dense: bool = float(own)/AREA_KM2 >= MIN_DENSITY
+    var dense: bool = own>=CONSOLIDATION_COUNT
     var dominant: bool = dense and (strongest == 0 or float(own) >= DOMINANCE*strongest)
-    return {"niche_id":id,"habitat":niche.habitat,"area_km2":AREA_KM2,"population":own,
-        "total_population":total,"density":float(own)/AREA_KM2,"strongest_rival":strongest,
+    return {"niche_id":id,"habitat":niche.habitat,"area_km2":area(id),"population":own,
+        "total_population":total,"density":float(own)/area(id),"strongest_rival":strongest,
         "dominant":dominant,"coexistence":dense and not dominant,
         "status":"dominant" if dominant else ("coexistence" if dense else "sparse")}
