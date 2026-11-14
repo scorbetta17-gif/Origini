@@ -12,6 +12,8 @@ func _capture() -> void:
     root.add_child(game)
     await process_frame
     game.set_process(false)
+    game.journey.skip()
+    for label in game.find_children("*","Label3D",true,false): label.hide()
     game.hud.hide()
     game.overlay.hide()
     game.nutrient_root.hide()

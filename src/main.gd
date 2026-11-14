@@ -31,7 +31,8 @@ var exchange_active: bool = false
 const THERMAL_SOURCES = [Vector2(-11.0, 3.0), Vector2(16.0, -14.0)]
 const THERMAL_AMPLITUDE = [92.0, 62.0]
 const THERMAL_DECAY = [13.0, 9.0]
-const NEED = {"carbon": 24.0, "amino": 15.0, "lipid": 12.0, "nucleic": 8.0, "biomass": 65.0}
+const NEED = Balance.DIVISION_NEEDS
+const RESERVE_BASE = Balance.RESERVE_BASE
 const TYPES = ["carbon", "amino", "lipid", "nucleic"]
 const TYPE_COLORS = {
     "carbon": Color(1.0, 0.65, 0.26), "amino": Color(0.74, 0.45, 1.0),
@@ -479,7 +480,7 @@ func _activate_lineage(id: String) -> void:
     zero_atp_seconds = maxf(0.0,float(e.get("zero_atp_seconds",0.0)))
     resources = e.get("resources", {}).duplicate(true)
     for key in NEED:
-        resources[key] = clampf(float(resources.get(key,0.0)),0.0,Physiology.reserve_cap(float(NEED[key])))
+        resources[key] = clampf(float(resources.get(key,0.0)),0.0,Physiology.reserve_cap(float(RESERVE_BASE[key])))
     mutation_points = maxf(0.0,float(e.get("points",0)))
     evolution = Evolution.normalize(e.get("evolution",{}))
     cycle_age = maxf(0.0,float(e.get("cycle_age",0)))
@@ -678,7 +679,7 @@ func _advance_phase_one(delta: float) -> void:
 
 func _open_phase_intro(_number: int) -> void:
     _open_overlay("ORIGINI · UNA LINEA NELL’OCEANO", "Dalla Cellula Zero al grado LECA · una campagna continua")
-    _add_overlay_label("Nutriti, esplora e dividi la cellula. La scissione animata dà 2 PM, fino a 3 con adattabilità: le frazioni si conservano.")
+    _add_overlay_label("Nutriti, esplora e dividi la cellula. La scissione animata dà 4 PM, fino a 6 con adattabilità: le frazioni si conservano.")
     _add_overlay_label("Spendi i punti nell’albero: ogni specializzazione offre vantaggi e costi. Le figlie ereditano il genoma; non ci sono carte casuali da scegliere.")
     _add_overlay_label("Conquista nicchie con almeno 30 cellule/km². Una densità pari a 1,5 volte la rivale maggiore dà dominanza; altrimenti puoi coesistere.")
     _add_overlay_label("Le popolazioni fuori campo sono coorti simulate, non migliaia di modelli 3D. Una nuova linea deve riconquistare le nicchie; le precedenti restano.")
@@ -783,11 +784,11 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
         var previous_stock: Dictionary = resources.duplicate(true)
         var uptake: float = float(entities[player_id]["traits"].get("uptake",1.0))*collectives.intake(player_id)
         if kind == "detritus":
-            resources["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(resources["carbon"])+2.0*uptake)
-            resources["amino"] = minf(Physiology.reserve_cap(float(NEED["amino"])),float(resources["amino"])+1.5*uptake)
+            resources["carbon"] = minf(Physiology.reserve_cap(float(RESERVE_BASE["carbon"])),float(resources["carbon"])+2.0*uptake)
+            resources["amino"] = minf(Physiology.reserve_cap(float(RESERVE_BASE["amino"])),float(resources["amino"])+1.5*uptake)
         else:
-            resources[kind] = minf(Physiology.reserve_cap(float(NEED[kind])),float(resources[kind])+2.15*uptake)
-        resources["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(resources["biomass"])+1.45*uptake)
+            resources[kind] = minf(Physiology.reserve_cap(float(RESERVE_BASE[kind])),float(resources[kind])+2.15*uptake)
+        resources["biomass"] = minf(Physiology.reserve_cap(float(RESERVE_BASE["biomass"])),float(resources["biomass"])+1.45*uptake)
         atp = minf(100.0,atp+(6.0 if kind=="carbon" else (3.0 if kind=="detritus" else .75))*sqrt(float(entities[player_id]["traits"].get("metabolism",1.0)))*Physiology.energy_yield_multiplier(entities[player_id]["traits"]))
         if atp > 0.0:
             zero_atp_seconds = 0.0
@@ -796,13 +797,13 @@ func _consume_nutrient(index: int, controlled: bool, cell_id: String = "") -> vo
     elif entities.has(cell_id):
         var e: Dictionary = entities[cell_id]
         var uptake_npc: float = float(e["traits"].get("uptake",1.0))*collectives.intake(cell_id)
-        e["biomass"] = minf(Physiology.reserve_cap(float(NEED["biomass"])),float(e["biomass"])+2.3*uptake_npc)
+        e["biomass"] = minf(Physiology.reserve_cap(float(RESERVE_BASE["biomass"])),float(e["biomass"])+2.3*uptake_npc)
         var stock: Dictionary = e["resources"]
         if kind == "detritus":
-            stock["carbon"] = minf(Physiology.reserve_cap(float(NEED["carbon"])),float(stock["carbon"])+2.0*uptake_npc)
-            stock["amino"] = minf(Physiology.reserve_cap(float(NEED["amino"])),float(stock["amino"])+1.5*uptake_npc)
+            stock["carbon"] = minf(Physiology.reserve_cap(float(RESERVE_BASE["carbon"])),float(stock["carbon"])+2.0*uptake_npc)
+            stock["amino"] = minf(Physiology.reserve_cap(float(RESERVE_BASE["amino"])),float(stock["amino"])+1.5*uptake_npc)
         else:
-            stock[kind] = minf(Physiology.reserve_cap(float(NEED[kind])),float(stock.get(kind,0.0))+2.15*uptake_npc)
+            stock[kind] = minf(Physiology.reserve_cap(float(RESERVE_BASE[kind])),float(stock.get(kind,0.0))+2.15*uptake_npc)
         stock["biomass"] = e["biomass"]
         e["resources"] = stock
         e["energy"] = minf(100.0 if battle.active() else 85.0,float(e["energy"])+(6.0 if kind=="carbon" else 3.0)*Physiology.energy_yield_multiplier(e["traits"]))
@@ -822,7 +823,7 @@ func _award_bundle(bundle: Dictionary, controlled: bool, cell_id: String = "") -
     var traits: Dictionary = entities[player_id if controlled else cell_id]["traits"]
     var uptake: float = clampf(float(traits.get("uptake",1.0)),.50,1.80)
     for key in NEED:
-        stock[key] = minf(Physiology.reserve_cap(float(NEED[key])),float(stock.get(key,0))+float(bundle.get(key,0))*uptake)
+        stock[key] = minf(Physiology.reserve_cap(float(RESERVE_BASE[key])),float(stock.get(key,0))+float(bundle.get(key,0))*uptake)
     if battle.active(): battle.scoring.intake(battle.state,player_id if controlled else cell_id,before_stock,stock)
     if controlled:
         resources = stock
@@ -916,7 +917,7 @@ func _collect_nearby() -> void:
         if player.position.distance_to(n["node"].position) > 1.08:
             continue
         var kind: String = str(n["kind"])
-        if kind != "detritus" and float(resources[kind]) >= Physiology.reserve_cap(float(NEED[kind]))-.001 and float(resources["biomass"])>=Physiology.reserve_cap(float(NEED["biomass"]))-.001 and atp >= 95.0:
+        if kind != "detritus" and float(resources[kind]) >= Physiology.reserve_cap(float(RESERVE_BASE[kind]))-.001 and float(resources["biomass"])>=Physiology.reserve_cap(float(RESERVE_BASE["biomass"]))-.001 and atp >= 95.0:
             continue
         _consume_nutrient(i,true)
 func _respawn_nutrients(delta: float) -> void:
@@ -1162,7 +1163,7 @@ func _update_ecosystem(dt: float) -> void:
                 _consume_nutrient(target_idx,false,str(id))
         c.set_growth(Physiology.growth_scale(float(e["biomass"]),24.0,
             float(NEED["biomass"])))
-        var can_replicate: bool = (float(e["biomass"]) >= 57.0
+        var can_replicate: bool = (float(e["biomass"]) >= 51.3
             and float(e["energy"]) >= 23.0 and float(e["age"]) >= 18.0
             and int(e["generation"]) < 16
             and entities.size() < npc_population_cap)
@@ -1382,7 +1383,7 @@ func _choose_daughter(choice: int) -> void:
     var old_hp: float = hp
     var old_atp: float = atp
     var old_points: float = mutation_points
-    var credit: float = 2.0*Balance.points_multiplier(parent["traits"])
+    var credit: float = Balance.BASE_DIVISION_POINTS*Balance.points_multiplier(parent["traits"])
     var next_evolution: Dictionary = Evolution.on_division(evolution,_evolution_context())
     var old_ecotype: String = str(parent.get("ecotype",old_id))
     var old_owned: Dictionary = purchased.duplicate(true)
@@ -1910,7 +1911,7 @@ func _on_phase_two() -> void:
         _add_overlay_button("SOSPENDI SCAMBIO" if bool(phase2_progress.get("exchange_enabled",true)) else "RIPRENDI SCAMBIO",_toggle_exchange)
         _add_overlay_button("SEPARA IL CONSORZIO",_release_partner)
         if bool(phase2_progress.get("active_stable",false)):
-            _add_overlay_label("Consorzio pronto: raccogli C24, AA15, L12, N8, biomassa65 e ATP30, poi DIVIDI.")
+            _add_overlay_label("Consorzio pronto: raccogli C21.6, AA13.5, L10.8, N7.2, biomassa58.5 e ATP30, poi DIVIDI.")
             if _can_divide():
                 _add_overlay_button("DIVIDI E TRASMETTI",_divide_pressed)
     elif anchor:
@@ -2246,9 +2247,9 @@ func _refresh_hud() -> void:
             "objective":simple_objective,"chapter_progress":chapter_fraction,
             "fission":clampf(scission_bar.value/100.0,0.0,1.0),
             "can_divide":_can_divide(),"division_status":_division_block_reason(),
-            "requirements_1":"C %d/24    A %d/15" % [int(resources["carbon"]),int(resources["amino"])],
-            "requirements_2":"L %d/12    N %d/8" % [int(resources["lipid"]),int(resources["nucleic"])],
-            "requirements_3":"BIO %d/65   ATP %d/30" % [int(resources["biomass"]),int(atp)]
+            "requirements_1":"C %.1f/%.1f  A %.1f/%.1f" % [resources.carbon,NEED.carbon,resources.amino,NEED.amino],
+            "requirements_2":"L %.1f/%.1f  N %.1f/%.1f" % [resources.lipid,NEED.lipid,resources.nucleic,NEED.nucleic],
+            "requirements_3":"BIO %.1f/%.1f  ATP %.0f/30" % [resources.biomass,NEED.biomass,atp]
         })
         buttons["enzymes"].text = "✦ ENZIMI\n6 ATP · PRONTI" if GenomeScript.has(traits,"hydrolase_secretion") else ("✦ ENZIMI\nACQUISTA · 2 P" if generation>=1 else "✦ ENZIMI\nDALLA GEN 1")
         buttons["lysis"].text = "✷ LISI\n10 ATP" if GenomeScript.has(traits,"hydrolase_secretion") and GenomeScript.has(traits,"surface_recognition") else "✷ LISI\nBLOCCATA"

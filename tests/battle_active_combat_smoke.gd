@@ -34,7 +34,7 @@ func run() -> void:
     b.start(2);id=g.player_id;b.state.elapsed=240
     g.player.position=b.rules.depot(240,1);b.advance(.01)
     assert(S.account(b.state,id).active.is_empty())
-    for key in g.NEED: g.resources[key]=g.Physiology.reserve_cap(g.NEED[key])
+    for key in g.NEED: g.resources[key]=g.Physiology.reserve_cap(g.RESERVE_BASE[key])
     g.atp=100;g.player.position=b.rules.depot(240,0);b.advance(4.1)
     assert(S.account(b.state,id).active.is_empty())
     g.resources.carbon=20;b.advance(4.1)

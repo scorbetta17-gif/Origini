@@ -214,35 +214,7 @@ func _category_color(id: String) -> Color:
     return Color(.36,.84,.91)
 
 func _icon(id: String, center: Vector2, radius: float, tint: Color) -> void:
-    var r: float = radius*.68
-    if id in ["dna_archive","rna_inheritance","translation"]:
-        for sign_value in [-1,1]:
-            var curve := PackedVector2Array()
-            for step in range(13):
-                var u: float = float(step)/12.0
-                curve.append(center+Vector2(sin(u*TAU)*r*.5*sign_value,(u*2-1)*r))
-            draw_polyline(curve,tint,1.3,true)
-    elif id in ["nucleus","leca"]:
-        draw_arc(center,r,0,TAU,20,tint,1.3,true)
-        draw_arc(center,r*.5,0,TAU,20,tint,1.3,true)
-        draw_circle(center,1.5,tint)
-    elif id in ["mitochondrion","internal_symbiont","metabolic_integration"]:
-        draw_arc(center,r,0,TAU,20,tint,1.3,true)
-        var folds := PackedVector2Array()
-        for step in range(5):
-            folds.append(center+Vector2((float(step)/4-.5)*r*1.5,r*.45*(1 if step%2==0 else -1)))
-        draw_polyline(folds,tint,1.4,true)
-    elif id in ["membrane_traffic","er_golgi","protein_import"]:
-        for row in range(3):
-            var y: float = (row-1)*r*.65
-            draw_line(center+Vector2(-r*.65,y),center+Vector2(r*.45,y),tint,1.4,true)
-        draw_circle(center+Vector2(r*.85,-r*.7),r*.20,tint)
-    elif id in ["stable_consortium","coordinated_division","prokaryotic_groups","differentiated_groups"]:
-        draw_arc(center-Vector2(r*.4,0),r*.55,0,TAU,16,tint,1.3,true)
-        draw_arc(center+Vector2(r*.4,0),r*.55,0,TAU,16,tint,1.3,true)
-    else:
-        draw_arc(center,r*.65,0,TAU,20,tint,1.3,true)
-        draw_circle(center+Vector2(r*.15,-r*.12),r*.2,tint)
+    preload("res://src/biological_symbols.gd").draw(self,id,center,radius*.68,tint)
 
 func _draw() -> void:
     draw_rect(Rect2(Vector2.ZERO,size),Color(.012,.045,.065))

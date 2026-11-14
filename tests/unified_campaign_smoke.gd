@@ -58,7 +58,7 @@ func _run() -> void:
     check(game.division_options[0].traits==original_traits and game.division_options[1].traits==original_traits,"Both daughters inherit identical genome; no random variant offer")
     await create_timer(2.7).timeout
     check(game.generation==1,"Real division tween automatically activates daughter")
-    check(is_equal_approx(game.mutation_points,2.375),"Baseline division grants 2 PM and preserves fraction")
+    check(is_equal_approx(game.mutation_points,4.375),"Baseline division grants 4 PM and preserves fraction")
     check(game.division_options.is_empty() and game.journey.state.step=="offer","First division offers enzymes, never random daughter choices")
     fill_cycle()
     game.cycle_age = 74.99
@@ -88,7 +88,7 @@ func _run() -> void:
         var branch: String = game.entities[game.player_id].branch
         game.division_options = [{"traits":inherited.duplicate(true),"branch":branch},{"traits":inherited.duplicate(true),"branch":branch}]
         game.call("_choose_daughter",0)
-        check(is_equal_approx(game.mutation_points,before+2.0*Balance.points_multiplier(inherited)),"Accelerated division uses bounded PM multiplier")
+        check(is_equal_approx(game.mutation_points,before+4.0*Balance.points_multiplier(inherited)),"Accelerated division uses bounded PM multiplier")
         check(game.entities[game.player_id].traits==inherited,"Daughter preserves phenotype and functional genome")
         # A division can reset external association state; explicitly restore the observed fixture.
         if game.entities.has(donor_id):

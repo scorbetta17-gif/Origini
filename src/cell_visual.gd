@@ -222,7 +222,7 @@ func _try_blender_core(primitive: bool, tint: Color, thermal: float) -> bool:
             var enzyme: MeshInstance3D = core.find_child("Autocatalytic_%02d_%02d" % [index,sub],true,false) as MeshInstance3D
             if enzyme!=null:
                 enzyme.position=centers[index-1]+Vector3((sub-2)*.08,(sub%2)*.025,(sub-2)*.035)
-                enzyme.scale*=1.65
+                enzyme.hide() # Replaced by folded catalytic RNA, not premature protein complexes.
     if bool(traits.get("dna",false)):
         interior.get_node("SingleStrand_RNA").hide()
         _build_imported_dna(interior)
@@ -360,15 +360,18 @@ func _build() -> void:
                     cos(t*TAU*1.43)*.22+sin(t*TAU*2.5)*.065))
             _tube(interior,poly,.018 if primitive else .020,RNA_COLOR)
             interior.get_child(0).name = "SingleStrand_RNA"
-        var complexes: int = 3 if primitive else 5
-        for i in range(complexes):
-            var phi: float = float(i)*TAU/float(complexes)+.5
-            var center := Vector3(cos(phi)*.28, sin(phi*2.0)*.22, sin(phi)*.30)
-            var protein_color := CATALYST_COLOR if primitive else CATALYST_COLOR.lightened(.06)
-            _ellipsoid(interior,center,Vector3(.075,.047,.06),protein_color)
-            _ellipsoid(interior,center+Vector3(.044,.026,-.03),Vector3(.042,.033,.039),protein_color.darkened(.11))
-            _ellipsoid(interior,center+Vector3(-.035,-.021,.034),Vector3(.035,.03,.042),protein_color.lightened(.12))
 
+    var ribozymes := Node3D.new()
+    ribozymes.name = "Catalytic_RNA_Folds"
+    interior.add_child(ribozymes)
+    for i in range(3):
+        var a: float = TAU*float(i)/3.0
+        var at := Vector3(cos(a)*.45,.12,sin(a)*.35)
+        var fold := PackedVector3Array()
+        for j in range(25):
+            var t: float = float(j)/24.0
+            fold.append(at+Vector3(cos(t*TAU)*.055,sin(t*PI)*.035,(t-.5)*.12))
+        _tube(ribozymes,fold,.010,RNA_COLOR)
     _bilayer()
 
     # Trasportatori: pori incastonati nella membrana; solo locus maggiore.
@@ -527,6 +530,19 @@ func _capability_root(id: String, external: bool = false) -> Node3D:
 
 func _build_evolution_capabilities() -> void:
     var caps: Dictionary = traits.get("evolution_capabilities",{})
+    if bool(caps.get("translation",false)):
+        var ribosomes: Node3D = _capability_root("translation")
+        for i in range(3):
+            var at := Vector3(-.38+float(i)*.32,.16,-.25)
+            _ellipsoid(ribosomes,at,Vector3(.065,.045,.05),Color(.68,.73,.83),.95)
+            _ellipsoid(ribosomes,at+Vector3(0,.065,0),Vector3(.085,.055,.065),Color(.68,.73,.83),.95)
+            _tube(ribosomes,PackedVector3Array([at+Vector3(-.12,.025,0),at+Vector3(.12,.025,0)]),.009,RNA_COLOR)
+            _tube(ribosomes,PackedVector3Array([at+Vector3(0,.11,0),at+Vector3(.03,.17,0),at+Vector3(.08,.17,0)]),.009,Color(.85,.85,.61))
+    if bool(caps.get("cytoskeleton",false)):
+        var network: Node3D = _capability_root("cytoskeleton")
+        for i in range(3):
+            var z: float = -.25+float(i)*.23
+            _tube(network,PackedVector3Array([Vector3(-.6,-.18,z),Vector3(0,-.11,z+.09),Vector3(.6,-.18,z)]),.009,Color(.50,.78,.77),.65)
     if bool(caps.get("asgard_host",false)):
         var protrusions: Node3D = _capability_root("asgard_host",true)
         for i in range(4):
@@ -539,6 +555,12 @@ func _build_evolution_capabilities() -> void:
         var symbiont: Node3D = _capability_root("internal_symbiont")
         var center := Vector3(.38,.02,.18)
         _ellipsoid(symbiont,center,Vector3(.19,.105,.11),Color(.82,.52,.28),.50)
+        if not mature_mito:
+            var bacterial_dna := PackedVector3Array()
+            for i in range(33):
+                var a: float = TAU*float(i)/32.0
+                bacterial_dna.append(center+Vector3(cos(a)*.10,.075,sin(a)*.035))
+            _tube(symbiont,bacterial_dna,.007,Color(.75,.45,.95))
         if mature_mito:
             var mitochondrion: Node3D = _capability_root("mitochondrion")
             _ellipsoid(mitochondrion,center,Vector3(.157,.080,.085),Color(.95,.72,.35),.50)
@@ -548,13 +570,9 @@ func _build_evolution_capabilities() -> void:
             mitochondrion.set_meta("display","double outline with internal cristae; stylized")
     if bool(caps.get("membrane_traffic",false)):
         var er: Node3D = _capability_root("membrane_traffic")
-        for i in range(4):
-            var path := PackedVector3Array()
-            for j in range(13):
-                var a: float = float(j)/12.0*PI*1.4+.2
-                var radius: float = .24+float(i)*.047
-                path.append(Vector3(cos(a)*radius-.12,-.06+float(i)*.035,sin(a)*radius-.02))
-            _tube(er,path,.018,Color(.49,.76,.85),.70)
+        # Early membrane traffic: vesicles, not a prematurely mature ER/Golgi stack.
+        for i in range(3):
+            _ellipsoid(er,Vector3(-.36+float(i)*.16,-.05,.25),Vector3.ONE*(.035+float(i)*.008),Color(.49,.76,.85),.40)
     if bool(caps.get("er_golgi",false)):
         var golgi: Node3D = _capability_root("er_golgi")
         for i in range(4):
@@ -568,6 +586,8 @@ func _build_evolution_capabilities() -> void:
     if bool(caps.get("nucleus",false)):
         var nucleus: Node3D = _capability_root("nucleus")
         _ellipsoid(nucleus,Vector3(-.15,.13,.02),Vector3(.24,.22,.23),Color(.61,.57,.87),.20)
+        _ellipsoid(nucleus,Vector3(-.15,.13,.02),Vector3(.22,.20,.21),Color(.61,.57,.87),.12)
+        nucleus.set_meta("display","double nuclear envelope; DNA remains inside")
         var dna: Node3D = find_child("DNA_DoubleStrand",true,false) as Node3D
         if dna == null:
             _build_imported_dna(interior)
