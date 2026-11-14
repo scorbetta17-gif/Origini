@@ -1,4 +1,5 @@
 extends Node
+const combat = preload("res://src/battle_combat.gd")
 const scoring = preload("res://src/battle_scoring.gd")
 const rules = preload("res://src/battle_rules.gd")
 const Genome = preload("res://src/cell_genome.gd")
@@ -142,6 +143,8 @@ func needs_supply(id: String) -> bool:
 
 func npc_goal(id: String, fallback: Vector3) -> Vector3:
     var at: Vector3 = game.entities[id].node.position
+    var response: Vector3=combat.react(self,id)
+    if response!=Vector3.ZERO: return response
     var z: Dictionary = rules.zone(state.elapsed)
     # Anticipate the next front before seeking food or chasing prey.
     var goal: Vector3 = z.next_center if z.warning else z.center
@@ -179,6 +182,8 @@ func npc_goal(id: String, fallback: Vector3) -> Vector3:
         var destination: Vector3 = rules.depot((int(z.stage)+1)*rules.PHASE_LENGTH,choice)
         var offset: Vector3 = destination-at
         return offset if offset.length()>1.1 else Vector3.ZERO
+    if int(state.get("front_version",1))>=2 and int(z.stage)>0 and float(state.elapsed)-int(z.stage)*rules.PHASE_LENGTH<45 and needs_supply(id) and not scoring.account(state,id).active.has(str(z.stage)):
+        if int(game.entities[id].traits.get("arena_profile",0)) in [0,1,2]: return rules.depot(state.elapsed,0)-at
     # Rich caches compete with ordinary foraging; no teleporting or free NPC intake.
     var best: Vector3 = fallback
     var distance: float = 15.0
@@ -193,6 +198,7 @@ func npc_goal(id: String, fallback: Vector3) -> Vector3:
 func advance(dt: float) -> void:
     if not active() or not str(state.result).is_empty(): return
     scoring.initialize(state)
+    combat.advance(self,dt)
     state.elapsed = minf(rules.DURATION,float(state.elapsed)+dt)
     var z: Dictionary = rules.zone(state.elapsed)
     if int(state.depot_phase)!=int(z.stage):
@@ -248,7 +254,7 @@ func advance(dt: float) -> void:
                     var before: float = float(scoring.account(state,id).absorbed)
                     var richness: float = [1.0,.45,.7][i]
                     game._award_bundle({"carbon":4*richness,"amino":3*richness,"lipid":3*richness,"nucleic":2*richness,"biomass":4*richness,"atp":6*richness},controlled,id)
-                    if int(z.stage)>0 and float(state.elapsed)-int(z.stage)*rules.PHASE_LENGTH<=45 and float(scoring.account(state,id).absorbed)>before:
+                    if int(z.stage)>0 and float(state.elapsed)-int(z.stage)*rules.PHASE_LENGTH<=45 and float(scoring.account(state,id).absorbed)>before and (int(state.get("front_version",1))<2 or i==0):
                         scoring.front(state,id,int(z.stage),"deposito appena attivato")
                     state.stocks[i] -= 1
                     state.harvest[id] = state.elapsed
@@ -281,6 +287,7 @@ func finish(result: String) -> void:
     var personal: Dictionary = scoring.breakdown(state,game.player_id,game.hp,game.atp)
     game._add_overlay_label("Durata %d:%02d · punteggio personale %.1f / 100" % [int(state.elapsed)/60,int(state.elapsed)%60,personal.total])
     game._add_overlay_label("Vitalità %.1f / 40\nNutrienti %.1f / 20\nEliminazioni %.1f / 20\nObiettivi fronti %.1f / 20" % [personal.vitality,personal.nutrition,personal.eliminations,personal.objectives])
+    game._add_overlay_label("Anticipo %.0f / 8 · scelte attive %.0f / 12" % [personal.early_points,personal.active_points])
     game._add_overlay_label("Assorbiti %.2f unità nutrizionali (soglia %.0f). Eliminazioni accreditate: %d. Fronti completati: %d / 4." % [personal.absorbed,state.nutrition_target,personal.kills.size(),personal.fronts.size()])
     for key in personal.fronts: game._add_overlay_label("Fronte %s · %s" % [key,personal.fronts[key]])
     if not personal.kills.is_empty(): game._add_overlay_label("Rivali eliminati: "+", ".join(personal.kills))
@@ -305,7 +312,7 @@ func dashboard() -> void:
     game._add_overlay_label("Fronte %s · ambiente locale %.1f °C / pH %.1f. Sono valori di una simulazione ludica." % [env.front,env.temperature,env.ph])
     game._add_overlay_label("Verde: rifugio attuale. Oro: prossimo rifugio, annunciato 90 secondi prima. Bianco: tu. Azzurro: alleati. Rosso: rivali. Arancione: depositi con scorte.")
     game._add_overlay_label("Prossimo fronte: R ricco/esposto (12 unità a porzione), S riparato (5,4), C condiviso (8,4), prima dei modificatori di assorbimento. Oro = futuri depositi. Il settore esterno colorato diventa pericoloso.")
-    game._add_overlay_label("5 punti per fronte, una sola volta: rifugio almeno 15 s prima; oppure assorbimento da deposito nei primi 45 s; oppure attraversamento con alleato entro 5 s e 3 m.")
+    game._add_overlay_label("Nuove arene: 2 punti anticipo e 3 per assorbimento dal deposito R conteso o traversata con alleato entro 5 s e 3 m. Le partite precedenti conservano il bonus unico di 5.")
     for i in range(3):
         game._add_overlay_label("Deposito %d: %d porzioni · distanza %.0f m" % [i+1,int(state.stocks[i]),game.player.position.distance_to(rules.depot(state.elapsed,i))])
     game._add_overlay_label("Punteggio su 100: HP 25 + ATP 15; assorbimento 20; eliminazioni 20 (4 ciascuna); fronti 20 (5 ciascuno). Credito al maggior danno negli ultimi 30 s, parità risolta per ID. Nessun potenziamento per eliminazioni. Un patto reciproco protegge del 10% e rigenera 0,12 HP/s entro 3 m, consumando 0,08 ATP/s. La difesa riduce il danno ambientale fino al 30%, senza immunità.")
@@ -430,14 +437,15 @@ func update_front_objectives(z: Dictionary) -> void:
             scoring.front(state,partner,stage,"attraversamento con alleato")
 
 func objective_text() -> String:
-    var z: Dictionary = rules.zone(state.elapsed)
-    var next: int = int(z.stage)+1 if z.warning else int(z.stage)
-    var completed: bool = scoring.account(state,game.player_id).fronts.has(str(next))
+    var z: Dictionary=rules.zone(state.elapsed)
+    var next: int=int(z.stage)+1 if z.warning else int(z.stage)
+    if int(state.get("front_version",1))<2: return "Regole 0.83 · obiettivo fronte +5, una sola volta"
+    var cell: Dictionary=scoring.account(state,game.player_id)
     if z.warning:
-        return "Fronte %d: R ricco/esposto o S sicuro · %s" % [next,"bonus già ottenuto" if completed else "anticipa il rifugio: +5"]
-    if int(z.stage)>0 and not completed and float(state.elapsed)-int(z.stage)*rules.PHASE_LENGTH<=45:
-        return "Fronte %d: assorbi da un nuovo deposito · +5 punti" % int(z.stage)
-    return "Raccogli, sopravvivi e prepara il prossimo fronte"
+        return "Fronte %d · %s · R conteso +3 / S sicuro"%[next,"anticipo +2 ottenuto" if cell.early.has(str(next)) else "anticipa: +2"]
+    if next>0 and not cell.active.has(str(next)) and float(state.elapsed)-next*rules.PHASE_LENGTH<=45:
+        return "Fronte %d · assorbi in R o attraversa con alleato: +3"%next
+    return "Raccogli e osserva gli attacchi: ▷ preavviso / … recupero"
 
 func player_death() -> void:
     scoring.death(state,game.player_id)

@@ -8,7 +8,7 @@ const RADII := [34.0,28.0,22.0,16.0,10.0]
 const NAMES := ["Predazione","Difesa","Mobilità","Cooperazione"]
 
 static func origin() -> Dictionary:
-    return {"enabled":true,"elapsed":0.0,"result":"","profile":0,
+    return {"front_version":2,"enabled":true,"elapsed":0.0,"result":"","profile":0,
         "teams":{},"pacts":{},"depot_phase":-1,"stocks":[60,60,60],
         "harvest":{},"repair":{},"packets":{},"spawn_credit":0.0,"announced":-1}
 
@@ -78,4 +78,14 @@ static func valid(raw: Variant) -> bool:
         for value in raw[key].values():
             if not (value is int or value is float) or not is_finite(float(value)) or float(value)<0: return false
     if not preload("res://src/battle_scoring.gd").valid(raw): return false
+    if not raw.get("combat",{}) is Dictionary or not raw.get("combat_config",{}) is Dictionary: return false
+    for config in raw.get("combat_config",{}).values():
+        if not preload("res://src/battle_scoring.gd").numeric(config) or float(config)<=0: return false
+    for attack in raw.get("combat",{}).values():
+        if not attack is Dictionary or not attack.get("target") is String: return false
+        if attack.get("phase") not in ["windup","recovery"]: return false
+        if not preload("res://src/battle_scoring.gd").numeric(attack.get("left")): return false
+        if not attack.get("direction") is Array or attack.direction.size()!=3: return false
+        for number in attack.direction:
+            if not preload("res://src/battle_scoring.gd").numeric(number): return false
     return str(raw.get("result","")) in ["","vittoria","sconfitta","pareggio"]

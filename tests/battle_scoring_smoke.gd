@@ -4,6 +4,7 @@ const Rules = preload("res://src/battle_rules.gd")
 func _initialize() -> void: call_deferred("run")
 func run() -> void:
     var state: Dictionary = Rules.origin()
+    state.front_version=1 # Existing arena keeps the 0.83 single quota.
     Score.initialize(state)
     var full: Dictionary = {"carbon":26.88,"amino":16.8,"lipid":13.44,"nucleic":8.96,"biomass":72.8,"atp":100}
     assert(Score.intake(state,"A",full,full)==0)
@@ -65,7 +66,7 @@ func run() -> void:
     game.battle.start(2)
     id = game.player_id
     game.battle.state.elapsed = 240
-    game.player.position = Rules.depot(240,1)
+    game.player.position = Rules.depot(240,0)
     game.battle.advance(.01)
     assert(Score.account(game.battle.state,id).fronts.get("1","")=="deposito appena attivato")
     game.battle.advance(4.1)
@@ -94,13 +95,17 @@ func run() -> void:
     game.hp = 80; game.atp = 80
     game.entities["BR-001"].hp = 100; game.entities["BR-001"].energy = 100
     Score.account(game.battle.state,id).absorbed = game.battle.state.nutrition_target
-    for stage in range(1,5): Score.front(game.battle.state,id,stage,"refugio anticipato")
+    for stage in range(1,5):
+        Score.front(game.battle.state,id,stage,"refugio anticipato")
+        Score.front(game.battle.state,id,stage,"deposito appena attivato")
     var rank: Array = game.battle.ranking()
     assert(rank[0].id==id and rank[0].breakdown.kills.is_empty() and rank[0].points==72)
     print("NO_KILL_FIXTURE=",JSON.stringify(rank))
     # Same vitality/intake/events, credited kills alone change winner.
     Score.account(game.battle.state,id).absorbed = 0
     Score.account(game.battle.state,id).fronts = {}
+    Score.account(game.battle.state,id).early = {}
+    Score.account(game.battle.state,id).active = {}
     assert(game.battle.ranking()[0].id=="BR-001")
     for i in range(3):
         game.battle.record_hit("fixture-victim-%d"%i,id,30)

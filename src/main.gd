@@ -748,6 +748,7 @@ func _toggle_focus() -> void:
     buttons["focus"].text = "MONDO" if camera_focus else "CELLULA"
 
 func _move_player(direction: Vector2, delta: float) -> void:
+    if battle.active() and battle.combat.busy(battle,player_id): direction=Vector2.ZERO
     if events.dormant(player_id):
         entities[player_id]["velocity"] = Vector3.ZERO
         return
@@ -922,6 +923,14 @@ func _respawn_nutrients(delta: float) -> void:
     if battle.active(): return
     _maintain_substrates(delta)
     _recycle_distant_nutrients()
+    # Donor settlements retain their food; exploration gets a bounded local supply.
+    if player.position.length()>40:
+        var local_food: int=0
+        for n in nutrients:
+            if n.node.position.distance_to(player.position)<30: local_food+=1
+        while local_food<40 and nutrients.size()<124:
+            _create_nutrient(Balance.NUTRIENT_CYCLE[rng.randi_range(0,Balance.NUTRIENT_CYCLE.size()-1)],_nearby_nutrient_position())
+            local_food+=1
     # Accumulate elapsed simulation time exactly once, independent of FPS.
     # eco_tick is cumulative and must never be added again on every frame.
     if nutrients.size() >= Physiology.nutrient_goal():
@@ -1044,7 +1053,7 @@ func _update_npc_motion(delta: float) -> void:
             continue
         var current: Vector3 = e.get("velocity",Vector3.ZERO)
         var desired: Vector3 = e.get("intent_velocity",Vector3.ZERO)
-        if float(e.get("energy",0.0)) <= 0.0 or events.dormant(str(id)):
+        if float(e.get("energy",0.0)) <= 0.0 or events.dormant(str(id)) or (battle.active() and battle.combat.busy(battle,str(id))):
             current = Vector3.ZERO
             desired = Vector3.ZERO
         var next: Vector3 = current.move_toward(desired,Physiology.NPC_ACCELERATION*delta)
@@ -1157,6 +1166,13 @@ func _update_ecosystem(dt: float) -> void:
             and entities.size() < npc_population_cap)
         if can_replicate and not battle.active():
             _divide_npc(str(id))
+            continue
+        if battle.active():
+            if int(e.traits.get("arena_profile",-1))==0:
+                for other in entities:
+                    if not battle.friendly(str(id),str(other)) and c.position.distance_to(entities[other].node.position)<1.6:
+                        battle.combat.request(battle,str(id),str(other))
+                        break
             continue
         # Real ecological competition among predators and prey.
         if int(e["generation"]) >= 3 and role == "predatore" and float(e["energy"]) > 8.0:
@@ -1534,6 +1550,9 @@ func _follow_attack(delta: float) -> void:
     var delta_3d: Vector3 = prey_node.position-player.position
     if delta_3d.length() > 1.45:
         _move_player(Vector2(delta_3d.x,delta_3d.z).normalized(),delta)
+        return
+    if battle.active():
+        battle.combat.request(battle,player_id,selected_target_id)
         return
     if skill_cooldown > 0:
         return

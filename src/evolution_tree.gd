@@ -3,7 +3,7 @@ class_name EvolutionTree
 signal capability_requested(id: String)
 const Progress = preload("res://src/evolution_progress.gd")
 const POSITIONS: Dictionary = {
-    "cell_zero":Vector2(-850,0),"rna_inheritance":Vector2(-650,0),
+    "dormancy":Vector2(-650,220),"cell_zero":Vector2(-850,0),"rna_inheritance":Vector2(-650,0),
     "translation":Vector2(-450,0),"dna_archive":Vector2(-250,-110),
     "bioenergetics":Vector2(-250,110),"luca":Vector2(-50,0),
     "bacteria":Vector2(150,240),"alpha_partner":Vector2(380,240),
@@ -24,7 +24,7 @@ var pan: Vector2 = Vector2.ZERO
 var inspected: String = "cell_zero"
 var node_positions: Dictionary = POSITIONS.duplicate()
 const COMPACT_POSITIONS: Dictionary = {
-    "cell_zero":Vector2(-640,0),"rna_inheritance":Vector2(-640,-190),
+    "dormancy":Vector2(-640,220),"cell_zero":Vector2(-640,0),"rna_inheritance":Vector2(-640,-190),
     "translation":Vector2(-420,-290),"dna_archive":Vector2(-210,-430),
     "bioenergetics":Vector2(-210,-210),"luca":Vector2(10,-290),
     "bacteria":Vector2(10,0),"alpha_partner":Vector2(240,90),

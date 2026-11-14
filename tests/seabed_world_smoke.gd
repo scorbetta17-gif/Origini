@@ -67,7 +67,7 @@ func _run() -> void:
         if p.distance_to(game.player.position)<30:
             near += 1
     assert(near>=40,"Exploration supplies local food while preserving the contested habitat food near its living competitors")
-    assert(game.nutrients.size()<=94)
+    assert(game.nutrients.size()<=124)
     # Recycling must never move nutrients that sustain another living cell.
     var traits: Dictionary = game.call("_base_traits")
     game.call("_create_entity","seabed-neighbor","",0,"pre_luca",traits,Vector3.ZERO,false)
