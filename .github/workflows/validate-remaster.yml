@@ -1,7 +1,7 @@
 name: ORIGINI - campagna unificata e rendering
 on:
   push:
-    branches: [work/battle-royale-082, work/first-mutation-arena-083]
+    branches: [work/living-niches-084]
   workflow_dispatch:
 permissions:
   contents: read
@@ -42,12 +42,12 @@ jobs:
           timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_battle.gd 2>&1 | tee battle-capture.log
           if grep -E 'SCRIPT ERROR|Assertion failed|Shader compilation failed' battle-playthrough.log battle-capture.log; then exit 1; fi
           test -s build/previews/082-battle-arena.png
-          timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_first_mutation_083.gd 2>&1 | tee capture083.log
-          grep -q 'CAPTURE 083 PASS' capture083.log
-          if grep -E 'SCRIPT ERROR|Assertion failed|Shader compilation failed' capture083.log; then exit 1; fi
-          test -s build/previews/083-mutation.png
-          test -s build/previews/083-front.png
-          test -s build/previews/083-result.png
+          timeout 180s xvfb-run -a godot --path . --rendering-method gl_compatibility --script res://tests/capture_expansion_084.gd 2>&1 | tee capture084.log
+          grep -q 'CAPTURE 084 PASS' capture084.log
+          if grep -E 'SCRIPT ERROR|Assertion failed|Shader compilation failed' capture084.log; then exit 1; fi
+          test -s build/previews/084-map.png
+          test -s build/previews/084-front.png
+          test -s build/previews/084-result.png
       - name: Campagna e fenotipi OpenGL
         shell: bash
         run: |

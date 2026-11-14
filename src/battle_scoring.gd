@@ -12,7 +12,10 @@ static func initialize(state: Dictionary) -> void:
 static func account(state: Dictionary, id: String) -> Dictionary:
     initialize(state)
     if not state.scores.has(id): state.scores[id] = {"absorbed":0.0,"kills":[],"fronts":{}}
-    return state.scores[id]
+    var cell: Dictionary=state.scores[id]
+    for key in ["early","active","fronts083"]:
+        if not cell.has(key): cell[key]={}
+    return cell
 
 static func intake(state: Dictionary, id: String, before: Dictionary, after: Dictionary) -> float:
     var amount: float = 0
@@ -55,8 +58,16 @@ static func death(state: Dictionary, victim: String) -> String:
 static func front(state: Dictionary, id: String, stage: int, objective: String) -> bool:
     if stage<1 or stage>4: return false
     var cell: Dictionary = account(state,id)
-    if cell.fronts.has(str(stage)): return false
-    cell.fronts[str(stage)] = objective
+    var key: String=str(stage)
+    cell.fronts083[key]=objective
+    if int(state.get("front_version",1))<2:
+        if cell.fronts.has(key): return false
+        cell.fronts[key]=objective
+        return true
+    var quota: String="early" if objective.contains("anticipato") else "active"
+    if cell[quota].has(key): return false
+    cell[quota][key]=objective
+    cell.fronts[key]=objective
     return true
 
 static func breakdown(state: Dictionary, id: String, hp: float, atp: float) -> Dictionary:
@@ -64,19 +75,27 @@ static func breakdown(state: Dictionary, id: String, hp: float, atp: float) -> D
     var vitality: float = clampf(hp,0,100)*.25+clampf(atp,0,100)*.15
     var nutrition: float = 20.0*clampf(float(cell.absorbed)/float(state.nutrition_target),0,1)
     var eliminations: float = minf(20,cell.kills.size()*4)
-    var objectives: float = minf(20,cell.fronts.size()*5)
+    var early: float=cell.early.size()*2.0
+    var active: float=cell.active.size()*3.0
+    var objectives: float = minf(20,early+active) if int(state.get("front_version",1))>=2 else minf(20,cell.fronts.size()*5)
     return {"vitality":vitality,"nutrition":nutrition,"eliminations":eliminations,"objectives":objectives,
+        "early_points":early,"active_points":active,"early":cell.early.duplicate(),"active":cell.active.duplicate(),
         "total":vitality+nutrition+eliminations+objectives,"absorbed":cell.absorbed,"kills":cell.kills.duplicate(),"fronts":cell.fronts.duplicate()}
 
 static func valid(state: Dictionary) -> bool:
     # Legacy 0.82 starts fresh counters; historical intake cannot be reconstructed.
     for key in ["scores","damage","credited","crossings"]:
         if state.has(key) and not state[key] is Dictionary: return false
+    if int(state.get("front_version",1)) not in [1,2]: return false
     var threshold: Variant = state.get("nutrition_target",DEFAULT_NUTRITION_TARGET)
     if not numeric(threshold) or float(threshold)<=0: return false
     for cell in state.get("scores",{}).values():
         if not cell is Dictionary or not numeric(cell.get("absorbed")) or float(cell.absorbed)<0: return false
         if not cell.get("kills") is Array or not cell.get("fronts") is Dictionary: return false
+        for quota in ["early","active"]:
+            if not cell.get(quota,{}) is Dictionary: return false
+            for key in cell.get(quota,{}):
+                if str(key) not in ["1","2","3","4"] or not cell[quota][key] is String: return false
         var unique: Dictionary = {}
         for id in cell.kills:
             if not id is String or unique.has(id): return false

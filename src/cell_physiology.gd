@@ -50,12 +50,14 @@ static func motion_cost(distance: float, traits: Dictionary) -> float:
 
 static func energy_step(atp: float, zero_seconds: float, elapsed: float,
                         distance: float, traits: Dictionary) -> Dictionary:
+    var upkeep_elapsed: float = elapsed*(.15 if bool(traits.get("dormant",false)) else 1.0)
     var remaining: float = maxf(0.0,atp)
-    remaining = maxf(0.0,remaining-(BASE_ATP_UPKEEP+.008*maxf(0.0,float(traits.get("protease",0)))+.004*maxf(0.0,float(traits.get("transporters",0)))+complexity_upkeep(traits))*maxf(0.0,elapsed)-motion_cost(distance,traits))
+    remaining = maxf(0.0,remaining-(BASE_ATP_UPKEEP+.008*maxf(0.0,float(traits.get("protease",0)))+.004*maxf(0.0,float(traits.get("transporters",0)))+complexity_upkeep(traits))*maxf(0.0,upkeep_elapsed)-motion_cost(distance,traits))
     var shortage: float = 0.0 if remaining > .001 else zero_seconds+maxf(0.0,elapsed)
     return {"atp":remaining,"zero_seconds":shortage,"dead":shortage >= ZERO_ATP_DEATH_SECONDS}
 
 static func npc_energy_step(energy: float, elapsed: float, distance: float, traits: Dictionary = {}) -> float:
+    if bool(traits.get("dormant",false)): elapsed *= .15
     return maxf(0.0,energy - (NPC_ATP_UPKEEP+complexity_upkeep(traits))*maxf(0.0,elapsed) - maxf(0.0,distance)*NPC_ATP_MOVEMENT_COST)
 
 static func complexity_upkeep(traits: Dictionary) -> float:

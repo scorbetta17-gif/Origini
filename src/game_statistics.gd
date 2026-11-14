@@ -36,6 +36,8 @@ static func census(ecology: Dictionary, profiles: Dictionary, position: Vector3,
     for id in ids:
         for lineage in normalized.niches[id].populations:
             counts[lineage] = int(counts.get(lineage,0))+int(normalized.niches[id].populations[lineage])
+    var surface: float = 0
+    for id in ids: surface += Ecology.area(str(id))
     var total: int = 0
     for n in counts.values(): total += int(n)
     var capacity: int = CAPACITY*ids.size()
@@ -49,9 +51,9 @@ static func census(ecology: Dictionary, profiles: Dictionary, position: Vector3,
         lines.append({"id":str(lineage),"group":group,"count":count,
             "population_percent":100.0*count/maxi(1,total),
             "capacity_percent":100.0*count/capacity,
-            "density":float(count)/(Ecology.AREA_KM2*ids.size()),"traits":traits.duplicate(true)})
+            "density":float(count)/(surface),"traits":traits.duplicate(true)})
     lines.sort_custom(func(a: Dictionary,b: Dictionary):
         return a.count>b.count if a.count!=b.count else a.id<b.id)
     return {"total":total,"capacity":capacity,"occupied_percent":100.0*total/capacity,
         "free_percent":maxf(0.0,100.0*(capacity-total)/capacity),"groups":groups,"lines":lines,
-        "area":Ecology.AREA_KM2*ids.size(),"niche":Ecology.niche_id(position)}
+        "area":surface,"niche":Ecology.niche_id(position)}

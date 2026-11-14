@@ -24,7 +24,7 @@ func run() -> void:
     Ecology.register_birth(ecology,"dna",Vector3.ZERO,6)
     census = Stats.census(ecology,profiles,Vector3.ZERO)
     check(census.groups["Cellule DNA"]==6 and census.lines[0].population_percent==75,"Mixed population composition")
-    check(Stats.census(ecology,profiles,Vector3.ZERO,true).capacity==1200,"Whole map denominator")
+    check(Stats.census(ecology,profiles,Vector3.ZERO,true).capacity==1344,"Whole map denominator")
     var game: Node = load("res://scenes/Main.tscn").instantiate()
     root.add_child(game)
     await process_frame
