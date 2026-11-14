@@ -52,8 +52,10 @@ func restore_individual(id: String) -> bool:
     state.archive.erase(id)
     return true
 func follow(id: String) -> String:
-    if game.entities.has(id): return id
-    if restore_individual(id): return id
+    if game.entities.has(id) or restore_individual(id):
+        var partner: String=str(game.entities[id].get("phase2_progress",{}).get("partner_id",""))
+        if not partner.is_empty() and not game.entities.has(partner): restore_individual(partner)
+        return id
     if state.archive.has(id):
         var r: Dictionary=state.archive[id]
         for other in game.entities:
@@ -91,8 +93,11 @@ func advance(dt: float) -> void:
             var key: String=str(i)+"|"+str(lineage)
             var record: Dictionary=state.settlements.get(key,{"held":0.0,"previous":int(pops[lineage]),"trend":0,"established":false})
             record.held=float(record.held)+dt if int(pops[lineage])>=E.CONSOLIDATION_COUNT else 0.0
-            record.trend=int(pops[lineage])-int(record.previous)
-            record.previous=int(pops[lineage])
+            record["sample_seconds"]=float(record.get("sample_seconds",0))+dt
+            if float(record.sample_seconds)>=10:
+                record.trend=int(pops[lineage])-int(record.previous)
+                record.previous=int(pops[lineage])
+                record.sample_seconds=fmod(float(record.sample_seconds),10.0)
             record.established=float(record.held)>=float(state.verify_seconds)
             state.settlements[key]=record
         for key in state.settlements.keys():
@@ -130,7 +135,7 @@ func open_map() -> void:
         game._add_overlay_label("%s · %s\nTuoi: %d · totale: %d · %s · persistenza %.0f/%ds"%[game.habitats.TITLES[i],resource_summary(i)+" · "+["rischio basso","rischio termico","concorrenti"][i],summary.population,summary.total_population,game._niche_label(summary.status),minf(held,state.verify_seconds),int(state.verify_seconds)])
         for other in game.ecology.niches["site"+str(i)].populations:
             var count: int=game.ecology.niches["site"+str(i)].populations[other]
-            game._add_overlay_label("  %s: %d · Δ %d"%[other,count,int(state.settlements.get(str(i)+"|"+str(other),{}).get("trend",0))])
+            game._add_overlay_label("  %s: %d · Δ/10s %d"%[other,count,int(state.settlements.get(str(i)+"|"+str(other),{}).get("trend",0))])
         game._add_overlay_button("Segna "+game.habitats.TITLES[i],travel.bind(i))
     game.collectives.map_info()
     game._add_overlay_button("Segui una linea nella genealogia",game._on_genealogy)

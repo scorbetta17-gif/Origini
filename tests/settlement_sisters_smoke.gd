@@ -54,6 +54,13 @@ func run() -> void:
     assert(total(g)==census)
     g.player.position=E.LOCAL_CENTERS[0];g._advance_niches(0);g._materialize_cohorts()
     assert(total(g)==census)
+    # Mutation immediately after a niche crossing cannot duplicate census.
+    var before_mutation: int=total(g)
+    g.player.position=Vector3(100,0,100)
+    g.purchased["fixture-crossing"]=true
+    g._differentiate_lineage()
+    assert(total(g)==before_mutation)
+    g._advance_niches(0);assert(total(g)==before_mutation)
     g.campaign.open_map();assert(g.overlay.visible)
     assert(E.climate_fit({"thermotolerance":1.5},"thermal_fault")>E.climate_fit({},"thermal_fault"))
     print("PASS: real division commands, diverging sisters, exact census on demotion/return/load, persistent settlement and map")

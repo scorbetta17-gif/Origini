@@ -1094,6 +1094,8 @@ func _update_ecosystem(dt: float) -> void:
                 _remove_entity(str(id),"stress termico")
                 continue
         if events.dormant(str(id)):
+            var resting_food: int=_nearest_nutrient(c.position,.82)
+            if resting_food>=0: _consume_nutrient(resting_food,false,str(id))
             e["intent_velocity"] = Vector3.ZERO
             continue
         var role: String = Physiology.strategy(e["traits"])
@@ -2668,6 +2670,11 @@ func _differentiate_lineage() -> void:
     var descendant: String = "%s-v%d-%d" % [player_id,purchased.size(),evolution.get("unlocks",{}).size()]
     if descendant == previous:
         return
+    var census_at: Vector3=e.get("census_position",player.position)
+    if Ecology.niche_id(census_at)!=Ecology.niche_id(player.position):
+        Ecology.register_death(ecology,previous,census_at)
+        Ecology.register_birth(ecology,previous,player.position)
+    e["census_position"]=player.position
     Ecology.differentiate(ecology,previous,descendant,player.position)
     e["ecotype"] = descendant
     ecological_profiles[descendant] = e["traits"].duplicate(true)

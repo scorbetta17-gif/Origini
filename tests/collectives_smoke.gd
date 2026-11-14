@@ -39,6 +39,12 @@ func run() -> void:
     g._on_cooperate();assert(g.partner_id=="DONOR-1")
     for i in range(30): g._advance_phase_two(1)
     assert(g.phase2_progress.active_stable and g.phase2_progress.metabolites_exchanged>0)
+    var host: String=g.player_id
+    g._create_entity("sister-host","",1,"pre_luca",g._base_traits(),Vector3(100,0,100),false)
+    g._switch_lineage("sister-host");g._advance_niches(0)
+    assert(g.campaign.state.archive.has("DONOR-1"))
+    g._switch_lineage(host)
+    assert(g.partner_id=="DONOR-1" and g.entities.has("DONOR-1"))
     g._save_game("user://consortium.json");g._load_game("user://consortium.json")
     assert(g.partner_id=="DONOR-1" and g.phase2_progress.active_stable)
     g.evolution.divisions=40;g.mutation_points=20
